@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GradPath.Core")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+b25f02b8804f00c5fd6d19852fa1e0c1a7c31064")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+cb7121c6a7635c1c339e37c40a5aa2337ffc83cd")]
 [assembly: System.Reflection.AssemblyProductAttribute("GradPath.Core")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GradPath.Core")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]
