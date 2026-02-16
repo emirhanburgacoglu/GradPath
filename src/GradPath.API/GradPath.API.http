@@ -1,0 +1,6 @@
+@GradPath.API_HostAddress = http://localhost:5250
+
+GET {{GradPath.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###

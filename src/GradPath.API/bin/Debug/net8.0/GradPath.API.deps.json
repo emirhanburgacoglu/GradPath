@@ -1,0 +1,73 @@
+{
+  "runtimeTarget": {
+    "name": ".NETCoreApp,Version=v8.0",
+    "signature": ""
+  },
+  "compilationOptions": {},
+  "targets": {
+    ".NETCoreApp,Version=v8.0": {
+      "GradPath.API/1.0.0": {
+        "dependencies": {
+          "GradPath.Business": "1.0.0",
+          "GradPath.Core": "1.0.0"
+        },
+        "runtime": {
+          "GradPath.API.dll": {}
+        }
+      },
+      "GradPath.Business/1.0.0": {
+        "dependencies": {
+          "GradPath.Core": "1.0.0",
+          "GradPath.Data": "1.0.0"
+        },
+        "runtime": {
+          "GradPath.Business.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "GradPath.Core/1.0.0": {
+        "runtime": {
+          "GradPath.Core.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      },
+      "GradPath.Data/1.0.0": {
+        "dependencies": {
+          "GradPath.Core": "1.0.0"
+        },
+        "runtime": {
+          "GradPath.Data.dll": {
+            "assemblyVersion": "1.0.0",
+            "fileVersion": "1.0.0.0"
+          }
+        }
+      }
+    }
+  },
+  "libraries": {
+    "GradPath.API/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "GradPath.Business/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "GradPath.Core/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    },
+    "GradPath.Data/1.0.0": {
+      "type": "project",
+      "serviceable": false,
+      "sha512": ""
+    }
+  }
+}

@@ -1,0 +1,11 @@
+C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Core\bin\Debug\net8.0\GradPath.Core.deps.json
+C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Core\bin\Debug\net8.0\GradPath.Core.dll
+C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Core\bin\Debug\net8.0\GradPath.Core.pdb
+C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Core\obj\Debug\net8.0\GradPath.Core.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Core\obj\Debug\net8.0\GradPath.Core.AssemblyInfoInputs.cache
+C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Core\obj\Debug\net8.0\GradPath.Core.AssemblyInfo.cs
+C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Core\obj\Debug\net8.0\GradPath.Core.csproj.CoreCompileInputs.cache
+C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Core\obj\Debug\net8.0\GradPath.Core.dll
+C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Core\obj\Debug\net8.0\refint\GradPath.Core.dll
+C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Core\obj\Debug\net8.0\GradPath.Core.pdb
+C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Core\obj\Debug\net8.0\ref\GradPath.Core.dll
