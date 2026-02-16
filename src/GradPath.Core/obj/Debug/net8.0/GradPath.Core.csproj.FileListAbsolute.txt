@@ -9,3 +9,5 @@ C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Core\obj\Debug\net8.
 C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Core\obj\Debug\net8.0\refint\GradPath.Core.dll
 C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Core\obj\Debug\net8.0\GradPath.Core.pdb
 C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Core\obj\Debug\net8.0\ref\GradPath.Core.dll
+C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Core\obj\Debug\net8.0\GradPath.Core.sourcelink.json
+C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Core\obj\Debug\net8.0\GradPath.Core.csproj.AssemblyReference.cache

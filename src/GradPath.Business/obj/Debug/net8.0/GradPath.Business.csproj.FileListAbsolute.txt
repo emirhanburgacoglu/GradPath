@@ -15,3 +15,4 @@ C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Business\obj\Debug\n
 C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Business\obj\Debug\net8.0\refint\GradPath.Business.dll
 C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Business\obj\Debug\net8.0\GradPath.Business.pdb
 C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Business\obj\Debug\net8.0\ref\GradPath.Business.dll
+C:\Users\ASUS\OneDrive\Masaüstü\GP2\GradPath\src\GradPath.Business\obj\Debug\net8.0\GradPath.Business.sourcelink.json
