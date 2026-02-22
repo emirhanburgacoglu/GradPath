@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GradPath.Data.Migrations
 {
     [DbContext(typeof(GradPathDbContext))]
-    [Migration("20260216135830_InitialCreate")]
+    [Migration("20260222133439_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -25,7 +25,7 @@ namespace GradPath.Data.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("GradPath.Core.Entities.AppRole", b =>
+            modelBuilder.Entity("GradPath.Data.Entities.AppRole", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -52,7 +52,7 @@ namespace GradPath.Data.Migrations
                     b.ToTable("AspNetRoles", (string)null);
                 });
 
-            modelBuilder.Entity("GradPath.Core.Entities.AppUser", b =>
+            modelBuilder.Entity("GradPath.Data.Entities.AppUser", b =>
                 {
                     b.Property<Guid>("Id")
                         .ValueGeneratedOnAdd()
@@ -105,15 +105,14 @@ namespace GradPath.Data.Migrations
                     b.Property<bool>("PhoneNumberConfirmed")
                         .HasColumnType("boolean");
 
-                    b.Property<string>("Role")
-                        .IsRequired()
-                        .HasColumnType("text");
-
                     b.Property<string>("SecurityStamp")
                         .HasColumnType("text");
 
                     b.Property<bool>("TwoFactorEnabled")
                         .HasColumnType("boolean");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
 
                     b.Property<string>("UserName")
                         .HasMaxLength(256)
@@ -133,7 +132,7 @@ namespace GradPath.Data.Migrations
                     b.ToTable("AspNetUsers", (string)null);
                 });
 
-            modelBuilder.Entity("GradPath.Core.Entities.Department", b =>
+            modelBuilder.Entity("GradPath.Data.Entities.Department", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -161,166 +160,7 @@ namespace GradPath.Data.Migrations
                     b.ToTable("Departments");
                 });
 
-            modelBuilder.Entity("GradPath.Core.Entities.Project", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("CategoryId")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Description")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("DifficultyLevel")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Projects");
-                });
-
-            modelBuilder.Entity("GradPath.Core.Entities.ProjectDepartment", b =>
-                {
-                    b.Property<int>("ProjectId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("DepartmentId")
-                        .HasColumnType("integer");
-
-                    b.Property<bool>("IsRequired")
-                        .HasColumnType("boolean");
-
-                    b.HasKey("ProjectId", "DepartmentId");
-
-                    b.HasIndex("DepartmentId");
-
-                    b.ToTable("ProjectDepartments");
-                });
-
-            modelBuilder.Entity("GradPath.Core.Entities.ProjectTechnology", b =>
-                {
-                    b.Property<int>("ProjectId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("TechnologyId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("ImportanceLevel")
-                        .HasColumnType("integer");
-
-                    b.HasKey("ProjectId", "TechnologyId");
-
-                    b.HasIndex("TechnologyId");
-
-                    b.ToTable("ProjectTechnologies");
-                });
-
-            modelBuilder.Entity("GradPath.Core.Entities.Recommendation", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<string>("AIExplanation")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("ProjectId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Score")
-                        .HasColumnType("integer");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProjectId");
-
-                    b.ToTable("Recommendations");
-                });
-
-            modelBuilder.Entity("GradPath.Core.Entities.StudentProfile", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<double>("CGPA")
-                        .HasColumnType("double precision");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("ParsedCV")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<string>("ParsedTranscript")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("UserId")
-                        .HasColumnType("uuid");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("StudentProfiles");
-                });
-
-            modelBuilder.Entity("GradPath.Core.Entities.TeamMatch", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<Guid>("InitiatorId")
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid?>("PartnerId")
-                        .HasColumnType("uuid");
-
-                    b.Property<int>("ProjectId")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ProjectId");
-
-                    b.ToTable("TeamMatches");
-                });
-
-            modelBuilder.Entity("GradPath.Core.Entities.Technology", b =>
+            modelBuilder.Entity("GradPath.Data.Entities.Project", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -337,6 +177,226 @@ namespace GradPath.Data.Migrations
 
                     b.Property<string>("Description")
                         .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("DifficultyLevel")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("EstimatedWeeks")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Title")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.ToTable("Projects");
+                });
+
+            modelBuilder.Entity("GradPath.Data.Entities.ProjectDepartment", b =>
+                {
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("DepartmentId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsRequired")
+                        .HasColumnType("boolean");
+
+                    b.HasKey("ProjectId", "DepartmentId");
+
+                    b.HasIndex("DepartmentId");
+
+                    b.ToTable("ProjectDepartments");
+                });
+
+            modelBuilder.Entity("GradPath.Data.Entities.ProjectTechnology", b =>
+                {
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("TechnologyId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ImportanceLevel")
+                        .HasColumnType("integer");
+
+                    b.HasKey("ProjectId", "TechnologyId");
+
+                    b.HasIndex("TechnologyId");
+
+                    b.ToTable("ProjectTechnologies");
+                });
+
+            modelBuilder.Entity("GradPath.Data.Entities.Recommendation", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AIExplanation")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("DifficultyAnalysis")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int>("DifficultyScore")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("FlagReason")
+                        .HasColumnType("text");
+
+                    b.Property<bool>("IsAccepted")
+                        .HasColumnType("boolean");
+
+                    b.Property<bool>("IsFlagged")
+                        .HasColumnType("boolean");
+
+                    b.Property<decimal>("MatchScore")
+                        .HasColumnType("numeric");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TechnologyRoadmap")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Recommendations");
+                });
+
+            modelBuilder.Entity("GradPath.Data.Entities.StudentProfile", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<decimal?>("CGPA")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("CvFileName")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("CvUploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<bool>("IsHonorStudent")
+                        .HasColumnType("boolean");
+
+                    b.Property<string>("ParsedCvData")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("ParsedTranscriptData")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<int?>("TotalECTS")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("TranscriptFileName")
+                        .HasColumnType("text");
+
+                    b.Property<DateTime?>("TranscriptUploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("UserId")
+                        .IsUnique();
+
+                    b.ToTable("StudentProfiles");
+                });
+
+            modelBuilder.Entity("GradPath.Data.Entities.TeamMatch", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("InitiatorId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("MatchedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Message")
+                        .HasColumnType("text");
+
+                    b.Property<Guid?>("PartnerId")
+                        .HasColumnType("uuid");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("InitiatorId");
+
+                    b.HasIndex("PartnerId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.ToTable("TeamMatches");
+                });
+
+            modelBuilder.Entity("GradPath.Data.Entities.Technology", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<string>("Category")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Description")
                         .HasColumnType("text");
 
                     b.Property<string>("Name")
@@ -451,24 +511,24 @@ namespace GradPath.Data.Migrations
                     b.ToTable("AspNetUserTokens", (string)null);
                 });
 
-            modelBuilder.Entity("GradPath.Core.Entities.AppUser", b =>
+            modelBuilder.Entity("GradPath.Data.Entities.AppUser", b =>
                 {
-                    b.HasOne("GradPath.Core.Entities.Department", "Department")
-                        .WithMany()
+                    b.HasOne("GradPath.Data.Entities.Department", "Department")
+                        .WithMany("Students")
                         .HasForeignKey("DepartmentId");
 
                     b.Navigation("Department");
                 });
 
-            modelBuilder.Entity("GradPath.Core.Entities.ProjectDepartment", b =>
+            modelBuilder.Entity("GradPath.Data.Entities.ProjectDepartment", b =>
                 {
-                    b.HasOne("GradPath.Core.Entities.Department", "Department")
+                    b.HasOne("GradPath.Data.Entities.Department", "Department")
                         .WithMany("ProjectDepartments")
                         .HasForeignKey("DepartmentId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GradPath.Core.Entities.Project", "Project")
+                    b.HasOne("GradPath.Data.Entities.Project", "Project")
                         .WithMany("ProjectDepartments")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -479,15 +539,15 @@ namespace GradPath.Data.Migrations
                     b.Navigation("Project");
                 });
 
-            modelBuilder.Entity("GradPath.Core.Entities.ProjectTechnology", b =>
+            modelBuilder.Entity("GradPath.Data.Entities.ProjectTechnology", b =>
                 {
-                    b.HasOne("GradPath.Core.Entities.Project", "Project")
+                    b.HasOne("GradPath.Data.Entities.Project", "Project")
                         .WithMany("ProjectTechnologies")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GradPath.Core.Entities.Technology", "Technology")
+                    b.HasOne("GradPath.Data.Entities.Technology", "Technology")
                         .WithMany("ProjectTechnologies")
                         .HasForeignKey("TechnologyId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -498,31 +558,65 @@ namespace GradPath.Data.Migrations
                     b.Navigation("Technology");
                 });
 
-            modelBuilder.Entity("GradPath.Core.Entities.Recommendation", b =>
+            modelBuilder.Entity("GradPath.Data.Entities.Recommendation", b =>
                 {
-                    b.HasOne("GradPath.Core.Entities.Project", "Project")
-                        .WithMany()
+                    b.HasOne("GradPath.Data.Entities.Project", "Project")
+                        .WithMany("Recommendations")
                         .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GradPath.Data.Entities.AppUser", "User")
+                        .WithMany("Recommendations")
+                        .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Project");
+
+                    b.Navigation("User");
                 });
 
-            modelBuilder.Entity("GradPath.Core.Entities.TeamMatch", b =>
+            modelBuilder.Entity("GradPath.Data.Entities.StudentProfile", b =>
                 {
-                    b.HasOne("GradPath.Core.Entities.Project", "Project")
-                        .WithMany()
+                    b.HasOne("GradPath.Data.Entities.AppUser", "User")
+                        .WithOne("StudentProfile")
+                        .HasForeignKey("GradPath.Data.Entities.StudentProfile", "UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
+            modelBuilder.Entity("GradPath.Data.Entities.TeamMatch", b =>
+                {
+                    b.HasOne("GradPath.Data.Entities.AppUser", "Initiator")
+                        .WithMany("InitiatedMatches")
+                        .HasForeignKey("InitiatorId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GradPath.Data.Entities.AppUser", "Partner")
+                        .WithMany("ReceivedMatches")
+                        .HasForeignKey("PartnerId")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("GradPath.Data.Entities.Project", "Project")
+                        .WithMany("TeamMatches")
                         .HasForeignKey("ProjectId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("Initiator");
+
+                    b.Navigation("Partner");
 
                     b.Navigation("Project");
                 });
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityRoleClaim<System.Guid>", b =>
                 {
-                    b.HasOne("GradPath.Core.Entities.AppRole", null)
+                    b.HasOne("GradPath.Data.Entities.AppRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -531,7 +625,7 @@ namespace GradPath.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<System.Guid>", b =>
                 {
-                    b.HasOne("GradPath.Core.Entities.AppUser", null)
+                    b.HasOne("GradPath.Data.Entities.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -540,7 +634,7 @@ namespace GradPath.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserLogin<System.Guid>", b =>
                 {
-                    b.HasOne("GradPath.Core.Entities.AppUser", null)
+                    b.HasOne("GradPath.Data.Entities.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -549,13 +643,13 @@ namespace GradPath.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserRole<System.Guid>", b =>
                 {
-                    b.HasOne("GradPath.Core.Entities.AppRole", null)
+                    b.HasOne("GradPath.Data.Entities.AppRole", null)
                         .WithMany()
                         .HasForeignKey("RoleId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
-                    b.HasOne("GradPath.Core.Entities.AppUser", null)
+                    b.HasOne("GradPath.Data.Entities.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
@@ -564,26 +658,43 @@ namespace GradPath.Data.Migrations
 
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserToken<System.Guid>", b =>
                 {
-                    b.HasOne("GradPath.Core.Entities.AppUser", null)
+                    b.HasOne("GradPath.Data.Entities.AppUser", null)
                         .WithMany()
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
                 });
 
-            modelBuilder.Entity("GradPath.Core.Entities.Department", b =>
+            modelBuilder.Entity("GradPath.Data.Entities.AppUser", b =>
                 {
-                    b.Navigation("ProjectDepartments");
+                    b.Navigation("InitiatedMatches");
+
+                    b.Navigation("ReceivedMatches");
+
+                    b.Navigation("Recommendations");
+
+                    b.Navigation("StudentProfile");
                 });
 
-            modelBuilder.Entity("GradPath.Core.Entities.Project", b =>
+            modelBuilder.Entity("GradPath.Data.Entities.Department", b =>
+                {
+                    b.Navigation("ProjectDepartments");
+
+                    b.Navigation("Students");
+                });
+
+            modelBuilder.Entity("GradPath.Data.Entities.Project", b =>
                 {
                     b.Navigation("ProjectDepartments");
 
                     b.Navigation("ProjectTechnologies");
+
+                    b.Navigation("Recommendations");
+
+                    b.Navigation("TeamMatches");
                 });
 
-            modelBuilder.Entity("GradPath.Core.Entities.Technology", b =>
+            modelBuilder.Entity("GradPath.Data.Entities.Technology", b =>
                 {
                     b.Navigation("ProjectTechnologies");
                 });

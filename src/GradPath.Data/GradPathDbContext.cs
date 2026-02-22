@@ -26,19 +26,30 @@ public class GradPathDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     // Ara Tablolar (Çok-a-Çok İlişkiler)
     public DbSet<ProjectDepartment> ProjectDepartments { get; set; }
     public DbSet<ProjectTechnology> ProjectTechnologies { get; set; }
-
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
 
-        // ProjectDepartment için birleşik anahtar (Composite Key) tanımlama
+        // Composite Keys
         builder.Entity<ProjectDepartment>()
             .HasKey(pd => new { pd.ProjectId, pd.DepartmentId });
 
-        // ProjectTechnology için birleşik anahtar tanımlama
         builder.Entity<ProjectTechnology>()
             .HasKey(pt => new { pt.ProjectId, pt.TechnologyId });
 
-        // PostgreSQL için özel JSONB yapılandırmaları ve diğer kısıtlamalar buraya gelecek
+        // TeamMatch - Initiator ilişkisi (isteği atan kullanıcı)
+        builder.Entity<TeamMatch>()
+            .HasOne(tm => tm.Initiator)
+            .WithMany(u => u.InitiatedMatches)
+            .HasForeignKey(tm => tm.InitiatorId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        // TeamMatch - Partner ilişkisi (eşleşen kullanıcı)
+        builder.Entity<TeamMatch>()
+            .HasOne(tm => tm.Partner)
+            .WithMany(u => u.ReceivedMatches)
+            .HasForeignKey(tm => tm.PartnerId)
+            .OnDelete(DeleteBehavior.Restrict);
     }
+
 }

@@ -50,30 +50,15 @@ namespace GradPath.Data.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Title = table.Column<string>(type: "text", nullable: false),
                     Description = table.Column<string>(type: "text", nullable: false),
-                    DifficultyLevel = table.Column<string>(type: "text", nullable: false),
-                    CategoryId = table.Column<int>(type: "integer", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                    Category = table.Column<string>(type: "text", nullable: false),
+                    DifficultyLevel = table.Column<int>(type: "integer", nullable: false),
+                    EstimatedWeeks = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
                 },
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_Projects", x => x.Id);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "StudentProfiles",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ParsedCV = table.Column<string>(type: "text", nullable: false),
-                    ParsedTranscript = table.Column<string>(type: "text", nullable: false),
-                    CGPA = table.Column<double>(type: "double precision", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_StudentProfiles", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
@@ -84,7 +69,7 @@ namespace GradPath.Data.Migrations
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     Name = table.Column<string>(type: "text", nullable: false),
                     Category = table.Column<string>(type: "text", nullable: false),
-                    Description = table.Column<string>(type: "text", nullable: false),
+                    Description = table.Column<string>(type: "text", nullable: true),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
@@ -120,8 +105,8 @@ namespace GradPath.Data.Migrations
                     Id = table.Column<Guid>(type: "uuid", nullable: false),
                     FullName = table.Column<string>(type: "text", nullable: false),
                     DepartmentId = table.Column<int>(type: "integer", nullable: true),
-                    Role = table.Column<string>(type: "text", nullable: false),
                     CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
                     UserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     NormalizedUserName = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
                     Email = table.Column<string>(type: "character varying(256)", maxLength: 256, nullable: true),
@@ -153,7 +138,8 @@ namespace GradPath.Data.Migrations
                 {
                     ProjectId = table.Column<int>(type: "integer", nullable: false),
                     DepartmentId = table.Column<int>(type: "integer", nullable: false),
-                    IsRequired = table.Column<bool>(type: "boolean", nullable: false)
+                    IsRequired = table.Column<bool>(type: "boolean", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -173,58 +159,13 @@ namespace GradPath.Data.Migrations
                 });
 
             migrationBuilder.CreateTable(
-                name: "Recommendations",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
-                    ProjectId = table.Column<int>(type: "integer", nullable: false),
-                    AIExplanation = table.Column<string>(type: "text", nullable: false),
-                    Score = table.Column<int>(type: "integer", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_Recommendations", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_Recommendations_Projects_ProjectId",
-                        column: x => x.ProjectId,
-                        principalTable: "Projects",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
-                name: "TeamMatches",
-                columns: table => new
-                {
-                    Id = table.Column<int>(type: "integer", nullable: false)
-                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    ProjectId = table.Column<int>(type: "integer", nullable: false),
-                    InitiatorId = table.Column<Guid>(type: "uuid", nullable: false),
-                    PartnerId = table.Column<Guid>(type: "uuid", nullable: true),
-                    Status = table.Column<string>(type: "text", nullable: false),
-                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
-                },
-                constraints: table =>
-                {
-                    table.PrimaryKey("PK_TeamMatches", x => x.Id);
-                    table.ForeignKey(
-                        name: "FK_TeamMatches_Projects_ProjectId",
-                        column: x => x.ProjectId,
-                        principalTable: "Projects",
-                        principalColumn: "Id",
-                        onDelete: ReferentialAction.Cascade);
-                });
-
-            migrationBuilder.CreateTable(
                 name: "ProjectTechnologies",
                 columns: table => new
                 {
                     ProjectId = table.Column<int>(type: "integer", nullable: false),
                     TechnologyId = table.Column<int>(type: "integer", nullable: false),
-                    ImportanceLevel = table.Column<int>(type: "integer", nullable: false)
+                    ImportanceLevel = table.Column<int>(type: "integer", nullable: false),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
@@ -328,6 +269,105 @@ namespace GradPath.Data.Migrations
                         onDelete: ReferentialAction.Cascade);
                 });
 
+            migrationBuilder.CreateTable(
+                name: "Recommendations",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ProjectId = table.Column<int>(type: "integer", nullable: false),
+                    AIExplanation = table.Column<string>(type: "text", nullable: false),
+                    TechnologyRoadmap = table.Column<string>(type: "text", nullable: false),
+                    DifficultyAnalysis = table.Column<string>(type: "text", nullable: false),
+                    MatchScore = table.Column<decimal>(type: "numeric", nullable: false),
+                    DifficultyScore = table.Column<int>(type: "integer", nullable: false),
+                    IsAccepted = table.Column<bool>(type: "boolean", nullable: false),
+                    IsFlagged = table.Column<bool>(type: "boolean", nullable: false),
+                    FlagReason = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_Recommendations", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_Recommendations_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                    table.ForeignKey(
+                        name: "FK_Recommendations_Projects_ProjectId",
+                        column: x => x.ProjectId,
+                        principalTable: "Projects",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "StudentProfiles",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    UserId = table.Column<Guid>(type: "uuid", nullable: false),
+                    ParsedCvData = table.Column<string>(type: "text", nullable: false),
+                    ParsedTranscriptData = table.Column<string>(type: "text", nullable: false),
+                    CGPA = table.Column<decimal>(type: "numeric", nullable: true),
+                    TotalECTS = table.Column<int>(type: "integer", nullable: true),
+                    IsHonorStudent = table.Column<bool>(type: "boolean", nullable: false),
+                    CvFileName = table.Column<string>(type: "text", nullable: true),
+                    TranscriptFileName = table.Column<string>(type: "text", nullable: true),
+                    CvUploadedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    TranscriptUploadedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_StudentProfiles", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_StudentProfiles_AspNetUsers_UserId",
+                        column: x => x.UserId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "TeamMatches",
+                columns: table => new
+                {
+                    Id = table.Column<Guid>(type: "uuid", nullable: false),
+                    ProjectId = table.Column<int>(type: "integer", nullable: false),
+                    InitiatorId = table.Column<Guid>(type: "uuid", nullable: false),
+                    PartnerId = table.Column<Guid>(type: "uuid", nullable: true),
+                    Status = table.Column<string>(type: "text", nullable: false),
+                    Message = table.Column<string>(type: "text", nullable: true),
+                    CreatedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    MatchedAt = table.Column<DateTime>(type: "timestamp with time zone", nullable: true)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_TeamMatches", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_TeamMatches_AspNetUsers_InitiatorId",
+                        column: x => x.InitiatorId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_TeamMatches_AspNetUsers_PartnerId",
+                        column: x => x.PartnerId,
+                        principalTable: "AspNetUsers",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_TeamMatches_Projects_ProjectId",
+                        column: x => x.ProjectId,
+                        principalTable: "Projects",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
             migrationBuilder.CreateIndex(
                 name: "IX_AspNetRoleClaims_RoleId",
                 table: "AspNetRoleClaims",
@@ -386,6 +426,27 @@ namespace GradPath.Data.Migrations
                 column: "ProjectId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_Recommendations_UserId",
+                table: "Recommendations",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_StudentProfiles_UserId",
+                table: "StudentProfiles",
+                column: "UserId",
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TeamMatches_InitiatorId",
+                table: "TeamMatches",
+                column: "InitiatorId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_TeamMatches_PartnerId",
+                table: "TeamMatches",
+                column: "PartnerId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_TeamMatches_ProjectId",
                 table: "TeamMatches",
                 column: "ProjectId");
@@ -428,10 +489,10 @@ namespace GradPath.Data.Migrations
                 name: "AspNetRoles");
 
             migrationBuilder.DropTable(
-                name: "AspNetUsers");
+                name: "Technologies");
 
             migrationBuilder.DropTable(
-                name: "Technologies");
+                name: "AspNetUsers");
 
             migrationBuilder.DropTable(
                 name: "Projects");
