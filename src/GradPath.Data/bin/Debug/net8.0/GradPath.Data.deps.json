@@ -9,9 +9,10 @@
       "GradPath.Data/1.0.0": {
         "dependencies": {
           "GradPath.Core": "1.0.0",
-          "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "8.0.24",
+          "Microsoft.AspNetCore.Identity.EntityFrameworkCore": "8.0.11",
           "Microsoft.EntityFrameworkCore.Design": "8.0.24",
-          "Npgsql.EntityFrameworkCore.PostgreSQL": "8.0.11"
+          "Microsoft.EntityFrameworkCore.Tools": "8.0.11",
+          "Npgsql.EntityFrameworkCore.PostgreSQL": "8.0.10"
         },
         "runtime": {
           "GradPath.Data.dll": {}
@@ -44,15 +45,15 @@
           }
         }
       },
-      "Microsoft.AspNetCore.Identity.EntityFrameworkCore/8.0.24": {
+      "Microsoft.AspNetCore.Identity.EntityFrameworkCore/8.0.11": {
         "dependencies": {
           "Microsoft.EntityFrameworkCore.Relational": "8.0.24",
           "Microsoft.Extensions.Identity.Stores": "8.0.24"
         },
         "runtime": {
           "lib/net8.0/Microsoft.AspNetCore.Identity.EntityFrameworkCore.dll": {
-            "assemblyVersion": "8.0.24.0",
-            "fileVersion": "8.0.2426.7207"
+            "assemblyVersion": "8.0.11.0",
+            "fileVersion": "8.0.1124.52116"
           }
         }
       },
@@ -335,6 +336,11 @@
           }
         }
       },
+      "Microsoft.EntityFrameworkCore.Tools/8.0.11": {
+        "dependencies": {
+          "Microsoft.EntityFrameworkCore.Design": "8.0.24"
+        }
+      },
       "Microsoft.Extensions.Caching.Abstractions/8.0.0": {
         "dependencies": {
           "Microsoft.Extensions.Primitives": "8.0.0"
@@ -480,28 +486,28 @@
           }
         }
       },
-      "Npgsql/8.0.6": {
+      "Npgsql/8.0.5": {
         "dependencies": {
           "Microsoft.Extensions.Logging.Abstractions": "8.0.2"
         },
         "runtime": {
           "lib/net8.0/Npgsql.dll": {
-            "assemblyVersion": "8.0.6.0",
-            "fileVersion": "8.0.6.0"
+            "assemblyVersion": "8.0.5.0",
+            "fileVersion": "8.0.5.0"
           }
         }
       },
-      "Npgsql.EntityFrameworkCore.PostgreSQL/8.0.11": {
+      "Npgsql.EntityFrameworkCore.PostgreSQL/8.0.10": {
         "dependencies": {
           "Microsoft.EntityFrameworkCore": "8.0.24",
           "Microsoft.EntityFrameworkCore.Abstractions": "8.0.24",
           "Microsoft.EntityFrameworkCore.Relational": "8.0.24",
-          "Npgsql": "8.0.6"
+          "Npgsql": "8.0.5"
         },
         "runtime": {
           "lib/net8.0/Npgsql.EntityFrameworkCore.PostgreSQL.dll": {
-            "assemblyVersion": "8.0.11.0",
-            "fileVersion": "8.0.11.0"
+            "assemblyVersion": "8.0.10.0",
+            "fileVersion": "8.0.10.0"
           }
         }
       },
@@ -638,12 +644,12 @@
       "path": "microsoft.aspnetcore.cryptography.keyderivation/8.0.24",
       "hashPath": "microsoft.aspnetcore.cryptography.keyderivation.8.0.24.nupkg.sha512"
     },
-    "Microsoft.AspNetCore.Identity.EntityFrameworkCore/8.0.24": {
+    "Microsoft.AspNetCore.Identity.EntityFrameworkCore/8.0.11": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-G394k2JjAHAop2neaPXU99wv+gZvUwZ1RLm9Elfk1LKhU99fU6ga/rgZe4V82Kdre1qkEuFjHnDPQ/VhugdQRQ==",
-      "path": "microsoft.aspnetcore.identity.entityframeworkcore/8.0.24",
-      "hashPath": "microsoft.aspnetcore.identity.entityframeworkcore.8.0.24.nupkg.sha512"
+      "sha512": "sha512-AR87eq0J3pqRPcqJUe9f5xLj8FoXxpakyjSDwvVQXWd6ClzFLQ+GPksCM009tpi6WJZblZ7qud5UZFj421UYTg==",
+      "path": "microsoft.aspnetcore.identity.entityframeworkcore/8.0.11",
+      "hashPath": "microsoft.aspnetcore.identity.entityframeworkcore.8.0.11.nupkg.sha512"
     },
     "Microsoft.Bcl.AsyncInterfaces/6.0.0": {
       "type": "package",
@@ -721,6 +727,13 @@
       "sha512": "sha512-QMGORS3ltx2RWHBCUcBjadS0eNYGkTGXsOdZf3oSM6pZuNBBl16z6gThA3a+BF8T5HY3jThxVDFKaPHxmpueXA==",
       "path": "microsoft.entityframeworkcore.relational/8.0.24",
       "hashPath": "microsoft.entityframeworkcore.relational.8.0.24.nupkg.sha512"
+    },
+    "Microsoft.EntityFrameworkCore.Tools/8.0.11": {
+      "type": "package",
+      "serviceable": true,
+      "sha512": "sha512-9iUOj0npm2FxOkGIE3ktv0N0YU1oEhaMTJoDYuKS8dGNkWo1CPm7RjsoJABesKFk1lkCIfTE5SHXb45GIMjDnQ==",
+      "path": "microsoft.entityframeworkcore.tools/8.0.11",
+      "hashPath": "microsoft.entityframeworkcore.tools.8.0.11.nupkg.sha512"
     },
     "Microsoft.Extensions.Caching.Abstractions/8.0.0": {
       "type": "package",
@@ -813,19 +826,19 @@
       "path": "mono.texttemplating/2.2.1",
       "hashPath": "mono.texttemplating.2.2.1.nupkg.sha512"
     },
-    "Npgsql/8.0.6": {
+    "Npgsql/8.0.5": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-KaS6CY5kY2Sd0P00MSeFcOI3t2DiQ4UWG8AuRpVOUeDWITOKfoEEG91DP3cmT6aerixPkjwKgXxnpDxIkDpO6g==",
-      "path": "npgsql/8.0.6",
-      "hashPath": "npgsql.8.0.6.nupkg.sha512"
+      "sha512": "sha512-zRG5V8cyeZLpzJlKzFKjEwkRMYIYnHWJvEor2lWXeccS2E1G2nIWYYhnukB51iz5XsWSVEtqg3AxTWM0QJ6vfg==",
+      "path": "npgsql/8.0.5",
+      "hashPath": "npgsql.8.0.5.nupkg.sha512"
     },
-    "Npgsql.EntityFrameworkCore.PostgreSQL/8.0.11": {
+    "Npgsql.EntityFrameworkCore.PostgreSQL/8.0.10": {
       "type": "package",
       "serviceable": true,
-      "sha512": "sha512-leShR/O/nSIS3Jpj8yUBmkzaXzBbtlV326+MYkX2BwAj2qSNrUv/H6m8G9Hnv2zUkQYccTpmV5jIVq5vdciEUA==",
-      "path": "npgsql.entityframeworkcore.postgresql/8.0.11",
-      "hashPath": "npgsql.entityframeworkcore.postgresql.8.0.11.nupkg.sha512"
+      "sha512": "sha512-gFPl9Dmxih7Yi4tZ3bITzZFzbxFMBx04gqTqcjoL2r5VEW+O2TA5UVw/wm/XW26NAJ7sg59Je0+9QrwiZt6MPQ==",
+      "path": "npgsql.entityframeworkcore.postgresql/8.0.10",
+      "hashPath": "npgsql.entityframeworkcore.postgresql.8.0.10.nupkg.sha512"
     },
     "System.CodeDom/4.4.0": {
       "type": "package",

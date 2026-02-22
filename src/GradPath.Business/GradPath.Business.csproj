@@ -5,6 +5,10 @@
     <ProjectReference Include="..\GradPath.Data\GradPath.Data.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <PackageReference Include="PdfPig" Version="0.1.9" />
+  </ItemGroup>
+
   <PropertyGroup>
     <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
