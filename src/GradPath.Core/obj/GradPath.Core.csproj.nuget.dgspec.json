@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj": {}
+    "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj": {
+    "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj",
+        "projectUniqueName": "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj",
         "projectName": "GradPath.Core",
-        "projectPath": "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj",
+        "projectPath": "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj",
         "packagesPath": "C:\\Users\\ASUS\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\obj\\",
+        "outputPath": "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\ASUS\\AppData\\Roaming\\NuGet\\NuGet.Config"

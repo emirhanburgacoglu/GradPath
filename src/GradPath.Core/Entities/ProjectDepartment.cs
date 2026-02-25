@@ -1,13 +1,20 @@
 namespace GradPath.Core.Entities;
 
+/// <summary>
+/// Proje ile bölüm arasındaki çok-a-çok ilişkiyi temsil eder.
+/// </summary>
 public class ProjectDepartment
 {
     public int ProjectId { get; set; }
-    public Project Project { get; set; } = null!;
-
     public int DepartmentId { get; set; }
+
+    // Bu proje bu bölüm için zorunlu mu yoksa opsiyonel mi?
+    public bool IsRequired { get; set; } = true;
+
+    // Navigation Properties
+    public Project Project { get; set; } = null!;
     public Department Department { get; set; } = null!;
 
-    // Raporunda belirttiğin: Bu proje bu bölüm için zorunlu/temel mi?
-    public bool IsRequired { get; set; }
+    // Metadata
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

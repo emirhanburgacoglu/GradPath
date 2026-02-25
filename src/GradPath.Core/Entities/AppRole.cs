@@ -2,4 +2,10 @@ using Microsoft.AspNetCore.Identity;
 
 namespace GradPath.Core.Entities;
 
-public class AppRole : IdentityRole<Guid> { }
+/// <summary>
+/// Kullanıcı rollerini temsil eder. IdentityRole'dan türeyerek hazır rol altyapısını kullanır.
+/// </summary>
+public class AppRole : IdentityRole<Guid>
+{
+    // Şimdilik boş kalabilir, ileride özel özellikler ekleyebiliriz
+}

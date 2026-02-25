@@ -1,17 +1,32 @@
 namespace GradPath.Core.Entities;
 
-//Öğrencinin parse edilmiş profil verilerini ve akademik durumunu saklayan sınıf.
-public class StudentProfile : BaseEntity
+/// <summary>
+/// Öğrencilerin CV ve transkript verilerini saklar.
+/// </summary>
+public class StudentProfile
 {
-    // Profilin hangi kullanıcıya ait olduğunun kinliği 
+    public Guid Id { get; set; }
     public Guid UserId { get; set; }
 
-    // Groq API'den gelen parse edilmiş CV verileri 
-    public string ParsedCV { get; set; } = null!;
+    // Parse Edilmiş Veriler (JSON olarak saklanacak)
+    public string ParsedCvData { get; set; } = "{}";           // CV'den çıkan JSON
+    public string ParsedTranscriptData { get; set; } = "{}";   // Transkriptten çıkan JSON
 
-    //Transkript verilerinin parse edilmiş hali (dersler, notlar, krediler vb.)
-    public string ParsedTranscript { get; set; } = null!;
+    // Özet Bilgiler (Hızlı erişim için ayrıca tutuyoruz)
+    public decimal? CGPA { get; set; }                         // 3.26 gibi
+    public int? TotalECTS { get; set; }                        // 189 AKTS
+    public bool IsHonorStudent { get; set; }                   // Onur öğrencisi mi?
 
-    // Öğrencinin güncel akademik durumunu göstermek için eklenen CGPA alanı
-    public double CGPA { get; set; }
+    // Dosya Bilgileri
+    public string? CvFileName { get; set; }
+    public string? TranscriptFileName { get; set; }
+    public DateTime? CvUploadedAt { get; set; }
+    public DateTime? TranscriptUploadedAt { get; set; }
+
+    // Navigation Properties
+    public AppUser User { get; set; } = null!;
+
+    // Metadata
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
 }

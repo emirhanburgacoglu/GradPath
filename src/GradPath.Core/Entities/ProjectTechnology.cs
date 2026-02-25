@@ -1,23 +1,20 @@
 namespace GradPath.Core.Entities;
 
-// Projeler ile teknolojiler arasındaki Çok-a-Çok ilişkiyi kuran ara tablo.
-
+/// <summary>
+/// Proje ile teknoloji arasındaki çok-a-çok ilişkiyi temsil eder.
+/// </summary>
 public class ProjectTechnology
 {
-
-    //İlgili projenin ID'si.
-
     public int ProjectId { get; set; }
-    public Project Project { get; set; } = null!;
-
-    // İlgili teknolojinin ID'si.
-
     public int TechnologyId { get; set; }
+
+    // Bu teknoloji ne kadar önemli? (1=Opsiyonel, 2=Önerilen, 3=Zorunlu)
+    public int ImportanceLevel { get; set; } = 2;
+
+    // Navigation Properties
+    public Project Project { get; set; } = null!;
     public Technology Technology { get; set; } = null!;
 
-
-    // Bu teknolojinin proje için önem derecesi (Örn: 1-5 arası puan).
-    //Hibrit öneri motoru bu puanı kullanarak eşleştirme yapar.
-
-    public int ImportanceLevel { get; set; }
+    // Metadata
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

@@ -1,17 +1,17 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.API\\GradPath.API.csproj": {}
+    "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.API\\GradPath.API.csproj": {}
   },
   "projects": {
-    "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.API\\GradPath.API.csproj": {
+    "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.API\\GradPath.API.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.API\\GradPath.API.csproj",
+        "projectUniqueName": "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.API\\GradPath.API.csproj",
         "projectName": "GradPath.API",
-        "projectPath": "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.API\\GradPath.API.csproj",
+        "projectPath": "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.API\\GradPath.API.csproj",
         "packagesPath": "C:\\Users\\ASUS\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.API\\obj\\",
+        "outputPath": "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.API\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\ASUS\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -26,11 +26,11 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Business\\GradPath.Business.csproj": {
-                "projectPath": "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Business\\GradPath.Business.csproj"
+              "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Business\\GradPath.Business.csproj": {
+                "projectPath": "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Business\\GradPath.Business.csproj"
               },
-              "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj": {
-                "projectPath": "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj"
+              "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj": {
+                "projectPath": "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj"
               }
             }
           }
@@ -92,14 +92,14 @@
         }
       }
     },
-    "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Business\\GradPath.Business.csproj": {
+    "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Business\\GradPath.Business.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Business\\GradPath.Business.csproj",
+        "projectUniqueName": "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Business\\GradPath.Business.csproj",
         "projectName": "GradPath.Business",
-        "projectPath": "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Business\\GradPath.Business.csproj",
+        "projectPath": "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Business\\GradPath.Business.csproj",
         "packagesPath": "C:\\Users\\ASUS\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Business\\obj\\",
+        "outputPath": "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Business\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\ASUS\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -114,11 +114,11 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj": {
-                "projectPath": "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj"
+              "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj": {
+                "projectPath": "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj"
               },
-              "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Data\\GradPath.Data.csproj": {
-                "projectPath": "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Data\\GradPath.Data.csproj"
+              "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Data\\GradPath.Data.csproj": {
+                "projectPath": "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Data\\GradPath.Data.csproj"
               }
             }
           }
@@ -163,14 +163,14 @@
         }
       }
     },
-    "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj": {
+    "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj",
+        "projectUniqueName": "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj",
         "projectName": "GradPath.Core",
-        "projectPath": "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj",
+        "projectPath": "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj",
         "packagesPath": "C:\\Users\\ASUS\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\obj\\",
+        "outputPath": "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\ASUS\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -227,14 +227,14 @@
         }
       }
     },
-    "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Data\\GradPath.Data.csproj": {
+    "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Data\\GradPath.Data.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Data\\GradPath.Data.csproj",
+        "projectUniqueName": "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Data\\GradPath.Data.csproj",
         "projectName": "GradPath.Data",
-        "projectPath": "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Data\\GradPath.Data.csproj",
+        "projectPath": "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Data\\GradPath.Data.csproj",
         "packagesPath": "C:\\Users\\ASUS\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Data\\obj\\",
+        "outputPath": "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Data\\obj\\",
         "projectStyle": "PackageReference",
         "configFilePaths": [
           "C:\\Users\\ASUS\\AppData\\Roaming\\NuGet\\NuGet.Config"
@@ -249,8 +249,8 @@
           "net8.0": {
             "targetAlias": "net8.0",
             "projectReferences": {
-              "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj": {
-                "projectPath": "C:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj"
+              "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj": {
+                "projectPath": "c:\\Users\\ASUS\\OneDrive\\Masaüstü\\GP2\\GradPath\\src\\GradPath.Core\\GradPath.Core.csproj"
               }
             }
           }

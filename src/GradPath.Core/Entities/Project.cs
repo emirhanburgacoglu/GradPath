@@ -1,25 +1,26 @@
 namespace GradPath.Core.Entities;
 
-public class Project : BaseEntity
+/// <summary>
+/// Sistemdeki proje şablonlarını temsil eden ana sınıf.
+/// </summary>
+public class Project
 {
-    // Sistemdeki proje şablonlarını temsil eden ana sınıf
+    public int Id { get; set; }
 
+    // Proje Bilgileri
+    public string Title { get; set; } = string.Empty;
+    public string Description { get; set; } = string.Empty;
+    public string Category { get; set; } = string.Empty;      // "AI/ML", "Web", "IoT", "Embedded"
+    public int DifficultyLevel { get; set; }                   // 1=Kolay, 2=Orta, 3=Zor
+    public int EstimatedWeeks { get; set; }                    // Tahmini tamamlanma süresi
 
-    // Proje başlığı 
-    public string Title { get; set; } = null!;
-
-    // Prjenin detaylı açıklaması ve kapsamı 
-    public string Description { get; set; } = null!;
-
-    // Projenin zorluk seviesi 
-    public string DifficultyLevel { get; set; } = null!; // Uygun, Zorlayıcı, Zor [cite: 8, 54]
-
-    // Projenin kategorisi 
-    public int CategoryId { get; set; } // Kategori ID 
-
-    // Bu projenin hangi bölümlerle ilişkili olduğunu gösteren koleksiyon
+    // Navigation Properties
     public ICollection<ProjectDepartment> ProjectDepartments { get; set; } = new List<ProjectDepartment>();
-
-    // Bu projenin hangi teknolojilerle ilişkili olduğunu gösteren koleksiyon
     public ICollection<ProjectTechnology> ProjectTechnologies { get; set; } = new List<ProjectTechnology>();
+    public ICollection<Recommendation> Recommendations { get; set; } = new List<Recommendation>();
+    public ICollection<TeamMatch> TeamMatches { get; set; } = new List<TeamMatch>();
+
+    // Metadata
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
 }

@@ -1,27 +1,20 @@
 namespace GradPath.Core.Entities;
 
 /// <summary>
-/// Sistemde tanımlı olan teknolojileri (Diller, Frameworkler, Veritabanları) temsil eder.
+/// Sistemdeki teknolojileri temsil eder (Python, React, PostgreSQL vs.)
 /// </summary>
-public class Technology : BaseEntity
+public class Technology
 {
-    /// <summary>
-    /// Teknolojinin adı (Örn: ASP.NET Core, React, Python).
-    /// </summary>
-    public string Name { get; set; } = null!;
+    public int Id { get; set; }
 
-    /// <summary>
-    /// Teknolojinin kategorisi (Örn: Backend, Frontend, Database, AI).
-    /// </summary>
-    public string Category { get; set; } = null!;
+    // Teknoloji Bilgileri
+    public string Name { get; set; } = string.Empty;           // "Python", "React", "PostgreSQL"
+    public string Category { get; set; } = string.Empty;       // "Language", "Framework", "Database", "Tool"
+    public string? Description { get; set; }                   // Opsiyonel açıklama
 
-    /// <summary>
-    /// Teknolojinin kısa açıklaması.
-    /// </summary>
-    public string Description { get; set; } = null!;
-
-    /// <summary>
-    /// İlişki: Bu teknolojinin kullanıldığı projelerin listesi.
-    /// </summary>
+    // Navigation Properties
     public ICollection<ProjectTechnology> ProjectTechnologies { get; set; } = new List<ProjectTechnology>();
+
+    // Metadata
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 }

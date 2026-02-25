@@ -2,19 +2,24 @@ using Microsoft.AspNetCore.Identity;
 
 namespace GradPath.Core.Entities;
 
+/// <summary>
 /// Sisteme giriş yapacak öğrencileri ve adminleri temsil eder.
 /// IdentityUser'dan türeyerek hazır giriş-çıkış altyapısını kullanır.
-
+/// </summary>
 public class AppUser : IdentityUser<Guid>
 {
-    // Kullanıcının tam adı ve soyadı 
-    public string FullName { get; set; } = null!;
-
-    // Öğrencinin bağlı olduğu bölüm (Admin için null olabilir) 
+    // Temel Bilgiler
+    public string FullName { get; set; } = string.Empty;
     public int? DepartmentId { get; set; }
-    public Department? Department { get; set; }
-    // Kullanıcının sistemdeki rolü (Admin veya Ogrenci) [cite: 34]
-    public string Role { get; set; } = "Ogrenci";
 
+    // Navigation Properties (İlişkiler)
+    public Department? Department { get; set; }
+    public StudentProfile? StudentProfile { get; set; }
+    public ICollection<Recommendation> Recommendations { get; set; } = new List<Recommendation>();
+    public ICollection<TeamMatch> InitiatedMatches { get; set; } = new List<TeamMatch>();
+    public ICollection<TeamMatch> ReceivedMatches { get; set; } = new List<TeamMatch>();
+
+    // Metadata
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
 }
