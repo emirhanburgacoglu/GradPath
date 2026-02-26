@@ -16,16 +16,16 @@ public class GradPathDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     }
 
     // Ana Tablolar
-    public DbSet<Department> Departments { get; set; }
-    public DbSet<Project> Projects { get; set; }
-    public DbSet<Technology> Technologies { get; set; }
-    public DbSet<StudentProfile> StudentProfiles { get; set; }
-    public DbSet<Recommendation> Recommendations { get; set; }
-    public DbSet<TeamMatch> TeamMatches { get; set; }
+    public DbSet<Department> Departments { get; set; } = null!;
+    public DbSet<Project> Projects { get; set; } = null!;
+    public DbSet<Technology> Technologies { get; set; } = null!;
+    public DbSet<StudentProfile> StudentProfiles { get; set; } = null!;
+    public DbSet<Recommendation> Recommendations { get; set; } = null!;
+    public DbSet<TeamMatch> TeamMatches { get; set; } = null!;
 
     // Ara Tablolar (Çok-a-Çok İlişkiler)
-    public DbSet<ProjectDepartment> ProjectDepartments { get; set; }
-    public DbSet<ProjectTechnology> ProjectTechnologies { get; set; }
+    public DbSet<ProjectDepartment> ProjectDepartments { get; set; } = null!;
+    public DbSet<ProjectTechnology> ProjectTechnologies { get; set; } = null!;
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
