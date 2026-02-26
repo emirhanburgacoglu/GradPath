@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using GradPath.Data;
 using GradPath.Core.Entities;
 using Microsoft.OpenApi.Models;
+using GradPath.Business.Services;
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Veritabanı Bağlantı Dizesini Al (appsettings.json'dan okur)
@@ -23,6 +24,7 @@ builder.Services.AddIdentity<AppUser, AppRole>(options =>
 .AddEntityFrameworkStores<GradPathDbContext>();
 
 // Add services to the container.
+builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddControllers(); // API Controller'larını tanıması için şart
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(); // API dökümantasyonu için
