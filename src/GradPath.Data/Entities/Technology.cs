@@ -1,4 +1,4 @@
-namespace GradPath.Core.Entities;
+namespace GradPath.Data.Entities;
 
 /// <summary>
 /// Sistemdeki teknolojileri temsil eder (Python, React, PostgreSQL vs.)

@@ -1,4 +1,4 @@
-namespace GradPath.Core.Entities;
+namespace GradPath.Data.Entities;
 
 /// <summary>
 /// Proje ile teknoloji arasındaki çok-a-çok ilişkiyi temsil eder.

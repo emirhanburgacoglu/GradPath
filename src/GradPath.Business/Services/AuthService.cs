@@ -3,7 +3,7 @@ using System.Security.Claims;
 using System.Text;
 using GradPath.Business.DTOs.Auth;
 using GradPath.Data;
-using GradPath.Core.Entities;
+using GradPath.Data.Entities;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;

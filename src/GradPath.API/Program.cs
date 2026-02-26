@@ -1,6 +1,6 @@
 using Microsoft.EntityFrameworkCore;
 using GradPath.Data;
-using GradPath.Core.Entities;
+using GradPath.Data.Entities;
 using Microsoft.OpenApi.Models;
 using GradPath.Business.Services;
 var builder = WebApplication.CreateBuilder(args);

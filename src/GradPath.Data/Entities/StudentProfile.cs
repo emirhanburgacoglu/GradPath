@@ -1,4 +1,4 @@
-namespace GradPath.Core.Entities;
+namespace GradPath.Data.Entities;
 
 /// <summary>
 /// Öğrencilerin CV ve transkript verilerini saklar.

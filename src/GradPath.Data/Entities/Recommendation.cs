@@ -1,4 +1,4 @@
-namespace GradPath.Core.Entities;
+namespace GradPath.Data.Entities;
 
 /// <summary>
 /// AI tarafından öğrenciye yapılan proje önerilerini saklar.

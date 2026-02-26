@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace GradPath.Core.Entities;
+namespace GradPath.Data.Entities;
 
 /// <summary>
 /// Sisteme giriş yapacak öğrencileri ve adminleri temsil eder.

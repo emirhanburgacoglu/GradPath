@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
-using GradPath.Core.Entities;
+using GradPath.Data.Entities;
 
 
 namespace GradPath.Data;

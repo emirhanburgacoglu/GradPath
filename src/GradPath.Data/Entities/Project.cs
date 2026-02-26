@@ -1,4 +1,4 @@
-namespace GradPath.Core.Entities;
+namespace GradPath.Data.Entities;
 
 /// <summary>
 /// Sistemdeki proje şablonlarını temsil eden ana sınıf.

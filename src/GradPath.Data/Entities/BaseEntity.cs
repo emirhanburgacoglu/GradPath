@@ -1,4 +1,4 @@
-namespace GradPath.Core.Entities;
+namespace GradPath.Data.Entities;
 
 // Tüm veritabanı tabloları için ortak özellikleri barındıran temel sınıf.
 

@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace GradPath.Core.Entities;
+namespace GradPath.Data.Entities;
 
 /// <summary>
 /// Kullanıcı rollerini temsil eder. IdentityRole'dan türeyerek hazır rol altyapısını kullanır.

@@ -1,4 +1,4 @@
-namespace GradPath.Core.Entities;
+namespace GradPath.Data.Entities;
 
 /// <summary>
 /// Öğrenciler arasındaki proje takımı kurma isteklerini ve eşleşmeleri saklar.

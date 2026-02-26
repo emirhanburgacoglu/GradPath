@@ -1,4 +1,4 @@
-namespace GradPath.Core.Entities;
+namespace GradPath.Data.Entities;
 
 /// <summary>
 /// Sistemdeki bölümleri temsil eder (Bilgisayar Mühendisliği, Elektrik Mühendisliği vs.)
