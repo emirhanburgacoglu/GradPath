@@ -12,10 +12,44 @@ namespace GradPath.API.Controllers;
 public class StudentController : ControllerBase
 {
     private readonly IStudentService _studentService;
+    private readonly IFileUploadService _fileUploadService;
 
-    public StudentController(IStudentService studentService)
+    public StudentController(IStudentService studentService, IFileUploadService fileUploadService)
     {
         _studentService = studentService;
+        _fileUploadService = fileUploadService;
+    }
+
+    [HttpPost("upload-cv")]
+    public async Task<IActionResult> UploadCv(IFormFile file)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdString == null) return Unauthorized();
+
+        var userId = Guid.Parse(userIdString);
+        
+        // 1. Dosyayı fiziksel olarak kaydet
+        var fileName = await _fileUploadService.UploadFileAsync(file, "cvs");
+
+        // 2. Veritabanında profil bilgisini güncelle
+        await _studentService.UpdateCvFileNameAsync(userId, fileName);
+
+        return Ok(new { Message = "CV başarıyla yüklendi", FileName = fileName });
+    }
+
+    [HttpPost("upload-transcript")]
+    public async Task<IActionResult> UploadTranscript(IFormFile file)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdString == null) return Unauthorized();
+
+        var userId = Guid.Parse(userIdString);
+        
+        var fileName = await _fileUploadService.UploadFileAsync(file, "transcripts");
+
+        await _studentService.UpdateTranscriptFileNameAsync(userId, fileName);
+
+        return Ok(new { Message = "Transkript başarıyla yüklendi", FileName = fileName });
     }
 
     // PROFILIMI GETIR: GET api/v1/student/me
