@@ -4,6 +4,9 @@ using GradPath.Data.Entities;
 using Microsoft.AspNetCore.Identity; // <-- Bu satırı ekle
 using Microsoft.OpenApi.Models;
 using GradPath.Business.Services;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
 
 
 var builder = WebApplication.CreateBuilder(args);
@@ -14,7 +17,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 // 2. DbContext Kaydı (PostgreSQL Sürücüsü ile)
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
-
+builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddDbContext<GradPathDbContext>(options =>
     options.UseNpgsql(connectionString));
 
@@ -31,9 +34,56 @@ builder.Services.AddIdentity<AppUser, AppRole>(options =>
 
 // Add services to the container.
 
-builder.Services.AddControllers(); // API Controller'larını tanıması için şart
+// 4. Authentication (JWT) Ayarları
+var jwtSettings = builder.Configuration.GetSection("JwtSettings");
+var secretKey = jwtSettings["SecretKey"] ?? "GradPath-Super-Gizli-Anahtar-En-Az-32-Karakter-Olmali-2025";
+var issuer = jwtSettings["Issuer"];
+var audience = jwtSettings["Audience"];
+var key = Encoding.UTF8.GetBytes(secretKey);
+
+builder.Services.AddAuthentication(options =>
+{
+    options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
+    options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+})
+.AddJwtBearer(options =>
+{
+    options.TokenValidationParameters = new TokenValidationParameters
+    {
+        ValidateIssuerSigningKey = true,
+        IssuerSigningKey = new SymmetricSecurityKey(key),
+        ValidateIssuer = true,
+        ValidIssuer = issuer,
+        ValidateAudience = true,
+        ValidAudience = audience,
+        ValidateLifetime = true
+    };
+});
+
+builder.Services.AddControllers(); 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(); // API dökümantasyonu için
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo { Title = "GradPath API", Version = "v1" });
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Bearer {token}\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference { Type = ReferenceType.SecurityScheme, Id = "Bearer" }
+            },
+            Array.Empty<string>()
+        }
+    });
+});
 
 var app = builder.Build();
 
