@@ -1,14 +1,20 @@
 using Microsoft.EntityFrameworkCore;
 using GradPath.Data;
 using GradPath.Data.Entities;
+using Microsoft.AspNetCore.Identity; // <-- Bu satırı ekle
 using Microsoft.OpenApi.Models;
 using GradPath.Business.Services;
+
+
 var builder = WebApplication.CreateBuilder(args);
 
 // 1. Veritabanı Bağlantı Dizesini Al (appsettings.json'dan okur)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
 // 2. DbContext Kaydı (PostgreSQL Sürücüsü ile)
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IProjectService, ProjectService>();
+
 builder.Services.AddDbContext<GradPathDbContext>(options =>
     options.UseNpgsql(connectionString));
 
@@ -24,7 +30,7 @@ builder.Services.AddIdentity<AppUser, AppRole>(options =>
 .AddEntityFrameworkStores<GradPathDbContext>();
 
 // Add services to the container.
-builder.Services.AddScoped<IAuthService, AuthService>();
+
 builder.Services.AddControllers(); // API Controller'larını tanıması için şart
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(); // API dökümantasyonu için
@@ -45,5 +51,14 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers(); // Controller rotalarını haritalar
+
+// Veritabanı başlangıç verilerini (Seeding) çalıştır
+using (var scope = app.Services.CreateScope())
+{
+    // Program.cs içinde
+    var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<AppRole>>();
+    var context = scope.ServiceProvider.GetRequiredService<GradPathDbContext>(); // Bunu ekle
+    await DbSeeder.SeedRolesAndAdminAsync(roleManager, context); // context'i buraya pasla
+}
 
 app.Run();
