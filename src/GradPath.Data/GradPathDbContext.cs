@@ -26,6 +26,8 @@ public class GradPathDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     // Ara Tablolar (Çok-a-Çok İlişkiler)
     public DbSet<ProjectDepartment> ProjectDepartments { get; set; } = null!;
     public DbSet<ProjectTechnology> ProjectTechnologies { get; set; } = null!;
+    public DbSet<StudentTechnology> StudentTechnologies { get; set; } = null!;
+
     protected override void OnModelCreating(ModelBuilder builder)
     {
         base.OnModelCreating(builder);
@@ -36,6 +38,9 @@ public class GradPathDbContext : IdentityDbContext<AppUser, AppRole, Guid>
 
         builder.Entity<ProjectTechnology>()
             .HasKey(pt => new { pt.ProjectId, pt.TechnologyId });
+
+        builder.Entity<StudentTechnology>()
+            .HasKey(st => new { st.UserId, st.TechnologyId });
 
         // TeamMatch - Initiator ilişkisi (isteği atan kullanıcı)
         builder.Entity<TeamMatch>()

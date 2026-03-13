@@ -84,4 +84,84 @@ public class StudentService : IStudentService
         await _context.SaveChangesAsync();
         return true;
     }
+
+    public async Task<bool> UpdateCvFileNameAsync(Guid userId, string fileName)
+    {
+        var profile = await _context.StudentProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
+        if (profile == null) return false;
+
+        profile.CvFileName = fileName;
+        profile.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> UpdateTranscriptFileNameAsync(Guid userId, string fileName)
+    {
+        var profile = await _context.StudentProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
+        if (profile == null) return false;
+
+        profile.TranscriptFileName = fileName;
+        profile.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    // YETENEK LİSTELEME: Öğrencinin bildiği tüm teknolojileri getirir.
+    public async Task<List<StudentSkillDto>> GetSkillsAsync(Guid userId)
+    {
+        return await _context.StudentTechnologies
+            .Where(st => st.UserId == userId)
+            .Include(st => st.Technology) // Teknoloji ismini almak için Join yapıyoruz.
+            .Select(st => new StudentSkillDto
+            {
+                TechnologyId = st.TechnologyId,
+                TechnologyName = st.Technology.Name,
+                ProficiencyLevel = st.ProficiencyLevel
+            })
+            .ToListAsync();
+    }
+
+    // YETENEK EKLEME: Yeni bir yetenek ekler veya varsa seviyesini günceller (Upsert).
+    public async Task<bool> AddSkillAsync(Guid userId, StudentSkillDto skillDto)
+    {
+        // Önce bu yetenek zaten ekli mi diye bakalım.
+        var existingSkill = await _context.StudentTechnologies
+            .FirstOrDefaultAsync(st => st.UserId == userId && st.TechnologyId == skillDto.TechnologyId);
+
+        if (existingSkill != null)
+        {
+            // Varsa sadece seviyesini güncelle.
+            existingSkill.ProficiencyLevel = skillDto.ProficiencyLevel;
+        }
+        else
+        {
+            // Yoksa yeni kayıt ekle.
+            var newSkill = new StudentTechnology
+            {
+                UserId = userId,
+                TechnologyId = skillDto.TechnologyId,
+                ProficiencyLevel = skillDto.ProficiencyLevel
+            };
+            _context.StudentTechnologies.Add(newSkill);
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    // YETENEK SİLME: Öğrencinin bir yeteneğini listeden kaldırır.
+    public async Task<bool> RemoveSkillAsync(Guid userId, int technologyId)
+    {
+        var skill = await _context.StudentTechnologies
+            .FirstOrDefaultAsync(st => st.UserId == userId && st.TechnologyId == technologyId);
+
+        if (skill == null) return false;
+
+        _context.StudentTechnologies.Remove(skill);
+        await _context.SaveChangesAsync();
+        return true;
+    }
 }

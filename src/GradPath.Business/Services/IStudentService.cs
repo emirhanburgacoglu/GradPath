@@ -12,4 +12,15 @@ public interface IStudentService
 
     // Öğrencinin not ortalaması ve AKTS bilgisini günceller.
     Task<bool> UpdateProfileAsync(Guid userId, StudentProfileUpdateDto request);
+
+    // Yüklenen CV dosya adını veritabanına kaydeder.
+    Task<bool> UpdateCvFileNameAsync(Guid userId, string fileName);
+
+    // Yüklenen Transkript dosya adını veritabanına kaydeder.
+    Task<bool> UpdateTranscriptFileNameAsync(Guid userId, string fileName);
+
+    // Yetenek Yönetimi (Skills)
+    Task<List<StudentSkillDto>> GetSkillsAsync(Guid userId);
+    Task<bool> AddSkillAsync(Guid userId, StudentSkillDto skillDto);
+    Task<bool> RemoveSkillAsync(Guid userId, int technologyId);
 }

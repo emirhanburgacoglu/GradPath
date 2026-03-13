@@ -80,4 +80,46 @@ public class StudentController : ControllerBase
         if (!result) return BadRequest("Profil güncellenemedi.");
         return Ok("Profil başarıyla güncellendi.");
     }
+        // YETENEKLERİMİ LİSTELE: GET api/v1/student/skills
+    [HttpGet("skills")]
+    public async Task<IActionResult> GetMySkills()
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdString == null) return Unauthorized();
+
+        var userId = Guid.Parse(userIdString);
+        var skills = await _studentService.GetSkillsAsync(userId);
+        
+        return Ok(skills);
+    }
+
+    // YETENEK EKLE/GÜNCELLE: POST api/v1/student/skills
+    [HttpPost("skills")]
+    public async Task<IActionResult> AddSkill(StudentSkillDto skillDto)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdString == null) return Unauthorized();
+
+        var userId = Guid.Parse(userIdString);
+        var result = await _studentService.AddSkillAsync(userId, skillDto);
+
+        if (!result) return BadRequest("Yetenek eklenemedi.");
+        return Ok("Yetenek başarıyla kaydedildi.");
+    }
+
+    // YETENEK SİL: DELETE api/v1/student/skills/{id}
+    [HttpDelete("skills/{technologyId}")]
+    public async Task<IActionResult> RemoveSkill(int technologyId)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdString == null) return Unauthorized();
+
+        var userId = Guid.Parse(userIdString);
+        var result = await _studentService.RemoveSkillAsync(userId, technologyId);
+
+        if (!result) return NotFound("Yetenek bulunamadı.");
+        return Ok("Yetenek başarıyla silindi.");
+    }
+
 }
+
