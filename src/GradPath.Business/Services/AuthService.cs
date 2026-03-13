@@ -57,7 +57,16 @@ public class AuthService : IAuthService
         // 4. Varsayılan rol ata (Student)
         await _userManager.AddToRoleAsync(user, "Student");
 
-        // 5. JWT token üret
+        // 5. Öğrenci Profili klasörünü (satırını) otomatik oluştur
+        var profile = new StudentProfile
+        {
+            UserId = user.Id,
+            CreatedAt = DateTime.UtcNow
+        };
+        _context.StudentProfiles.Add(profile);
+        await _context.SaveChangesAsync();
+
+        // 6. JWT token üret
         var token = await GenerateJwtToken(user);
 
         return token;
