@@ -70,9 +70,9 @@ public class ProjectService : IProjectService
     }
 
     // EKLEME: Yeni bir proje kaydeder
-    public async Task<ProjectResponseDto> CreateAsync(ProjectCreateDto request)
+      public async Task<ProjectResponseDto> CreateAsync(ProjectCreateDto request)
     {
-        // 1. Web'den gelen paketle (request) yeni bir veritabanı satırı (project) oluşturuyoruz.
+        // 1. Ana proje bilgilerini oluştur
         var project = new Project
         {
             Title = request.Title,
@@ -83,18 +83,32 @@ public class ProjectService : IProjectService
             CreatedAt = DateTime.UtcNow
         };
 
-        // 2. Bu yeni satırı depoya ekliyoruz ve "Kaydet" diyoruz.
+        // 2. Bölüm İlişkilerini Kur (request.DepartmentIds olarak düzelttik)
+        if (request.DepartmentIds != null)
+        {
+            foreach (var deptId in request.DepartmentIds)
+            {
+                project.ProjectDepartments.Add(new ProjectDepartment { DepartmentId = deptId });
+            }
+        }
+
+        // 3. Teknoloji İlişkilerini Kur (request.TechnologyIds olarak düzelttik)
+        if (request.TechnologyIds != null)
+        {
+            foreach (var techId in request.TechnologyIds)
+            {
+                project.ProjectTechnologies.Add(new ProjectTechnology { TechnologyId = techId });
+            }
+        }
+
+        // 4. Hepsini tek seferde kaydet
         _context.Projects.Add(project);
         await _context.SaveChangesAsync();
 
-        // 3. Kayıt bitti, kullanıcıya "Başarıyla eklendi, ID'si şu" demek için ResponseDto dönüyoruz.
-        return new ProjectResponseDto 
-        { 
-            Id = project.Id, 
-            Title = project.Title,
-            CreatedAt = project.CreatedAt
-        };
+        // 5. Kayıt bitti! Zengin veriyi çekip geri gönderiyoruz.
+        return await GetByIdAsync(project.Id) ?? new ProjectResponseDto { Id = project.Id };
     }
+
 
     // GÜNCELLEME: Mevcut projeyi değiştirmemizi sağlar (İleride kullanacağız)
     public async Task<bool> UpdateAsync(int id, ProjectCreateDto request)

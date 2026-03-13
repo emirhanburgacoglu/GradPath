@@ -1,6 +1,6 @@
 ﻿using GradPath.Data.Entities;
 using Microsoft.AspNetCore.Identity;
-using Microsoft.EntityFrameworkCore; // AnyAsync için lazım
+using Microsoft.EntityFrameworkCore;
 
 namespace GradPath.Data;
 
@@ -18,16 +18,21 @@ public static class DbSeeder
             }
         }
 
-        // 2. Bölümleri Ekle (Eğer tablo boşsa)
+        // 2. Bölümleri Ekle
         if (!await context.Departments.AnyAsync())
         {
-            context.Departments.Add(new Department
-            {
-                Id = 1,
-                Name = "Bilgisayar Mühendisliği",
-                Code = "BM",
-                FacultyName = "Mühendislik Fakültesi"
-            });
+            context.Departments.Add(new Department { Name = "Bilgisayar Mühendisliği", Code = "BM", FacultyName = "Mühendislik Fakültesi" });
+            await context.SaveChangesAsync();
+        }
+
+        // 3. Teknolojileri Ekle (YENİ EKLEDİĞİMİZ KISIM)
+        if (!await context.Technologies.AnyAsync())
+        {
+            context.Technologies.AddRange(
+                new Technology { Name = "React", Category = "Frontend" },
+                new Technology { Name = ".NET 8", Category = "Backend" },
+                new Technology { Name = "Python", Category = "Data Science" }
+            );
             await context.SaveChangesAsync();
         }
     }
