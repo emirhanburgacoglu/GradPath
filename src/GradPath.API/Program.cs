@@ -18,7 +18,10 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IStudentService, StudentService>();
+builder.Services.AddScoped<IMatchingService, MatchingService>(); 
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
+
+
 builder.Services.AddDbContext<GradPathDbContext>(options =>
     options.UseNpgsql(connectionString));
 
