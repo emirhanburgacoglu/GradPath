@@ -21,6 +21,9 @@ builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<IMatchingService, MatchingService>(); 
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 
+// Groq API Ayarlarını (ApiKey vs.) appsettings'ten oku ve sisteme tanıt
+builder.Services.Configure<GradPath.Business.DTOs.AI.GroqApiSettings>(builder.Configuration.GetSection("GroqApiSettings"));
+
 
 builder.Services.AddDbContext<GradPathDbContext>(options =>
     options.UseNpgsql(connectionString));

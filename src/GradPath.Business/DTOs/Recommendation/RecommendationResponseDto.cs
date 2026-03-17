@@ -17,5 +17,8 @@ public class RecommendationResponseDto
     
     // Projenin gerektirdiği ama öğrencinin BİLMEDİĞİ teknolojiler
     public List<string> MissingTechnologies { get; set; } = new();
+
+    // C# tarafında yapay zekanın "Neden bu projeyi seçmelisin?" açıklamasını buraya koyacağız
+    public string AIExplanation { get; set; } = string.Empty;
 }
 
