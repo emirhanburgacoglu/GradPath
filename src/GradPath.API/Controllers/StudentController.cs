@@ -20,22 +20,30 @@ public class StudentController : ControllerBase
         _fileUploadService = fileUploadService;
     }
 
-    [HttpPost("upload-cv")]
-    public async Task<IActionResult> UploadCv(IFormFile file)
+   
+   [HttpPost("upload-cv")]
+public async Task<IActionResult> UploadCv(IFormFile file)
+{
+    var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+    if (userIdString == null) return Unauthorized();
+
+    var userId = Guid.Parse(userIdString);
+    
+    // 1. Dosyayı fiziksel olarak kaydet (Burası zaten sizde vardı)
+    var fileName = await _fileUploadService.UploadFileAsync(file, "cvs");
+
+    // 2. Veritabanındaki dosya adını güncelle (Burası da vardı)
+    await _studentService.UpdateCvFileNameAsync(userId, fileName);
+
+    // 3. YENİ: CV'yi AI ile işle (Ekleyeceğiniz kısım burası!)
+    using (var stream = file.OpenReadStream())
     {
-        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userIdString == null) return Unauthorized();
-
-        var userId = Guid.Parse(userIdString);
-        
-        // 1. Dosyayı fiziksel olarak kaydet
-        var fileName = await _fileUploadService.UploadFileAsync(file, "cvs");
-
-        // 2. Veritabanında profil bilgisini güncelle
-        await _studentService.UpdateCvFileNameAsync(userId, fileName);
-
-        return Ok(new { Message = "CV başarıyla yüklendi", FileName = fileName });
+        await _studentService.ProcessCvAsync(userId, stream);
     }
+
+    return Ok(new { Message = "CV başarıyla yüklendi ve AI tarafından analiz edildi.", FileName = fileName });
+}
+
 
     [HttpPost("upload-transcript")]
     public async Task<IActionResult> UploadTranscript(IFormFile file)
@@ -45,11 +53,17 @@ public class StudentController : ControllerBase
 
         var userId = Guid.Parse(userIdString);
         
+        // 1. Dosyayı kaydet
         var fileName = await _fileUploadService.UploadFileAsync(file, "transcripts");
-
         await _studentService.UpdateTranscriptFileNameAsync(userId, fileName);
 
-        return Ok(new { Message = "Transkript başarıyla yüklendi", FileName = fileName });
+        // 2. Transkripti AI ile işle (Yeni!)
+        using (var stream = file.OpenReadStream())
+        {
+            await _studentService.ProcessTranscriptAsync(userId, stream);
+        }
+
+        return Ok(new { Message = "Transkript başarıyla yüklendi ve AI tarafından analiz edildi.", FileName = fileName });
     }
 
     // PROFILIMI GETIR: GET api/v1/student/me

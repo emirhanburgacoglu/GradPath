@@ -22,6 +22,7 @@ builder.Services.AddScoped<IMatchingService, MatchingService>();
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 
 builder.Services.AddScoped<ITeamService, TeamService>();
+builder.Services.AddScoped<IPdfService, PdfService>();
 
 // Yapay zeka servisinin internete (Groq API) çıkabilmesi için HttpClient ile kaydediyoruz
 builder.Services.AddHttpClient<IGroqApiService, GroqApiService>();

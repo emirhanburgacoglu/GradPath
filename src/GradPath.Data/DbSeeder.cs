@@ -25,16 +25,38 @@ public static class DbSeeder
             await context.SaveChangesAsync();
         }
 
-        // 3. Teknolojileri Ekle (YENİ EKLEDİĞİMİZ KISIM)
-        if (!await context.Technologies.AnyAsync())
+        // 3. Teknolojileri Ekle (Akıllı Kontrol: Sadece eksik olanları ekler)
+        var existingTechNames = await context.Technologies.Select(t => t.Name.ToLower()).ToListAsync();
+
+        var techList = new List<Technology>
         {
-            context.Technologies.AddRange(
-                new Technology { Name = "React", Category = "Frontend" },
-                new Technology { Name = ".NET 8", Category = "Backend" },
-                new Technology { Name = "Python", Category = "Data Science" }
-            );
-            await context.SaveChangesAsync();
+            new Technology { Name = "C#", Category = "Language" },
+            new Technology { Name = "Python", Category = "Language" },
+            new Technology { Name = "Java", Category = "Language" },
+            new Technology { Name = "SQL", Category = "Language" },
+            new Technology { Name = "PHP", Category = "Language" },
+            new Technology { Name = ".NET Core", Category = "Framework" },
+            new Technology { Name = "ASP.NET Core", Category = "Framework" },
+            new Technology { Name = "CodeIgniter", Category = "Framework" },
+            new Technology { Name = "Entity Framework", Category = "ORM" },
+            new Technology { Name = "React", Category = "Framework" },
+            new Technology { Name = "PostgreSQL", Category = "Database" },
+            new Technology { Name = "MySQL", Category = "Database" },
+            new Technology { Name = "MSSQL", Category = "Database" },
+            new Technology { Name = "Git", Category = "Tool" },
+            new Technology { Name = "GitHub", Category = "Tool" },
+            new Technology { Name = "OpenCV", Category = "AI" },
+            new Technology { Name = "Raspberry Pi", Category = "Hardware" }
+        };
+
+        foreach (var tech in techList)
+        {
+            if (!existingTechNames.Contains(tech.Name.ToLower()))
+            {
+                context.Technologies.Add(tech);
+            }
         }
+        await context.SaveChangesAsync();
     }
 
     public static async Task SeedDemoDataAsync(UserManager<AppUser> userManager, GradPathDbContext context)

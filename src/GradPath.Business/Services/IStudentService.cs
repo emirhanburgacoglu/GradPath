@@ -10,6 +10,12 @@ public interface IStudentService
     // Kullanıcı ID'sine göre öğrenci profilini ve temel kullanıcı bilgilerini getirir.
     Task<StudentProfileResponseDto?> GetProfileByUserIdAsync(Guid userId);
 
+    // Transkript PDF'ini işler ve verileri otomatik çıkarır (AI tabanlı).
+    Task<bool> ProcessTranscriptAsync(Guid userId, Stream pdfStream);
+    
+    // CV PDF'ini işler ve verileri otomatik çıkarır (AI tabanlı).
+    Task<bool> ProcessCvAsync(Guid userId, Stream pdfStream);
+    
     // Öğrencinin not ortalaması ve AKTS bilgisini günceller.
     Task<bool> UpdateProfileAsync(Guid userId, StudentProfileUpdateDto request);
 
@@ -18,6 +24,7 @@ public interface IStudentService
 
     // Yüklenen Transkript dosya adını veritabanına kaydeder.
     Task<bool> UpdateTranscriptFileNameAsync(Guid userId, string fileName);
+
 
     // Yetenek Yönetimi (Skills)
     Task<List<StudentSkillDto>> GetSkillsAsync(Guid userId);
