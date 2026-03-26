@@ -21,6 +21,8 @@ builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<IMatchingService, MatchingService>(); 
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 
+builder.Services.AddScoped<ITeamService, TeamService>();
+
 // Yapay zeka servisinin internete (Groq API) çıkabilmesi için HttpClient ile kaydediyoruz
 builder.Services.AddHttpClient<IGroqApiService, GroqApiService>();
 
@@ -118,8 +120,10 @@ using (var scope = app.Services.CreateScope())
 {
     // Program.cs içinde
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<AppRole>>();
-    var context = scope.ServiceProvider.GetRequiredService<GradPathDbContext>(); // Bunu ekle
-    await DbSeeder.SeedRolesAndAdminAsync(roleManager, context); // context'i buraya pasla
+    var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
+    var context = scope.ServiceProvider.GetRequiredService<GradPathDbContext>(); 
+    await DbSeeder.SeedRolesAndAdminAsync(roleManager, context);
+    await DbSeeder.SeedDemoDataAsync(userManager, context);
 }
 
 app.Run();
