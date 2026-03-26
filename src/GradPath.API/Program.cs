@@ -21,8 +21,12 @@ builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<IMatchingService, MatchingService>(); 
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 
+// Yapay zeka servisinin internete (Groq API) çıkabilmesi için HttpClient ile kaydediyoruz
+builder.Services.AddHttpClient<IGroqApiService, GroqApiService>();
+
 // Groq API Ayarlarını (ApiKey vs.) appsettings'ten oku ve sisteme tanıt
 builder.Services.Configure<GradPath.Business.DTOs.AI.GroqApiSettings>(builder.Configuration.GetSection("GroqApiSettings"));
+
 
 
 builder.Services.AddDbContext<GradPathDbContext>(options =>

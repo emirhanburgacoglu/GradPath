@@ -7,10 +7,11 @@ namespace GradPath.Business.Services;
 public class MatchingService : IMatchingService
 {
     private readonly GradPathDbContext _context;
-
-    public MatchingService(GradPathDbContext context)
+    private readonly IGroqApiService _groqApiService;
+    public MatchingService(GradPathDbContext context, IGroqApiService groqApiService)
     {
         _context = context;
+        _groqApiService = groqApiService;
     }
 
     public async Task<List<RecommendationResponseDto>> GetProjectRecommendationsAsync(Guid userId)
@@ -91,6 +92,15 @@ public class MatchingService : IMatchingService
                 MatchedTechnologies = matchedTechs,
                 MissingTechnologies = missingTechs
             };
+                        // Sadece belirli bir skorun üzerindeki projelere AI yorumu ekleyelim (Sistemi yormamak için)
+            if (totalMatchScore >= 50)
+            {
+                var studentSummary = $"Yetenekler: {string.Join(", ", matchedTechs)}, Not Ortalaması: {cgpa}";
+                var projectSummary = $"Başlık: {project.Title}, Açıklama: {project.Description}, Arananlar: {string.Join(", ", projectTechs)}";
+                
+                dto.AIExplanation = await _groqApiService.GetProjectExplanationAsync(studentSummary, projectSummary);
+            }
+
 
             recommendations.Add(dto);
         }
