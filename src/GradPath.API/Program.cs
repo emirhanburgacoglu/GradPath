@@ -11,6 +11,21 @@ using System.Text;
 
 var builder = WebApplication.CreateBuilder(args);
 
+// CORS Politikasını Tanımla
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowFrontend", policy =>
+    {
+        policy.WithOrigins("http://localhost:5173") // React'in adresi
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+
+
+
+
 // 1. Veritabanı Bağlantı Dizesini Al (appsettings.json'dan okur)
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
 
@@ -101,6 +116,11 @@ builder.Services.AddSwaggerGen(c =>
 
 var app = builder.Build();
 
+
+app.UseHttpsRedirection();
+app.UseCors("AllowFrontend");
+
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
@@ -108,7 +128,7 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+
 
 // Kimlik doğrulama ve yetkilendirme middleware'leri (Sıralama önemlidir!)
 app.UseAuthentication();
