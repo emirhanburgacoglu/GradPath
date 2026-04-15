@@ -487,3 +487,6 @@ $RECYCLE.BIN/
 appsettings.json
 appsettings.Development.json
 appsettings.*.json
+
+# Runtime uploads
+src/GradPath.API/wwwroot/uploads/
