@@ -3,6 +3,8 @@ using GradPath.Business.DTOs.Student;
 using GradPath.Business.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using GradPath.Business.DTOs.CV;
+
 
 namespace GradPath.API.Controllers;
 
@@ -20,29 +22,29 @@ public class StudentController : ControllerBase
         _fileUploadService = fileUploadService;
     }
 
-   
-   [HttpPost("upload-cv")]
-public async Task<IActionResult> UploadCv(IFormFile file)
-{
-    var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-    if (userIdString == null) return Unauthorized();
 
-    var userId = Guid.Parse(userIdString);
-    
-    // 1. Dosyayı fiziksel olarak kaydet (Burası zaten sizde vardı)
-    var fileName = await _fileUploadService.UploadFileAsync(file, "cvs");
-
-    // 2. Veritabanındaki dosya adını güncelle (Burası da vardı)
-    await _studentService.UpdateCvFileNameAsync(userId, fileName);
-
-    // 3. YENİ: CV'yi AI ile işle (Ekleyeceğiniz kısım burası!)
-    using (var stream = file.OpenReadStream())
+    [HttpPost("upload-cv")]
+    public async Task<IActionResult> UploadCv(IFormFile file)
     {
-        await _studentService.ProcessCvAsync(userId, stream);
-    }
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdString == null) return Unauthorized();
 
-    return Ok(new { Message = "CV başarıyla yüklendi ve AI tarafından analiz edildi.", FileName = fileName });
-}
+        var userId = Guid.Parse(userIdString);
+
+        // 1. Dosyayı fiziksel olarak kaydet (Burası zaten sizde vardı)
+        var fileName = await _fileUploadService.UploadFileAsync(file, "cvs");
+
+        // 2. Veritabanındaki dosya adını güncelle (Burası da vardı)
+        await _studentService.UpdateCvFileNameAsync(userId, fileName);
+
+        // 3. YENİ: CV'yi AI ile işle (Ekleyeceğiniz kısım burası!)
+        using (var stream = file.OpenReadStream())
+        {
+            await _studentService.ProcessCvAsync(userId, stream);
+        }
+
+        return Ok(new { Message = "CV başarıyla yüklendi ve AI tarafından analiz edildi.", FileName = fileName });
+    }
 
 
     [HttpPost("upload-transcript")]
@@ -52,7 +54,7 @@ public async Task<IActionResult> UploadCv(IFormFile file)
         if (userIdString == null) return Unauthorized();
 
         var userId = Guid.Parse(userIdString);
-        
+
         // 1. Dosyayı kaydet
         var fileName = await _fileUploadService.UploadFileAsync(file, "transcripts");
         await _studentService.UpdateTranscriptFileNameAsync(userId, fileName);
@@ -94,7 +96,7 @@ public async Task<IActionResult> UploadCv(IFormFile file)
         if (!result) return BadRequest("Profil güncellenemedi.");
         return Ok("Profil başarıyla güncellendi.");
     }
-        // YETENEKLERİMİ LİSTELE: GET api/v1/student/skills
+    // YETENEKLERİMİ LİSTELE: GET api/v1/student/skills
     [HttpGet("skills")]
     public async Task<IActionResult> GetMySkills()
     {
@@ -103,7 +105,7 @@ public async Task<IActionResult> UploadCv(IFormFile file)
 
         var userId = Guid.Parse(userIdString);
         var skills = await _studentService.GetSkillsAsync(userId);
-        
+
         return Ok(skills);
     }
 
@@ -133,6 +135,20 @@ public async Task<IActionResult> UploadCv(IFormFile file)
 
         if (!result) return NotFound("Yetenek bulunamadı.");
         return Ok("Yetenek başarıyla silindi.");
+    }
+
+    [HttpPost("debug-analyze-cv-text")]
+    public IActionResult DebugAnalyzeCvText([FromBody] CvRawTextRequestDto request)
+    {
+        if (request == null || string.IsNullOrWhiteSpace(request.RawText))
+        {
+            return BadRequest("CV metni boş olamaz.");
+        }
+
+        var normalizedText = CvTextPreprocessor.Normalize(request.RawText);
+        var result = CvAnalysisBuilder.Build(normalizedText);
+
+        return Ok(result);
     }
 
 }

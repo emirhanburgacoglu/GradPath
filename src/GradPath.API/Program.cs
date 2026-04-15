@@ -48,7 +48,8 @@ builder.Services.Configure<GradPath.Business.DTOs.AI.GroqApiSettings>(builder.Co
 
 
 builder.Services.AddDbContext<GradPathDbContext>(options =>
-    options.UseNpgsql(connectionString));
+    options.UseNpgsql(connectionString, npgsqlOptions =>
+        npgsqlOptions.CommandTimeout(120)));
 
 // 3. Identity (Giriş/Çıkış ve Rol) Kaydı
 builder.Services.AddIdentity<AppUser, AppRole>(options =>

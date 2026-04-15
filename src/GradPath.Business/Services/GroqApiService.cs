@@ -57,4 +57,45 @@ public class GroqApiService : IGroqApiService
             return $"AI Analizi şu an yapılamıyor: {ex.Message}";
         }
     }
+
+    public async Task<string> GetJsonExtractionAsync(string systemPrompt, string userPrompt)
+    {
+        try
+        {
+            var requestBody = new
+            {
+                model = _settings.ModelId,
+                messages = new[]
+                {
+                    new { role = "system", content = systemPrompt },
+                    new { role = "user", content = userPrompt }
+                },
+                temperature = 0.1, // Düşük sıcaklık, JSON formatının bozulmamasını sağlar
+                response_format = new { type = "json_object" } // Sadece JSON döneceğini belirtmek için destekliyorsa
+            };
+
+            var request = new HttpRequestMessage(HttpMethod.Post, _settings.BaseUrl + "chat/completions");
+            request.Headers.Add("Authorization", $"Bearer {_settings.ApiKey}");
+            request.Content = new StringContent(JsonSerializer.Serialize(requestBody), Encoding.UTF8, "application/json");
+
+            var response = await _httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+
+            var jsonResponse = await response.Content.ReadAsStringAsync();
+            using var doc = JsonDocument.Parse(jsonResponse);
+
+            var rawContent = doc.RootElement
+                .GetProperty("choices")[0]
+                .GetProperty("message")
+                .GetProperty("content")
+                .GetString() ?? "{}";
+
+            return rawContent.Replace("```json", "").Replace("```", "").Trim();
+        }
+        catch (Exception ex)
+        {
+            // Fallback for returning empty JSON if failed
+            return "{}";
+        }
+    }
 }

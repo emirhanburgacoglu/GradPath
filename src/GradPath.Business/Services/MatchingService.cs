@@ -1,3 +1,5 @@
+using System.Text.Json;
+using GradPath.Business.DTOs.CV;
 using GradPath.Business.DTOs.Recommendation;
 using GradPath.Data;
 using Microsoft.EntityFrameworkCore;
@@ -8,6 +10,7 @@ public class MatchingService : IMatchingService
 {
     private readonly GradPathDbContext _context;
     private readonly IGroqApiService _groqApiService;
+
     public MatchingService(GradPathDbContext context, IGroqApiService groqApiService)
     {
         _context = context;
@@ -18,69 +21,88 @@ public class MatchingService : IMatchingService
     {
         var recommendations = new List<RecommendationResponseDto>();
 
-        // 1. Öğrencinin Profilini Çek (Sadece AGNO/CGPA için)
         var studentProfile = await _context.StudentProfiles
             .FirstOrDefaultAsync(sp => sp.UserId == userId);
-
-        // 2. Öğrencinin Bildiği Teknolojileri 'StudentTechnologies' Tablosundan Çek!
-        var studentTechs = await _context.StudentTechnologies
-            .Include(st => st.Technology) // İsimlerini alabilmek için Technology tablosunu dahil et
-            .Where(st => st.UserId == userId)
-            .ToListAsync();
-
-        if (studentProfile == null || !studentTechs.Any())
+        if (studentProfile == null)
         {
-            // Eğer profil yoksa veya hiç teknoloji eklenmemişse (LLM ile veya manuel), boş dön
             return recommendations;
         }
 
-        // Öğrencinin bildiği teknolojilerin "isimlerini" küçük harfe çevirip bir listeye alalım
+        var cvSignals = ExtractCvSignals(studentProfile.ParsedCvData);
+
+        var studentTechs = await _context.StudentTechnologies
+            .Include(st => st.Technology)
+            .Where(st => st.UserId == userId)
+            .ToListAsync();
+
+        if (!studentTechs.Any()
+            && !cvSignals.DeclaredSkills.Any()
+            && !cvSignals.ObservedTechnologies.Any())
+        {
+            return recommendations;
+        }
+
         var studentTechNames = studentTechs
-            .Select(s => s.Technology.Name.ToLower())
+            .Select(s => s.Technology.Name.ToLowerInvariant())
+            .Concat(cvSignals.DeclaredSkills.Select(name => name.ToLowerInvariant()))
+            .Concat(cvSignals.ObservedTechnologies.Select(name => name.ToLowerInvariant()))
+            .Distinct()
             .ToList();
 
-        // 3. Veritabanındaki Tüm Projeleri ve İstedikleri Teknolojileri Çekelim
+        var observedTechNames = cvSignals.ObservedTechnologies
+            .Select(name => name.ToLowerInvariant())
+            .ToHashSet();
+
+        var studentDomainSignals = cvSignals.DomainSignals
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+
         var allProjects = await _context.Projects
             .Include(p => p.ProjectTechnologies)
                 .ThenInclude(pt => pt.Technology)
             .ToListAsync();
 
-        // 4. Her Bir Proje İçin Eşleştirme (Matching) Yapalım
         foreach (var project in allProjects)
         {
-            // Projenin İstediği Teknolojiler
-            var projectTechs = project.ProjectTechnologies.Select(pt => pt.Technology.Name).ToList();
-            
-            // Eğer proje hiç teknoloji istemiyorsa atla
-            if (!projectTechs.Any()) continue;
+            var projectTechs = project.ProjectTechnologies
+                .Select(pt => pt.Technology.Name)
+                .ToList();
 
-            // Öğrencinin BİLDİĞİ proje teknolojileri (Kesişim Kümesi)
+            if (!projectTechs.Any())
+            {
+                continue;
+            }
+
             var matchedTechs = projectTechs
-                .Where(pt => studentTechNames.Contains(pt.ToLower()))
+                .Where(pt => studentTechNames.Contains(pt.ToLowerInvariant()))
                 .ToList();
 
-            // Öğrencinin BİLMEDİĞİ proje teknolojileri (Yol Haritası Kümesi)
             var missingTechs = projectTechs
-                .Where(pt => !studentTechNames.Contains(pt.ToLower()))
+                .Where(pt => !studentTechNames.Contains(pt.ToLowerInvariant()))
                 .ToList();
 
-            // --- SKORLAMA (MATEMATİKSEL MOTOR) ---
-            
-            // A. Teknoloji Skoru (100 Üzerinden)
             decimal techScore = ((decimal)matchedTechs.Count / projectTechs.Count) * 100m;
 
-            // B. GPA Bonusu (Max 20 Puan - Null kontrolü ile birlikte)
-            decimal cgpa = studentProfile.CGPA ?? 0m; // Eğer CGPA henüz girilmemişse (null) sıfır kabul et
+            var observedTechOverlapCount = projectTechs.Count(projectTech =>
+                observedTechNames.Contains(projectTech.ToLowerInvariant()));
+
+            decimal observedTechBonus = projectTechs.Count == 0
+                ? 0m
+                : ((decimal)observedTechOverlapCount / projectTechs.Count) * 15m;
+
+            var projectDomain = DetectProjectDomain(project);
+            decimal domainBonus = !string.IsNullOrWhiteSpace(projectDomain)
+                                  && studentDomainSignals.Contains(projectDomain)
+                ? 10m
+                : 0m;
+
+            decimal cgpa = studentProfile.CGPA ?? 0m;
             decimal gpaBonus = (cgpa / 4.0m) * 20m;
 
-            // Toplam Skor (İkisi birleşiyor, maksimum 100'e sabitliyoruz)
-            decimal totalMatchScore = Math.Min(techScore + gpaBonus, 100m);
+            decimal totalMatchScore = Math.Min(techScore + observedTechBonus + domainBonus + gpaBonus, 100m);
 
-            // C. Zorluk Analizi (Difficulty Score)
-            int difficultyScore = totalMatchScore >= 70 ? 1 : 
-                                 (totalMatchScore >= 40 ? 2 : 3);
+            int difficultyScore = totalMatchScore >= 70 ? 1 :
+                                  (totalMatchScore >= 40 ? 2 : 3);
 
-            // 5. Sonuçları DTO İçine Koy
             var dto = new RecommendationResponseDto
             {
                 ProjectId = project.Id,
@@ -92,20 +114,96 @@ public class MatchingService : IMatchingService
                 MatchedTechnologies = matchedTechs,
                 MissingTechnologies = missingTechs
             };
-                        // Sadece belirli bir skorun üzerindeki projelere AI yorumu ekleyelim (Sistemi yormamak için)
+
             if (totalMatchScore >= 50)
             {
-                var studentSummary = $"Yetenekler: {string.Join(", ", matchedTechs)}, Not Ortalaması: {cgpa}";
-                var projectSummary = $"Başlık: {project.Title}, Açıklama: {project.Description}, Arananlar: {string.Join(", ", projectTechs)}";
-                
+                var studentSummary =
+                    $"Yetenekler: {string.Join(", ", matchedTechs)}, Alanlar: {string.Join(", ", studentDomainSignals)}, Not Ortalamasi: {cgpa}";
+                var projectSummary =
+                    $"Baslik: {project.Title}, Aciklama: {project.Description}, Arananlar: {string.Join(", ", projectTechs)}, Alan: {projectDomain}";
+
                 dto.AIExplanation = await _groqApiService.GetProjectExplanationAsync(studentSummary, projectSummary);
             }
-
 
             recommendations.Add(dto);
         }
 
-        // 6. En Yüksek Skoru Alan Projeleri En Üste Gelecek Şekilde Sırala ve Döndür
         return recommendations.OrderByDescending(r => r.MatchScore).ToList();
+    }
+
+    private static string DetectProjectDomain(GradPath.Data.Entities.Project project)
+    {
+        var combined = $"{project.Title} {project.Description} {project.Category}".ToLowerInvariant();
+
+        if (combined.Contains("ai") || combined.Contains("machine learning") || combined.Contains("deep learning") || combined.Contains("nlp"))
+            return "AI";
+
+        if (combined.Contains("backend") || combined.Contains(".net") || combined.Contains("api"))
+            return "Backend";
+
+        if (combined.Contains("web") || combined.Contains("frontend") || combined.Contains("website"))
+            return "Web";
+
+        if (combined.Contains("mobile") || combined.Contains("flutter"))
+            return "Mobile";
+
+        if (combined.Contains("embedded") || combined.Contains("iot") || combined.Contains("raspberry"))
+            return "Embedded";
+
+        if (combined.Contains("data") || combined.Contains("database"))
+            return "Data";
+
+        return string.Empty;
+    }
+
+    private static CvMatchingSignals ExtractCvSignals(string? parsedCvData)
+    {
+        if (string.IsNullOrWhiteSpace(parsedCvData))
+        {
+            return new CvMatchingSignals();
+        }
+
+        try
+        {
+            var analysis = JsonSerializer.Deserialize<CvAnalysisResultDto>(parsedCvData);
+            if (analysis == null)
+            {
+                return new CvMatchingSignals();
+            }
+
+            var declaredSkills = analysis.SkillsByCategory
+                .SelectMany(category => category.Skills)
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            var observedTechnologies = analysis.Projects
+                .SelectMany(project => project.Technologies)
+                .Concat(analysis.Experiences.SelectMany(experience => experience.Technologies))
+                .Where(name => !string.IsNullOrWhiteSpace(name))
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            return new CvMatchingSignals
+            {
+                DeclaredSkills = declaredSkills,
+                DomainSignals = analysis.DomainSignals
+                    .Where(signal => !string.IsNullOrWhiteSpace(signal))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .ToList(),
+                ObservedTechnologies = observedTechnologies
+            };
+        }
+        catch
+        {
+            return new CvMatchingSignals();
+        }
+    }
+
+    private sealed class CvMatchingSignals
+    {
+        public List<string> DeclaredSkills { get; set; } = new();
+        public List<string> DomainSignals { get; set; } = new();
+        public List<string> ObservedTechnologies { get; set; } = new();
     }
 }

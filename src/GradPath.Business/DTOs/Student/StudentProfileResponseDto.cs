@@ -29,8 +29,10 @@ public class StudentProfileResponseDto
 
     // Yüklediği Transkript dosyasının sistemdeki adı
     public string? TranscriptFileName { get; set; }
-   
-   // Yapay zeka tarafından hazırlanan CV özeti
-public string? CvSummary { get; set; }
+
+    // Yapay zeka tarafından hazırlanan CV özeti
+    public string? CvSummary { get; set; }
+
+    public string? CvAnalysisJson { get; set; }
 
 }

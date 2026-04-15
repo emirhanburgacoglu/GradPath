@@ -7,4 +7,9 @@ public interface IGroqApiService
     /// bir 'Mantıksal Uygunluk Açıklaması' üretir.
     /// </summary>
     Task<string> GetProjectExplanationAsync(string studentData, string projectData);
+    
+    /// <summary>
+    /// Verilen metinden JSON formatında yapılandırılmış veri çıkarır.
+    /// </summary>
+    Task<string> GetJsonExtractionAsync(string systemPrompt, string userPrompt);
 }
