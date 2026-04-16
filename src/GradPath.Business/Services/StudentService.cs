@@ -407,6 +407,450 @@ public class StudentService : IStudentService
         await _context.SaveChangesAsync();
         return true;
     }
+
+    public async Task<List<StudentEducationCrudDto>> GetEducationsAsync(Guid userId)
+    {
+        return await _context.StudentEducations
+            .Where(education => education.UserId == userId)
+            .OrderByDescending(education => education.CreatedAt)
+            .Select(education => new StudentEducationCrudDto
+            {
+                Id = education.Id,
+                SchoolName = education.SchoolName,
+                Department = education.Department,
+                Degree = education.Degree,
+                StartDateText = education.StartDateText,
+                EndDateText = education.EndDateText
+            })
+            .ToListAsync();
+    }
+
+    public async Task<bool> AddEducationAsync(Guid userId, StudentEducationCrudDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(CleanText(dto.SchoolName))
+            && string.IsNullOrWhiteSpace(CleanText(dto.Department))
+            && string.IsNullOrWhiteSpace(CleanText(dto.Degree)))
+        {
+            return false;
+        }
+
+        _context.StudentEducations.Add(new StudentEducation
+        {
+            UserId = userId,
+            SchoolName = CleanText(dto.SchoolName),
+            Department = CleanText(dto.Department),
+            Degree = CleanText(dto.Degree),
+            StartDateText = CleanText(dto.StartDateText),
+            EndDateText = CleanText(dto.EndDateText)
+        });
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> UpdateEducationAsync(Guid userId, Guid educationId, StudentEducationCrudDto dto)
+    {
+        var education = await _context.StudentEducations
+            .FirstOrDefaultAsync(item => item.UserId == userId && item.Id == educationId);
+
+        if (education == null)
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(CleanText(dto.SchoolName))
+            && string.IsNullOrWhiteSpace(CleanText(dto.Department))
+            && string.IsNullOrWhiteSpace(CleanText(dto.Degree)))
+        {
+            return false;
+        }
+
+        education.SchoolName = CleanText(dto.SchoolName);
+        education.Department = CleanText(dto.Department);
+        education.Degree = CleanText(dto.Degree);
+        education.StartDateText = CleanText(dto.StartDateText);
+        education.EndDateText = CleanText(dto.EndDateText);
+        education.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> RemoveEducationAsync(Guid userId, Guid educationId)
+    {
+        var education = await _context.StudentEducations
+            .FirstOrDefaultAsync(item => item.UserId == userId && item.Id == educationId);
+
+        if (education == null)
+        {
+            return false;
+        }
+
+        _context.StudentEducations.Remove(education);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<List<StudentExperienceCrudDto>> GetExperiencesAsync(Guid userId)
+    {
+        var experiences = await _context.StudentExperiences
+            .Where(experience => experience.UserId == userId)
+            .Include(experience => experience.Technologies)
+                .ThenInclude(experienceTechnology => experienceTechnology.Technology)
+            .OrderByDescending(experience => experience.CreatedAt)
+            .ToListAsync();
+
+        return experiences
+            .Select(experience => new StudentExperienceCrudDto
+            {
+                Id = experience.Id,
+                CompanyName = experience.CompanyName,
+                Position = experience.Position,
+                StartDateText = experience.StartDateText,
+                EndDateText = experience.EndDateText,
+                Description = experience.Description,
+                TechnologyIds = experience.Technologies
+                    .OrderBy(item => item.Technology.Name)
+                    .Select(item => item.TechnologyId)
+                    .ToList(),
+                TechnologyNames = experience.Technologies
+                    .OrderBy(item => item.Technology.Name)
+                    .Select(item => item.Technology.Name)
+                    .ToList()
+            })
+            .ToList();
+    }
+
+    public async Task<bool> AddExperienceAsync(Guid userId, StudentExperienceCrudDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(CleanText(dto.CompanyName))
+            && string.IsNullOrWhiteSpace(CleanText(dto.Position))
+            && string.IsNullOrWhiteSpace(CleanText(dto.Description)))
+        {
+            return false;
+        }
+
+        var technologyIds = await GetValidTechnologyIdsAsync(dto.TechnologyIds);
+
+        var experience = new StudentExperience
+        {
+            UserId = userId,
+            CompanyName = CleanText(dto.CompanyName),
+            Position = CleanText(dto.Position),
+            StartDateText = CleanText(dto.StartDateText),
+            EndDateText = CleanText(dto.EndDateText),
+            Description = CleanText(dto.Description)
+        };
+
+        foreach (var technologyId in technologyIds)
+        {
+            experience.Technologies.Add(new StudentExperienceTechnology
+            {
+                UserId = userId,
+                TechnologyId = technologyId,
+                StudentExperience = experience
+            });
+        }
+
+        _context.StudentExperiences.Add(experience);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> UpdateExperienceAsync(Guid userId, Guid experienceId, StudentExperienceCrudDto dto)
+    {
+        var experience = await _context.StudentExperiences
+            .Include(item => item.Technologies)
+            .FirstOrDefaultAsync(item => item.UserId == userId && item.Id == experienceId);
+
+        if (experience == null)
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(CleanText(dto.CompanyName))
+            && string.IsNullOrWhiteSpace(CleanText(dto.Position))
+            && string.IsNullOrWhiteSpace(CleanText(dto.Description)))
+        {
+            return false;
+        }
+
+        experience.CompanyName = CleanText(dto.CompanyName);
+        experience.Position = CleanText(dto.Position);
+        experience.StartDateText = CleanText(dto.StartDateText);
+        experience.EndDateText = CleanText(dto.EndDateText);
+        experience.Description = CleanText(dto.Description);
+        experience.UpdatedAt = DateTime.UtcNow;
+
+        var existingTechnologies = experience.Technologies.ToList();
+        if (existingTechnologies.Count > 0)
+        {
+            _context.StudentExperienceTechnologies.RemoveRange(existingTechnologies);
+            experience.Technologies.Clear();
+        }
+
+        var technologyIds = await GetValidTechnologyIdsAsync(dto.TechnologyIds);
+        foreach (var technologyId in technologyIds)
+        {
+            experience.Technologies.Add(new StudentExperienceTechnology
+            {
+                UserId = userId,
+                TechnologyId = technologyId,
+                StudentExperienceId = experience.Id
+            });
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> RemoveExperienceAsync(Guid userId, Guid experienceId)
+    {
+        var experience = await _context.StudentExperiences
+            .FirstOrDefaultAsync(item => item.UserId == userId && item.Id == experienceId);
+
+        if (experience == null)
+        {
+            return false;
+        }
+
+        _context.StudentExperiences.Remove(experience);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<List<StudentCvProjectCrudDto>> GetCvProjectsAsync(Guid userId)
+    {
+        var projects = await _context.StudentCvProjects
+            .Where(project => project.UserId == userId)
+            .Include(project => project.Technologies)
+                .ThenInclude(projectTechnology => projectTechnology.Technology)
+            .OrderByDescending(project => project.CreatedAt)
+            .ToListAsync();
+
+        return projects
+            .Select(project => new StudentCvProjectCrudDto
+            {
+                Id = project.Id,
+                Name = project.Name,
+                Description = project.Description,
+                Role = project.Role,
+                Domain = project.Domain,
+                IsTeamProject = project.IsTeamProject,
+                TechnologyIds = project.Technologies
+                    .OrderBy(item => item.Technology.Name)
+                    .Select(item => item.TechnologyId)
+                    .ToList(),
+                TechnologyNames = project.Technologies
+                    .OrderBy(item => item.Technology.Name)
+                    .Select(item => item.Technology.Name)
+                    .ToList()
+            })
+            .ToList();
+    }
+
+    public async Task<bool> AddCvProjectAsync(Guid userId, StudentCvProjectCrudDto dto)
+    {
+        if (string.IsNullOrWhiteSpace(CleanText(dto.Name))
+            && string.IsNullOrWhiteSpace(CleanText(dto.Description)))
+        {
+            return false;
+        }
+
+        var technologyIds = await GetValidTechnologyIdsAsync(dto.TechnologyIds);
+
+        var project = new StudentCvProject
+        {
+            UserId = userId,
+            Name = CleanText(dto.Name),
+            Description = CleanText(dto.Description),
+            Role = CleanText(dto.Role),
+            Domain = CleanText(dto.Domain),
+            IsTeamProject = dto.IsTeamProject
+        };
+
+        foreach (var technologyId in technologyIds)
+        {
+            project.Technologies.Add(new StudentCvProjectTechnology
+            {
+                UserId = userId,
+                TechnologyId = technologyId,
+                StudentCvProject = project
+            });
+        }
+
+        _context.StudentCvProjects.Add(project);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> UpdateCvProjectAsync(Guid userId, Guid projectId, StudentCvProjectCrudDto dto)
+    {
+        var project = await _context.StudentCvProjects
+            .Include(item => item.Technologies)
+            .FirstOrDefaultAsync(item => item.UserId == userId && item.Id == projectId);
+
+        if (project == null)
+        {
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(CleanText(dto.Name))
+            && string.IsNullOrWhiteSpace(CleanText(dto.Description)))
+        {
+            return false;
+        }
+
+        project.Name = CleanText(dto.Name);
+        project.Description = CleanText(dto.Description);
+        project.Role = CleanText(dto.Role);
+        project.Domain = CleanText(dto.Domain);
+        project.IsTeamProject = dto.IsTeamProject;
+        project.UpdatedAt = DateTime.UtcNow;
+
+        var existingTechnologies = project.Technologies.ToList();
+        if (existingTechnologies.Count > 0)
+        {
+            _context.StudentCvProjectTechnologies.RemoveRange(existingTechnologies);
+            project.Technologies.Clear();
+        }
+
+        var technologyIds = await GetValidTechnologyIdsAsync(dto.TechnologyIds);
+        foreach (var technologyId in technologyIds)
+        {
+            project.Technologies.Add(new StudentCvProjectTechnology
+            {
+                UserId = userId,
+                TechnologyId = technologyId,
+                StudentCvProjectId = project.Id
+            });
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> RemoveCvProjectAsync(Guid userId, Guid projectId)
+    {
+        var project = await _context.StudentCvProjects
+            .FirstOrDefaultAsync(item => item.UserId == userId && item.Id == projectId);
+
+        if (project == null)
+        {
+            return false;
+        }
+
+        _context.StudentCvProjects.Remove(project);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<List<StudentDomainSignalCrudDto>> GetDomainSignalsAsync(Guid userId)
+    {
+        return await _context.StudentDomainSignals
+            .Where(signal => signal.UserId == userId)
+            .OrderBy(signal => signal.Name)
+            .Select(signal => new StudentDomainSignalCrudDto
+            {
+                Id = signal.Id,
+                Name = signal.Name
+            })
+            .ToListAsync();
+    }
+
+    public async Task<bool> AddDomainSignalAsync(Guid userId, StudentDomainSignalCrudDto dto)
+    {
+        var cleanedName = CleanText(dto.Name);
+        if (string.IsNullOrWhiteSpace(cleanedName))
+        {
+            return false;
+        }
+
+        var exists = await _context.StudentDomainSignals
+            .AnyAsync(signal => signal.UserId == userId && signal.Name.ToLower() == cleanedName.ToLower());
+
+        if (exists)
+        {
+            return false;
+        }
+
+        _context.StudentDomainSignals.Add(new StudentDomainSignal
+        {
+            UserId = userId,
+            Name = cleanedName
+        });
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> UpdateDomainSignalAsync(Guid userId, Guid domainSignalId, StudentDomainSignalCrudDto dto)
+    {
+        var cleanedName = CleanText(dto.Name);
+        if (string.IsNullOrWhiteSpace(cleanedName))
+        {
+            return false;
+        }
+
+        var signal = await _context.StudentDomainSignals
+            .FirstOrDefaultAsync(item => item.UserId == userId && item.Id == domainSignalId);
+
+        if (signal == null)
+        {
+            return false;
+        }
+
+        var exists = await _context.StudentDomainSignals
+            .AnyAsync(item =>
+                item.UserId == userId
+                && item.Id != domainSignalId
+                && item.Name.ToLower() == cleanedName.ToLower());
+
+        if (exists)
+        {
+            return false;
+        }
+
+        signal.Name = cleanedName;
+        signal.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> RemoveDomainSignalAsync(Guid userId, Guid domainSignalId)
+    {
+        var signal = await _context.StudentDomainSignals
+            .FirstOrDefaultAsync(item => item.UserId == userId && item.Id == domainSignalId);
+
+        if (signal == null)
+        {
+            return false;
+        }
+
+        _context.StudentDomainSignals.Remove(signal);
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    private async Task<List<int>> GetValidTechnologyIdsAsync(IEnumerable<int>? technologyIds)
+    {
+        var normalizedIds = (technologyIds ?? Enumerable.Empty<int>())
+            .Where(id => id > 0)
+            .Distinct()
+            .ToList();
+
+        if (normalizedIds.Count == 0)
+        {
+            return new List<int>();
+        }
+
+        return await _context.Technologies
+            .Where(technology => normalizedIds.Contains(technology.Id))
+            .Select(technology => technology.Id)
+            .ToListAsync();
+    }
+
     public async Task<bool> ProcessCvAsync(Guid userId, Stream pdfStream)
     {
         var serializedAnalysis = await BuildCvAnalysisJsonAsync(pdfStream);
