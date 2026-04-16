@@ -295,10 +295,127 @@ public class StudentService : IStudentService
         return true;
     }
 
+    public async Task<List<StudentSkillDto>> GetDraftSkillsFromCvAsync(Guid userId)
+    {
+        var profile = await _context.StudentProfiles
+            .FirstOrDefaultAsync(p => p.UserId == userId);
+
+        if (profile == null)
+        {
+            return new List<StudentSkillDto>();
+        }
+
+        await EnsureCvAnalysisIsFreshAsync(profile);
+
+        if (!TryDeserializeCvAnalysis(profile.ParsedCvData, out var analysis))
+        {
+            return new List<StudentSkillDto>();
+        }
+
+        var canonicalTechnologyMap = await GetCanonicalTechnologyMapAsync();
+
+        return analysis.SkillsByCategory
+            .Where(category => category.Skills != null)
+            .SelectMany(category => category.Skills)
+            .Where(skill => !string.IsNullOrWhiteSpace(skill))
+            .Select(skill => skill.Trim())
+            .Select(skill =>
+            {
+                var normalizedSkill = CvSkillNormalizer.FindMatch(skill)?.CanonicalName ?? skill;
+                return canonicalTechnologyMap.TryGetValue(normalizedSkill.Trim().ToLowerInvariant(), out var technology)
+                    ? new StudentSkillDto
+                    {
+                        TechnologyId = technology.Id,
+                        TechnologyName = technology.Name,
+                        ProficiencyLevel = 2
+                    }
+                    : null;
+            })
+            .Where(skill => skill != null)
+            .GroupBy(skill => skill!.TechnologyId)
+            .Select(group => group.First()!)
+            .OrderBy(skill => skill.TechnologyName)
+            .ToList();
+    }
+
+    public async Task<bool> ReplaceSkillsAsync(Guid userId, List<StudentSkillDto> skills)
+    {
+        var normalizedSkills = (skills ?? new List<StudentSkillDto>())
+            .Where(skill => skill.TechnologyId > 0)
+            .GroupBy(skill => skill.TechnologyId)
+            .Select(group =>
+            {
+                var preferred = group
+                    .OrderByDescending(skill => skill.ProficiencyLevel)
+                    .First();
+
+                return new StudentSkillDto
+                {
+                    TechnologyId = preferred.TechnologyId,
+                    TechnologyName = preferred.TechnologyName,
+                    ProficiencyLevel = Math.Clamp(preferred.ProficiencyLevel, 1, 3)
+                };
+            })
+            .ToList();
+
+        var validTechnologyIds = await _context.Technologies
+            .Where(technology => normalizedSkills.Select(skill => skill.TechnologyId).Contains(technology.Id))
+            .Select(technology => technology.Id)
+            .ToListAsync();
+
+        var validTechnologyIdSet = validTechnologyIds.ToHashSet();
+        normalizedSkills = normalizedSkills
+            .Where(skill => validTechnologyIdSet.Contains(skill.TechnologyId))
+            .ToList();
+
+        var existingSkills = await _context.StudentTechnologies
+            .Where(st => st.UserId == userId)
+            .ToListAsync();
+
+        var requestedTechnologyIds = normalizedSkills
+            .Select(skill => skill.TechnologyId)
+            .ToHashSet();
+
+        var skillsToRemove = existingSkills
+            .Where(existingSkill => !requestedTechnologyIds.Contains(existingSkill.TechnologyId))
+            .ToList();
+
+        if (skillsToRemove.Count > 0)
+        {
+            _context.StudentTechnologies.RemoveRange(skillsToRemove);
+        }
+
+        foreach (var skillDto in normalizedSkills)
+        {
+            var existingSkill = existingSkills
+                .FirstOrDefault(st => st.TechnologyId == skillDto.TechnologyId);
+
+            if (existingSkill != null)
+            {
+                existingSkill.ProficiencyLevel = skillDto.ProficiencyLevel;
+                continue;
+            }
+
+            _context.StudentTechnologies.Add(new StudentTechnology
+            {
+                UserId = userId,
+                TechnologyId = skillDto.TechnologyId,
+                ProficiencyLevel = skillDto.ProficiencyLevel
+            });
+        }
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
     public async Task<bool> ProcessCvAsync(Guid userId, Stream pdfStream)
     {
         var serializedAnalysis = await BuildCvAnalysisJsonAsync(pdfStream);
         if (string.IsNullOrWhiteSpace(serializedAnalysis))
+        {
+            return false;
+        }
+
+        if (!TryDeserializeCvAnalysis(serializedAnalysis, out var analysis))
         {
             return false;
         }
@@ -312,9 +429,12 @@ public class StudentService : IStudentService
         profile.ParsedCvData = serializedAnalysis;
         profile.UpdatedAt = DateTime.UtcNow;
 
+        await SyncCvAnalysisToDatabaseAsync(userId, analysis);
+
         await _context.SaveChangesAsync();
         return true;
     }
+
 
     private async Task EnsureCvAnalysisIsFreshAsync(StudentProfile profile)
     {
@@ -336,8 +456,16 @@ public class StudentService : IStudentService
             return;
         }
 
+        if (!TryDeserializeCvAnalysis(serializedAnalysis, out var analysis))
+        {
+            return;
+        }
+
         profile.ParsedCvData = serializedAnalysis;
         profile.UpdatedAt = DateTime.UtcNow;
+
+        await SyncCvAnalysisToDatabaseAsync(profile.UserId, analysis);
+
         await _context.SaveChangesAsync();
     }
 
@@ -449,6 +577,306 @@ JSON Şeması:
             return JsonSerializer.Serialize(analysis);
         }
     }
+    private async Task SyncCvAnalysisToDatabaseAsync(Guid userId, CvAnalysisResultDto analysis)
+    {
+        var canonicalTechnologyMap = await GetCanonicalTechnologyMapAsync();
+
+        await ReplaceStudentSkillsFromCvAsync(userId, analysis, canonicalTechnologyMap);
+        await ReplaceStudentEducationsFromCvAsync(userId, analysis);
+        await ReplaceStudentExperiencesFromCvAsync(userId, analysis, canonicalTechnologyMap);
+        await ReplaceStudentProjectsFromCvAsync(userId, analysis, canonicalTechnologyMap);
+        await ReplaceStudentDomainSignalsFromCvAsync(userId, analysis);
+    }
+
+    private async Task ReplaceStudentSkillsFromCvAsync(
+        Guid userId,
+        CvAnalysisResultDto analysis,
+        Dictionary<string, Technology> canonicalTechnologyMap)
+    {
+        var existingSkills = await _context.StudentTechnologies
+            .Where(st => st.UserId == userId)
+            .ToListAsync();
+
+        if (existingSkills.Count > 0)
+        {
+            _context.StudentTechnologies.RemoveRange(existingSkills);
+        }
+
+        var normalizedTechnologies = (analysis.SkillsByCategory ?? new List<CvSkillCategoryDto>())
+            .Where(category => category != null && category.Skills != null)
+            .SelectMany(category => category.Skills)
+            .Where(skill => !string.IsNullOrWhiteSpace(skill))
+            .Select(skill => skill.Trim())
+            .Select(skill =>
+            {
+                var normalizedSkill = CvSkillNormalizer.FindMatch(skill)?.CanonicalName ?? skill;
+
+                return canonicalTechnologyMap.TryGetValue(
+                    normalizedSkill.Trim().ToLowerInvariant(),
+                    out var technology)
+                    ? technology
+                    : null;
+            })
+            .Where(technology => technology != null)
+            .GroupBy(technology => technology!.Id)
+            .Select(group => group.First()!)
+            .ToList();
+
+        foreach (var technology in normalizedTechnologies)
+        {
+            _context.StudentTechnologies.Add(new StudentTechnology
+            {
+                UserId = userId,
+                TechnologyId = technology.Id,
+                ProficiencyLevel = 2
+            });
+        }
+    }
+
+    private async Task ReplaceStudentEducationsFromCvAsync(Guid userId, CvAnalysisResultDto analysis)
+    {
+        var existingEducations = await _context.StudentEducations
+            .Where(se => se.UserId == userId)
+            .ToListAsync();
+
+        if (existingEducations.Count > 0)
+        {
+            _context.StudentEducations.RemoveRange(existingEducations);
+        }
+
+        var educationItems = (analysis.Education ?? new List<CvEducationDto>())
+            .Where(item =>
+                !string.IsNullOrWhiteSpace(item.SchoolName) ||
+                !string.IsNullOrWhiteSpace(item.Department) ||
+                !string.IsNullOrWhiteSpace(item.Degree))
+            .GroupBy(item => new
+            {
+                SchoolName = NormalizeKey(item.SchoolName),
+                Department = NormalizeKey(item.Department),
+                Degree = NormalizeKey(item.Degree),
+                StartDateText = NormalizeKey(item.StartDateText),
+                EndDateText = NormalizeKey(item.EndDateText)
+            })
+            .Select(group => group.First())
+            .ToList();
+
+        foreach (var item in educationItems)
+        {
+            _context.StudentEducations.Add(new StudentEducation
+            {
+                UserId = userId,
+                SchoolName = CleanText(item.SchoolName),
+                Department = CleanText(item.Department),
+                Degree = CleanText(item.Degree),
+                StartDateText = CleanText(item.StartDateText),
+                EndDateText = CleanText(item.EndDateText)
+            });
+        }
+    }
+
+    private async Task ReplaceStudentExperiencesFromCvAsync(
+        Guid userId,
+        CvAnalysisResultDto analysis,
+        Dictionary<string, Technology> canonicalTechnologyMap)
+    {
+        var existingExperienceIds = await _context.StudentExperiences
+            .Where(se => se.UserId == userId)
+            .Select(se => se.Id)
+            .ToListAsync();
+
+        if (existingExperienceIds.Count > 0)
+        {
+            var existingExperienceTechnologies = await _context.StudentExperienceTechnologies
+                .Where(set => existingExperienceIds.Contains(set.StudentExperienceId))
+                .ToListAsync();
+
+            if (existingExperienceTechnologies.Count > 0)
+            {
+                _context.StudentExperienceTechnologies.RemoveRange(existingExperienceTechnologies);
+            }
+
+            var existingExperiences = await _context.StudentExperiences
+                .Where(se => se.UserId == userId)
+                .ToListAsync();
+
+            _context.StudentExperiences.RemoveRange(existingExperiences);
+        }
+
+        var experienceItems = (analysis.Experiences ?? new List<CvExperienceDto>())
+            .Where(item =>
+                !string.IsNullOrWhiteSpace(item.CompanyName) ||
+                !string.IsNullOrWhiteSpace(item.Position) ||
+                !string.IsNullOrWhiteSpace(item.Description))
+            .GroupBy(item => new
+            {
+                CompanyName = NormalizeKey(item.CompanyName),
+                Position = NormalizeKey(item.Position),
+                StartDateText = NormalizeKey(item.StartDateText),
+                EndDateText = NormalizeKey(item.EndDateText),
+                Description = NormalizeKey(item.Description)
+            })
+            .Select(group => group.First())
+            .ToList();
+
+        foreach (var item in experienceItems)
+        {
+            var experience = new StudentExperience
+            {
+                UserId = userId,
+                CompanyName = CleanText(item.CompanyName),
+                Position = CleanText(item.Position),
+                StartDateText = CleanText(item.StartDateText),
+                EndDateText = CleanText(item.EndDateText),
+                Description = CleanText(item.Description)
+            };
+
+            var technologies = ResolveTechnologies(item.Technologies, canonicalTechnologyMap);
+            foreach (var technology in technologies)
+            {
+                experience.Technologies.Add(new StudentExperienceTechnology
+                {
+                    UserId = userId,
+                    TechnologyId = technology.Id,
+                    StudentExperience = experience
+                });
+            }
+
+            _context.StudentExperiences.Add(experience);
+        }
+    }
+
+    private async Task ReplaceStudentProjectsFromCvAsync(
+        Guid userId,
+        CvAnalysisResultDto analysis,
+        Dictionary<string, Technology> canonicalTechnologyMap)
+    {
+        var existingProjectIds = await _context.StudentCvProjects
+            .Where(sp => sp.UserId == userId)
+            .Select(sp => sp.Id)
+            .ToListAsync();
+
+        if (existingProjectIds.Count > 0)
+        {
+            var existingProjectTechnologies = await _context.StudentCvProjectTechnologies
+                .Where(set => existingProjectIds.Contains(set.StudentCvProjectId))
+                .ToListAsync();
+
+            if (existingProjectTechnologies.Count > 0)
+            {
+                _context.StudentCvProjectTechnologies.RemoveRange(existingProjectTechnologies);
+            }
+
+            var existingProjects = await _context.StudentCvProjects
+                .Where(sp => sp.UserId == userId)
+                .ToListAsync();
+
+            _context.StudentCvProjects.RemoveRange(existingProjects);
+        }
+
+        var projectItems = (analysis.Projects ?? new List<CvProjectDto>())
+            .Where(item =>
+                !string.IsNullOrWhiteSpace(item.Name) ||
+                !string.IsNullOrWhiteSpace(item.Description))
+            .GroupBy(item => new
+            {
+                Name = NormalizeKey(item.Name),
+                Description = NormalizeKey(item.Description),
+                Role = NormalizeKey(item.Role),
+                Domain = NormalizeKey(item.Domain)
+            })
+            .Select(group => group.First())
+            .ToList();
+
+        foreach (var item in projectItems)
+        {
+            var project = new StudentCvProject
+            {
+                UserId = userId,
+                Name = CleanText(item.Name),
+                Description = CleanText(item.Description),
+                Role = CleanText(item.Role),
+                Domain = CleanText(item.Domain),
+                IsTeamProject = item.IsTeamProject
+            };
+
+            var technologies = ResolveTechnologies(item.Technologies, canonicalTechnologyMap);
+            foreach (var technology in technologies)
+            {
+                project.Technologies.Add(new StudentCvProjectTechnology
+                {
+                    UserId = userId,
+                    TechnologyId = technology.Id,
+                    StudentCvProject = project
+                });
+            }
+
+            _context.StudentCvProjects.Add(project);
+        }
+    }
+
+    private async Task ReplaceStudentDomainSignalsFromCvAsync(Guid userId, CvAnalysisResultDto analysis)
+    {
+        var existingSignals = await _context.StudentDomainSignals
+            .Where(ds => ds.UserId == userId)
+            .ToListAsync();
+
+        if (existingSignals.Count > 0)
+        {
+            _context.StudentDomainSignals.RemoveRange(existingSignals);
+        }
+
+        var signals = (analysis.DomainSignals ?? new List<string>())
+            .Where(signal => !string.IsNullOrWhiteSpace(signal))
+            .Select(signal => signal.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        foreach (var signal in signals)
+        {
+            _context.StudentDomainSignals.Add(new StudentDomainSignal
+            {
+                UserId = userId,
+                Name = signal
+            });
+        }
+    }
+
+    private static List<Technology> ResolveTechnologies(
+        IEnumerable<string>? rawTechnologyNames,
+        Dictionary<string, Technology> canonicalTechnologyMap)
+    {
+        return (rawTechnologyNames ?? Enumerable.Empty<string>())
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Select(name => name.Trim())
+            .Select(name =>
+            {
+                var normalizedName = CvSkillNormalizer.FindMatch(name)?.CanonicalName ?? name;
+
+                return canonicalTechnologyMap.TryGetValue(
+                    normalizedName.Trim().ToLowerInvariant(),
+                    out var technology)
+                    ? technology
+                    : null;
+            })
+            .Where(technology => technology != null)
+            .GroupBy(technology => technology!.Id)
+            .Select(group => group.First()!)
+            .ToList();
+    }
+
+    private static string CleanText(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : value.Trim();
+    }
+
+    private static string NormalizeKey(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value)
+            ? string.Empty
+            : value.Trim().ToLowerInvariant();
+    }
 
     private async Task<Dictionary<string, Technology>> GetCanonicalTechnologyMapAsync()
     {
@@ -462,5 +890,37 @@ JSON Şeması:
                 group => group.Key,
                 group => group.OrderBy(technology => technology.Id).First(),
                 StringComparer.OrdinalIgnoreCase);
+    }
+
+    private static bool TryDeserializeCvAnalysis(string? serializedAnalysis, out CvAnalysisResultDto analysis)
+    {
+        analysis = new CvAnalysisResultDto();
+
+        if (string.IsNullOrWhiteSpace(serializedAnalysis) || serializedAnalysis == "{}")
+        {
+            return false;
+        }
+
+        try
+        {
+            var parsed = JsonSerializer.Deserialize<CvAnalysisResultDto>(
+                serializedAnalysis,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+            if (parsed == null)
+            {
+                return false;
+            }
+
+            analysis = parsed;
+            return true;
+        }
+        catch (JsonException)
+        {
+            return false;
+        }
     }
 }
