@@ -1,16 +1,15 @@
 using System.Security.Claims;
+using GradPath.Business.DTOs.CV;
 using GradPath.Business.DTOs.Student;
 using GradPath.Business.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using GradPath.Business.DTOs.CV;
-
 
 namespace GradPath.API.Controllers;
 
 [ApiController]
 [Route("api/v1/student")]
-[Authorize] // Sadece giriş yapmış olanlar bu kapıdan girebilir!
+[Authorize]
 public class StudentController : ControllerBase
 {
     private readonly IStudentService _studentService;
@@ -22,7 +21,6 @@ public class StudentController : ControllerBase
         _fileUploadService = fileUploadService;
     }
 
-
     [HttpPost("upload-cv")]
     public async Task<IActionResult> UploadCv(IFormFile file)
     {
@@ -30,22 +28,17 @@ public class StudentController : ControllerBase
         if (userIdString == null) return Unauthorized();
 
         var userId = Guid.Parse(userIdString);
-
-        // 1. Dosyayı fiziksel olarak kaydet (Burası zaten sizde vardı)
         var fileName = await _fileUploadService.UploadFileAsync(file, "cvs");
 
-        // 2. Veritabanındaki dosya adını güncelle (Burası da vardı)
         await _studentService.UpdateCvFileNameAsync(userId, fileName);
 
-        // 3. YENİ: CV'yi AI ile işle (Ekleyeceğiniz kısım burası!)
         using (var stream = file.OpenReadStream())
         {
             await _studentService.ProcessCvAsync(userId, stream);
         }
 
-        return Ok(new { Message = "CV başarıyla yüklendi ve AI tarafından analiz edildi.", FileName = fileName });
+        return Ok(new { Message = "CV basariyla yuklendi ve AI tarafindan analiz edildi.", FileName = fileName });
     }
-
 
     [HttpPost("upload-transcript")]
     public async Task<IActionResult> UploadTranscript(IFormFile file)
@@ -54,36 +47,31 @@ public class StudentController : ControllerBase
         if (userIdString == null) return Unauthorized();
 
         var userId = Guid.Parse(userIdString);
-
-        // 1. Dosyayı kaydet
         var fileName = await _fileUploadService.UploadFileAsync(file, "transcripts");
+
         await _studentService.UpdateTranscriptFileNameAsync(userId, fileName);
 
-        // 2. Transkripti AI ile işle (Yeni!)
         using (var stream = file.OpenReadStream())
         {
             await _studentService.ProcessTranscriptAsync(userId, stream);
         }
 
-        return Ok(new { Message = "Transkript başarıyla yüklendi ve AI tarafından analiz edildi.", FileName = fileName });
+        return Ok(new { Message = "Transkript basariyla yuklendi ve AI tarafindan analiz edildi.", FileName = fileName });
     }
 
-    // PROFILIMI GETIR: GET api/v1/student/me
     [HttpGet("me")]
     public async Task<IActionResult> GetMyProfile()
     {
-        // Token içinden "Ben kimim?" sorusunun cevabını (User ID) alıyoruz
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (userIdString == null) return Unauthorized();
 
         var userId = Guid.Parse(userIdString);
         var profile = await _studentService.GetProfileByUserIdAsync(userId);
 
-        if (profile == null) return NotFound("Profil bulunamadı.");
+        if (profile == null) return NotFound("Profil bulunamadi.");
         return Ok(profile);
     }
 
-    // PROFILIMI GÜNCELLE: PUT api/v1/student/me
     [HttpPut("me")]
     public async Task<IActionResult> UpdateProfile(StudentProfileUpdateDto request)
     {
@@ -93,10 +81,10 @@ public class StudentController : ControllerBase
         var userId = Guid.Parse(userIdString);
         var result = await _studentService.UpdateProfileAsync(userId, request);
 
-        if (!result) return BadRequest("Profil güncellenemedi.");
-        return Ok("Profil başarıyla güncellendi.");
+        if (!result) return BadRequest("Profil guncellenemedi.");
+        return Ok("Profil basariyla guncellendi.");
     }
-    // YETENEKLERİMİ LİSTELE: GET api/v1/student/skills
+
     [HttpGet("skills")]
     public async Task<IActionResult> GetMySkills()
     {
@@ -109,7 +97,6 @@ public class StudentController : ControllerBase
         return Ok(skills);
     }
 
-    // YETENEK EKLE/GÜNCELLE: POST api/v1/student/skills
     [HttpPost("skills")]
     public async Task<IActionResult> AddSkill(StudentSkillDto skillDto)
     {
@@ -120,10 +107,9 @@ public class StudentController : ControllerBase
         var result = await _studentService.AddSkillAsync(userId, skillDto);
 
         if (!result) return BadRequest("Yetenek eklenemedi.");
-        return Ok("Yetenek başarıyla kaydedildi.");
+        return Ok("Yetenek basariyla kaydedildi.");
     }
 
-    // YETENEK SİL: DELETE api/v1/student/skills/{id}
     [HttpDelete("skills/{technologyId}")]
     public async Task<IActionResult> RemoveSkill(int technologyId)
     {
@@ -133,10 +119,10 @@ public class StudentController : ControllerBase
         var userId = Guid.Parse(userIdString);
         var result = await _studentService.RemoveSkillAsync(userId, technologyId);
 
-        if (!result) return NotFound("Yetenek bulunamadı.");
-        return Ok("Yetenek başarıyla silindi.");
+        if (!result) return NotFound("Yetenek bulunamadi.");
+        return Ok("Yetenek basariyla silindi.");
     }
-    // EGITIMLERIMI LISTELE: GET api/v1/student/educations
+
     [HttpGet("educations")]
     public async Task<IActionResult> GetMyEducations()
     {
@@ -149,7 +135,6 @@ public class StudentController : ControllerBase
         return Ok(educations);
     }
 
-    // EGITIM EKLE: POST api/v1/student/educations
     [HttpPost("educations")]
     public async Task<IActionResult> AddEducation(StudentEducationCrudDto dto)
     {
@@ -163,7 +148,6 @@ public class StudentController : ControllerBase
         return Ok("Egitim basariyla eklendi.");
     }
 
-    // EGITIM GUNCELLE: PUT api/v1/student/educations/{educationId}
     [HttpPut("educations/{educationId}")]
     public async Task<IActionResult> UpdateEducation(Guid educationId, StudentEducationCrudDto dto)
     {
@@ -177,7 +161,6 @@ public class StudentController : ControllerBase
         return Ok("Egitim basariyla guncellendi.");
     }
 
-    // EGITIM SIL: DELETE api/v1/student/educations/{educationId}
     [HttpDelete("educations/{educationId}")]
     public async Task<IActionResult> RemoveEducation(Guid educationId)
     {
@@ -191,7 +174,6 @@ public class StudentController : ControllerBase
         return Ok("Egitim basariyla silindi.");
     }
 
-    // DENEYIMLERIMI LISTELE: GET api/v1/student/experiences
     [HttpGet("experiences")]
     public async Task<IActionResult> GetMyExperiences()
     {
@@ -204,7 +186,6 @@ public class StudentController : ControllerBase
         return Ok(experiences);
     }
 
-    // DENEYIM EKLE: POST api/v1/student/experiences
     [HttpPost("experiences")]
     public async Task<IActionResult> AddExperience(StudentExperienceCrudDto dto)
     {
@@ -218,7 +199,6 @@ public class StudentController : ControllerBase
         return Ok("Deneyim basariyla eklendi.");
     }
 
-    // DENEYIM GUNCELLE: PUT api/v1/student/experiences/{experienceId}
     [HttpPut("experiences/{experienceId}")]
     public async Task<IActionResult> UpdateExperience(Guid experienceId, StudentExperienceCrudDto dto)
     {
@@ -232,7 +212,6 @@ public class StudentController : ControllerBase
         return Ok("Deneyim basariyla guncellendi.");
     }
 
-    // DENEYIM SIL: DELETE api/v1/student/experiences/{experienceId}
     [HttpDelete("experiences/{experienceId}")]
     public async Task<IActionResult> RemoveExperience(Guid experienceId)
     {
@@ -246,7 +225,6 @@ public class StudentController : ControllerBase
         return Ok("Deneyim basariyla silindi.");
     }
 
-    // CV PROJELERIMI LISTELE: GET api/v1/student/cv-projects
     [HttpGet("cv-projects")]
     public async Task<IActionResult> GetMyCvProjects()
     {
@@ -259,7 +237,6 @@ public class StudentController : ControllerBase
         return Ok(projects);
     }
 
-    // CV PROJESI EKLE: POST api/v1/student/cv-projects
     [HttpPost("cv-projects")]
     public async Task<IActionResult> AddCvProject(StudentCvProjectCrudDto dto)
     {
@@ -273,7 +250,6 @@ public class StudentController : ControllerBase
         return Ok("CV projesi basariyla eklendi.");
     }
 
-    // CV PROJESI GUNCELLE: PUT api/v1/student/cv-projects/{projectId}
     [HttpPut("cv-projects/{projectId}")]
     public async Task<IActionResult> UpdateCvProject(Guid projectId, StudentCvProjectCrudDto dto)
     {
@@ -287,7 +263,6 @@ public class StudentController : ControllerBase
         return Ok("CV projesi basariyla guncellendi.");
     }
 
-    // CV PROJESI SIL: DELETE api/v1/student/cv-projects/{projectId}
     [HttpDelete("cv-projects/{projectId}")]
     public async Task<IActionResult> RemoveCvProject(Guid projectId)
     {
@@ -301,7 +276,6 @@ public class StudentController : ControllerBase
         return Ok("CV projesi basariyla silindi.");
     }
 
-    // ALANLARIMI LISTELE: GET api/v1/student/domain-signals
     [HttpGet("domain-signals")]
     public async Task<IActionResult> GetMyDomainSignals()
     {
@@ -314,7 +288,6 @@ public class StudentController : ControllerBase
         return Ok(domainSignals);
     }
 
-    // ALAN EKLE: POST api/v1/student/domain-signals
     [HttpPost("domain-signals")]
     public async Task<IActionResult> AddDomainSignal(StudentDomainSignalCrudDto dto)
     {
@@ -328,7 +301,6 @@ public class StudentController : ControllerBase
         return Ok("Alan basariyla eklendi.");
     }
 
-    // ALAN GUNCELLE: PUT api/v1/student/domain-signals/{domainSignalId}
     [HttpPut("domain-signals/{domainSignalId}")]
     public async Task<IActionResult> UpdateDomainSignal(Guid domainSignalId, StudentDomainSignalCrudDto dto)
     {
@@ -342,7 +314,6 @@ public class StudentController : ControllerBase
         return Ok("Alan basariyla guncellendi.");
     }
 
-    // ALAN SIL: DELETE api/v1/student/domain-signals/{domainSignalId}
     [HttpDelete("domain-signals/{domainSignalId}")]
     public async Task<IActionResult> RemoveDomainSignal(Guid domainSignalId)
     {
@@ -356,13 +327,12 @@ public class StudentController : ControllerBase
         return Ok("Alan basariyla silindi.");
     }
 
-
     [HttpPost("debug-analyze-cv-text")]
     public IActionResult DebugAnalyzeCvText([FromBody] CvRawTextRequestDto request)
     {
         if (request == null || string.IsNullOrWhiteSpace(request.RawText))
         {
-            return BadRequest("CV metni boş olamaz.");
+            return BadRequest("CV metni bos olamaz.");
         }
 
         var normalizedText = CvTextPreprocessor.Normalize(request.RawText);
@@ -370,6 +340,4 @@ public class StudentController : ControllerBase
 
         return Ok(result);
     }
-
 }
-
