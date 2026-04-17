@@ -33,6 +33,9 @@ public class GradPathDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<StudentCvProject> StudentCvProjects { get; set; } = null!;
     public DbSet<StudentCvProjectTechnology> StudentCvProjectTechnologies { get; set; } = null!;
     public DbSet<StudentDomainSignal> StudentDomainSignals { get; set; } = null!;
+    public DbSet<StudentProjectPost> StudentProjectPosts { get; set; } = null!;
+    public DbSet<StudentProjectPostTechnology> StudentProjectPostTechnologies { get; set; } = null!;
+    public DbSet<StudentProjectPostDepartment> StudentProjectPostDepartments { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -119,5 +122,47 @@ public class GradPathDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             .WithMany(u => u.ReceivedMatches)
             .HasForeignKey(tm => tm.PartnerId)
             .OnDelete(DeleteBehavior.Restrict);
+        builder.Entity<StudentProjectPostTechnology>()
+          .HasKey(sppt => new { sppt.StudentProjectPostId, sppt.TechnologyId });
+
+        builder.Entity<StudentProjectPostDepartment>()
+            .HasKey(sppd => new { sppd.StudentProjectPostId, sppd.DepartmentId });
+
+        builder.Entity<StudentProjectPost>()
+            .HasOne(spp => spp.OwnerUser)
+            .WithMany()
+            .HasForeignKey(spp => spp.OwnerUserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<StudentProjectPostTechnology>()
+            .HasOne(sppt => sppt.StudentProjectPost)
+            .WithMany(spp => spp.Technologies)
+            .HasForeignKey(sppt => sppt.StudentProjectPostId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<StudentProjectPostTechnology>()
+            .HasOne(sppt => sppt.Technology)
+            .WithMany()
+            .HasForeignKey(sppt => sppt.TechnologyId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<StudentProjectPostDepartment>()
+            .HasOne(sppd => sppd.StudentProjectPost)
+            .WithMany(spp => spp.Departments)
+            .HasForeignKey(sppd => sppd.StudentProjectPostId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<StudentProjectPostDepartment>()
+            .HasOne(sppd => sppd.Department)
+            .WithMany()
+            .HasForeignKey(sppd => sppd.DepartmentId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<StudentProjectPost>()
+            .HasIndex(spp => spp.OwnerUserId);
+
+        builder.Entity<StudentProjectPost>()
+            .HasIndex(spp => new { spp.Status, spp.ProjectType });
+
     }
 }
