@@ -257,22 +257,45 @@ public class StudentService : IStudentService
             .ToList();
     }
 
+    public async Task<List<TechnologyOptionDto>> GetAvailableTechnologiesAsync()
+    {
+        return await _context.Technologies
+            .AsNoTracking()
+            .OrderBy(technology => technology.Category)
+            .ThenBy(technology => technology.Name)
+            .Select(technology => new TechnologyOptionDto
+            {
+                Id = technology.Id,
+                Name = technology.Name,
+                Category = technology.Category
+            })
+            .ToListAsync();
+    }
+
     public async Task<bool> AddSkillAsync(Guid userId, StudentSkillDto skillDto)
     {
+        var resolvedTechnologyId = await ResolveTechnologyIdAsync(skillDto.TechnologyId, skillDto.TechnologyName);
+        if (resolvedTechnologyId <= 0)
+        {
+            return false;
+        }
+
+        var proficiencyLevel = Math.Clamp(skillDto.ProficiencyLevel, 1, 3);
+
         var existingSkill = await _context.StudentTechnologies
-            .FirstOrDefaultAsync(st => st.UserId == userId && st.TechnologyId == skillDto.TechnologyId);
+            .FirstOrDefaultAsync(st => st.UserId == userId && st.TechnologyId == resolvedTechnologyId);
 
         if (existingSkill != null)
         {
-            existingSkill.ProficiencyLevel = skillDto.ProficiencyLevel;
+            existingSkill.ProficiencyLevel = proficiencyLevel;
         }
         else
         {
             _context.StudentTechnologies.Add(new StudentTechnology
             {
                 UserId = userId,
-                TechnologyId = skillDto.TechnologyId,
-                ProficiencyLevel = skillDto.ProficiencyLevel
+                TechnologyId = resolvedTechnologyId,
+                ProficiencyLevel = proficiencyLevel
             });
         }
 
@@ -340,7 +363,32 @@ public class StudentService : IStudentService
 
     public async Task<bool> ReplaceSkillsAsync(Guid userId, List<StudentSkillDto> skills)
     {
+        var canonicalTechnologyMap = await GetCanonicalTechnologyMapAsync();
+
         var normalizedSkills = (skills ?? new List<StudentSkillDto>())
+            .Select(skill =>
+            {
+                var resolvedTechnologyId = skill.TechnologyId;
+
+                if (resolvedTechnologyId <= 0 && !string.IsNullOrWhiteSpace(skill.TechnologyName))
+                {
+                    var normalizedName = CvSkillNormalizer.FindMatch(skill.TechnologyName)?.CanonicalName
+                        ?? skill.TechnologyName;
+
+                    resolvedTechnologyId = canonicalTechnologyMap.TryGetValue(
+                        normalizedName.Trim().ToLowerInvariant(),
+                        out var technology)
+                        ? technology.Id
+                        : 0;
+                }
+
+                return new StudentSkillDto
+                {
+                    TechnologyId = resolvedTechnologyId,
+                    TechnologyName = skill.TechnologyName,
+                    ProficiencyLevel = Math.Clamp(skill.ProficiencyLevel, 1, 3)
+                };
+            })
             .Where(skill => skill.TechnologyId > 0)
             .GroupBy(skill => skill.TechnologyId)
             .Select(group =>
@@ -886,6 +934,32 @@ public class StudentService : IStudentService
             .Concat(resolvedIds)
             .Distinct()
             .ToList();
+    }
+
+    private async Task<int> ResolveTechnologyIdAsync(int technologyId, string? technologyName)
+    {
+        if (technologyId > 0)
+        {
+            var validIds = await GetValidTechnologyIdsAsync(new[] { technologyId });
+            if (validIds.Count > 0)
+            {
+                return validIds[0];
+            }
+        }
+
+        if (string.IsNullOrWhiteSpace(technologyName))
+        {
+            return 0;
+        }
+
+        var canonicalTechnologyMap = await GetCanonicalTechnologyMapAsync();
+        var normalizedName = CvSkillNormalizer.FindMatch(technologyName)?.CanonicalName ?? technologyName;
+
+        return canonicalTechnologyMap.TryGetValue(
+            normalizedName.Trim().ToLowerInvariant(),
+            out var technology)
+            ? technology.Id
+            : 0;
     }
 
     public async Task<bool> ProcessCvAsync(Guid userId, Stream pdfStream)

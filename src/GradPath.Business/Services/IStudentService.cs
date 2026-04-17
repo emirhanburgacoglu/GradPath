@@ -28,6 +28,7 @@ public interface IStudentService
 
     // Yetenek Yönetimi (Skills)
     Task<List<StudentSkillDto>> GetSkillsAsync(Guid userId);
+    Task<List<TechnologyOptionDto>> GetAvailableTechnologiesAsync();
     Task<bool> AddSkillAsync(Guid userId, StudentSkillDto skillDto);
     Task<bool> RemoveSkillAsync(Guid userId, int technologyId);
 

@@ -97,6 +97,13 @@ public class StudentController : ControllerBase
         return Ok(skills);
     }
 
+    [HttpGet("skills/options")]
+    public async Task<IActionResult> GetSkillOptions()
+    {
+        var options = await _studentService.GetAvailableTechnologiesAsync();
+        return Ok(options);
+    }
+
     [HttpPost("skills")]
     public async Task<IActionResult> AddSkill(StudentSkillDto skillDto)
     {
@@ -121,6 +128,31 @@ public class StudentController : ControllerBase
 
         if (!result) return NotFound("Yetenek bulunamadi.");
         return Ok("Yetenek basariyla silindi.");
+    }
+
+    [HttpGet("skills/draft")]
+    public async Task<IActionResult> GetDraftSkillsFromCv()
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdString == null) return Unauthorized();
+
+        var userId = Guid.Parse(userIdString);
+        var skills = await _studentService.GetDraftSkillsFromCvAsync(userId);
+
+        return Ok(skills);
+    }
+
+    [HttpPut("skills")]
+    public async Task<IActionResult> ReplaceSkills(List<StudentSkillDto> skills)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdString == null) return Unauthorized();
+
+        var userId = Guid.Parse(userIdString);
+        var result = await _studentService.ReplaceSkillsAsync(userId, skills);
+
+        if (!result) return BadRequest("Yetenekler guncellenemedi.");
+        return Ok("Yetenekler basariyla guncellendi.");
     }
 
     [HttpGet("educations")]
