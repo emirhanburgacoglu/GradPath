@@ -530,7 +530,7 @@ public class StudentService : IStudentService
             return false;
         }
 
-        var technologyIds = await GetValidTechnologyIdsAsync(dto.TechnologyIds);
+        var technologyIds = await GetResolvedTechnologyIdsAsync(dto.TechnologyIds, dto.TechnologyNames);
 
         var experience = new StudentExperience
         {
@@ -589,7 +589,7 @@ public class StudentService : IStudentService
             experience.Technologies.Clear();
         }
 
-        var technologyIds = await GetValidTechnologyIdsAsync(dto.TechnologyIds);
+        var technologyIds = await GetResolvedTechnologyIdsAsync(dto.TechnologyIds, dto.TechnologyNames);
         foreach (var technologyId in technologyIds)
         {
             experience.Technologies.Add(new StudentExperienceTechnology
@@ -657,7 +657,7 @@ public class StudentService : IStudentService
             return false;
         }
 
-        var technologyIds = await GetValidTechnologyIdsAsync(dto.TechnologyIds);
+        var technologyIds = await GetResolvedTechnologyIdsAsync(dto.TechnologyIds, dto.TechnologyNames);
 
         var project = new StudentCvProject
         {
@@ -715,7 +715,7 @@ public class StudentService : IStudentService
             project.Technologies.Clear();
         }
 
-        var technologyIds = await GetValidTechnologyIdsAsync(dto.TechnologyIds);
+        var technologyIds = await GetResolvedTechnologyIdsAsync(dto.TechnologyIds, dto.TechnologyNames);
         foreach (var technologyId in technologyIds)
         {
             project.Technologies.Add(new StudentCvProjectTechnology
@@ -849,6 +849,43 @@ public class StudentService : IStudentService
             .Where(technology => normalizedIds.Contains(technology.Id))
             .Select(technology => technology.Id)
             .ToListAsync();
+    }
+
+    private async Task<List<int>> GetResolvedTechnologyIdsAsync(
+        IEnumerable<int>? technologyIds,
+        IEnumerable<string>? technologyNames)
+    {
+        var validIds = await GetValidTechnologyIdsAsync(technologyIds);
+
+        var normalizedTechnologyNames = (technologyNames ?? Enumerable.Empty<string>())
+            .Where(name => !string.IsNullOrWhiteSpace(name))
+            .Select(name => name.Trim())
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToList();
+
+        if (normalizedTechnologyNames.Count == 0)
+        {
+            return validIds;
+        }
+
+        var canonicalTechnologyMap = await GetCanonicalTechnologyMapAsync();
+        var resolvedIds = normalizedTechnologyNames
+            .Select(name =>
+            {
+                var normalizedName = CvSkillNormalizer.FindMatch(name)?.CanonicalName ?? name;
+
+                return canonicalTechnologyMap.TryGetValue(
+                    normalizedName.Trim().ToLowerInvariant(),
+                    out var technology)
+                    ? technology.Id
+                    : 0;
+            })
+            .Where(id => id > 0);
+
+        return validIds
+            .Concat(resolvedIds)
+            .Distinct()
+            .ToList();
     }
 
     public async Task<bool> ProcessCvAsync(Guid userId, Stream pdfStream)
