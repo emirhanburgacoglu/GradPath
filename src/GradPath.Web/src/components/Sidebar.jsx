@@ -30,10 +30,14 @@ function Sidebar({ currentView, initials, onLogout, onViewChange, profile }) {
           <User size={18} />
           Profilim
         </button>
-        <div className="nav-item nav-item-passive">
+        <button
+          type="button"
+          className={`nav-item ${currentView === 'posts' ? 'active' : ''}`}
+          onClick={() => onViewChange('posts')}
+        >
           <GraduationCap size={18} />
-          Projeler
-        </div>
+          Ilanlar
+        </button>
         <div className="nav-item nav-item-passive">
           <Settings size={18} />
           Ayarlar

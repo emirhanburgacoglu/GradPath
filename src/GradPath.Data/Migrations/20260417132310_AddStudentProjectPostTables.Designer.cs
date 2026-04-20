@@ -3,6 +3,7 @@ using System;
 using GradPath.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace GradPath.Data.Migrations
 {
     [DbContext(typeof(GradPathDbContext))]
-    partial class GradPathDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260417132310_AddStudentProjectPostTables")]
+    partial class AddStudentProjectPostTables
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -586,38 +589,6 @@ namespace GradPath.Data.Migrations
                     b.ToTable("StudentProjectPosts");
                 });
 
-            modelBuilder.Entity("GradPath.Data.Entities.StudentProjectPostApplication", b =>
-                {
-                    b.Property<Guid>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("uuid");
-
-                    b.Property<Guid>("ApplicantUserId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime>("CreatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Status")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<Guid>("StudentProjectPostId")
-                        .HasColumnType("uuid");
-
-                    b.Property<DateTime?>("UpdatedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("ApplicantUserId");
-
-                    b.HasIndex("StudentProjectPostId", "ApplicantUserId")
-                        .IsUnique();
-
-                    b.ToTable("StudentProjectPostApplications");
-                });
-
             modelBuilder.Entity("GradPath.Data.Entities.StudentProjectPostDepartment", b =>
                 {
                     b.Property<Guid>("StudentProjectPostId")
@@ -1007,25 +978,6 @@ namespace GradPath.Data.Migrations
                     b.Navigation("OwnerUser");
                 });
 
-            modelBuilder.Entity("GradPath.Data.Entities.StudentProjectPostApplication", b =>
-                {
-                    b.HasOne("GradPath.Data.Entities.AppUser", "ApplicantUser")
-                        .WithMany("StudentProjectPostApplications")
-                        .HasForeignKey("ApplicantUserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("GradPath.Data.Entities.StudentProjectPost", "StudentProjectPost")
-                        .WithMany("Applications")
-                        .HasForeignKey("StudentProjectPostId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("ApplicantUser");
-
-                    b.Navigation("StudentProjectPost");
-                });
-
             modelBuilder.Entity("GradPath.Data.Entities.StudentProjectPostDepartment", b =>
                 {
                     b.HasOne("GradPath.Data.Entities.Department", "Department")
@@ -1169,8 +1121,6 @@ namespace GradPath.Data.Migrations
                     b.Navigation("Recommendations");
 
                     b.Navigation("StudentProfile");
-
-                    b.Navigation("StudentProjectPostApplications");
                 });
 
             modelBuilder.Entity("GradPath.Data.Entities.Department", b =>
@@ -1203,8 +1153,6 @@ namespace GradPath.Data.Migrations
 
             modelBuilder.Entity("GradPath.Data.Entities.StudentProjectPost", b =>
                 {
-                    b.Navigation("Applications");
-
                     b.Navigation("Departments");
 
                     b.Navigation("Technologies");

@@ -36,6 +36,7 @@ public class GradPathDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<StudentProjectPost> StudentProjectPosts { get; set; } = null!;
     public DbSet<StudentProjectPostTechnology> StudentProjectPostTechnologies { get; set; } = null!;
     public DbSet<StudentProjectPostDepartment> StudentProjectPostDepartments { get; set; } = null!;
+    public DbSet<StudentProjectPostApplication> StudentProjectPostApplications { get; set; } = null!;
 
     protected override void OnModelCreating(ModelBuilder builder)
     {
@@ -157,6 +158,25 @@ public class GradPathDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             .WithMany()
             .HasForeignKey(sppd => sppd.DepartmentId)
             .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<StudentProjectPostApplication>()
+            .HasOne(application => application.StudentProjectPost)
+            .WithMany(post => post.Applications)
+            .HasForeignKey(application => application.StudentProjectPostId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<StudentProjectPostApplication>()
+            .HasOne(application => application.ApplicantUser)
+            .WithMany(user => user.StudentProjectPostApplications)
+            .HasForeignKey(application => application.ApplicantUserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<StudentProjectPostApplication>()
+            .HasIndex(application => application.ApplicantUserId);
+
+        builder.Entity<StudentProjectPostApplication>()
+            .HasIndex(application => new { application.StudentProjectPostId, application.ApplicantUserId })
+            .IsUnique();
 
         builder.Entity<StudentProjectPost>()
             .HasIndex(spp => spp.OwnerUserId);

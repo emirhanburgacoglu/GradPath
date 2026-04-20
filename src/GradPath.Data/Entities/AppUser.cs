@@ -18,6 +18,7 @@ public class AppUser : IdentityUser<Guid>
     public ICollection<Recommendation> Recommendations { get; set; } = new List<Recommendation>();
     public ICollection<TeamMatch> InitiatedMatches { get; set; } = new List<TeamMatch>();
     public ICollection<TeamMatch> ReceivedMatches { get; set; } = new List<TeamMatch>();
+    public ICollection<StudentProjectPostApplication> StudentProjectPostApplications { get; set; } = new List<StudentProjectPostApplication>();
 
     // Metadata
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;

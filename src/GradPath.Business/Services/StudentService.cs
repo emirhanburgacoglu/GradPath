@@ -124,6 +124,7 @@ public class StudentService : IStudentService
     {
         var profile = await _context.StudentProfiles
             .Include(p => p.User)
+                .ThenInclude(user => user.Department)
             .FirstOrDefaultAsync(p => p.UserId == userId);
 
         if (profile == null)
@@ -147,28 +148,8 @@ public class StudentService : IStudentService
 
         await EnsureCvAnalysisIsFreshAsync(profile);
 
-        string? cvSummary = null;
-        string? cvAnalysisJson = profile.ParsedCvData;
-
-        if (!string.IsNullOrWhiteSpace(profile.ParsedCvData))
-        {
-            try
-            {
-                using var doc = JsonDocument.Parse(profile.ParsedCvData);
-                if (doc.RootElement.TryGetProperty("NormalizedSummary", out var summaryProp))
-                {
-                    cvSummary = summaryProp.GetString();
-                }
-                else if (doc.RootElement.TryGetProperty("normalizedSummary", out var camelSummaryProp))
-                {
-                    cvSummary = camelSummaryProp.GetString();
-                }
-            }
-            catch
-            {
-                cvSummary = null;
-            }
-        }
+        var cvAnalysisJson = profile.ParsedCvData;
+        var cvSummary = ExtractCvSummary(profile.ParsedCvData);
 
         return new StudentProfileResponseDto
         {
@@ -182,6 +163,41 @@ public class StudentService : IStudentService
             TranscriptFileName = profile.TranscriptFileName,
             CvSummary = cvSummary,
             CvAnalysisJson = cvAnalysisJson
+        };
+    }
+
+    public async Task<StudentPublicProfileDto?> GetPublicProfileByUserIdAsync(Guid userId)
+    {
+        var user = await _context.Users
+            .AsNoTracking()
+            .Include(item => item.Department)
+            .FirstOrDefaultAsync(item => item.Id == userId);
+
+        if (user == null)
+        {
+            return null;
+        }
+
+        var profile = await _context.StudentProfiles
+            .AsNoTracking()
+            .FirstOrDefaultAsync(item => item.UserId == userId);
+
+        return new StudentPublicProfileDto
+        {
+            UserId = user.Id,
+            FullName = user.FullName,
+            DepartmentName = user.Department?.Name ?? string.Empty,
+            DepartmentCode = user.Department?.Code ?? string.Empty,
+            FacultyName = user.Department?.FacultyName ?? string.Empty,
+            CGPA = profile?.CGPA,
+            TotalECTS = profile?.TotalECTS,
+            IsHonorStudent = profile?.IsHonorStudent ?? false,
+            CvSummary = ExtractCvSummary(profile?.ParsedCvData),
+            Skills = await GetSkillsAsync(userId),
+            Educations = await GetEducationsAsync(userId),
+            Experiences = await GetExperiencesAsync(userId),
+            CvProjects = await GetCvProjectsAsync(userId),
+            DomainSignals = await GetDomainSignalsAsync(userId)
         };
     }
 
@@ -259,17 +275,29 @@ public class StudentService : IStudentService
 
     public async Task<List<TechnologyOptionDto>> GetAvailableTechnologiesAsync()
     {
-        return await _context.Technologies
+        var technologies = await _context.Technologies
             .AsNoTracking()
+            .ToListAsync();
+
+        return technologies
+            .Where(technology => !string.IsNullOrWhiteSpace(technology.Name))
+            .GroupBy(technology => new
+            {
+                Name = NormalizeKey(technology.Name),
+                Category = NormalizeKey(technology.Category)
+            })
+            .Select(group => group
+                .OrderBy(technology => technology.Id)
+                .First())
             .OrderBy(technology => technology.Category)
             .ThenBy(technology => technology.Name)
             .Select(technology => new TechnologyOptionDto
             {
                 Id = technology.Id,
-                Name = technology.Name,
-                Category = technology.Category
+                Name = technology.Name.Trim(),
+                Category = technology.Category.Trim()
             })
-            .ToListAsync();
+            .ToList();
     }
 
     public async Task<bool> AddSkillAsync(Guid userId, StudentSkillDto skillDto)
@@ -1063,6 +1091,34 @@ public class StudentService : IStudentService
         {
             return true;
         }
+    }
+
+    private static string? ExtractCvSummary(string? parsedCvData)
+    {
+        if (string.IsNullOrWhiteSpace(parsedCvData))
+        {
+            return null;
+        }
+
+        try
+        {
+            using var doc = JsonDocument.Parse(parsedCvData);
+            if (doc.RootElement.TryGetProperty("NormalizedSummary", out var summaryProp))
+            {
+                return summaryProp.GetString();
+            }
+
+            if (doc.RootElement.TryGetProperty("normalizedSummary", out var camelSummaryProp))
+            {
+                return camelSummaryProp.GetString();
+            }
+        }
+        catch
+        {
+            return null;
+        }
+
+        return null;
     }
 
     private string? GetStoredCvPath(string? cvFileName)

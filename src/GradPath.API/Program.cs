@@ -33,7 +33,9 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IStudentService, StudentService>();
-builder.Services.AddScoped<IMatchingService, MatchingService>(); 
+builder.Services.AddScoped<IStudentProjectPostService, GradPath.Business.Services.StudentProjectPostService>();
+
+builder.Services.AddScoped<IMatchingService, MatchingService>();
 builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 
 builder.Services.AddScoped<ITeamService, TeamService>();
@@ -90,7 +92,7 @@ builder.Services.AddAuthentication(options =>
     };
 });
 
-builder.Services.AddControllers(); 
+builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
@@ -143,7 +145,7 @@ using (var scope = app.Services.CreateScope())
     // Program.cs içinde
     var roleManager = scope.ServiceProvider.GetRequiredService<RoleManager<AppRole>>();
     var userManager = scope.ServiceProvider.GetRequiredService<UserManager<AppUser>>();
-    var context = scope.ServiceProvider.GetRequiredService<GradPathDbContext>(); 
+    var context = scope.ServiceProvider.GetRequiredService<GradPathDbContext>();
     await DbSeeder.SeedRolesAndAdminAsync(roleManager, context);
     await DbSeeder.SeedDemoDataAsync(userManager, context);
 }

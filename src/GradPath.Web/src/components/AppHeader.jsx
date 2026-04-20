@@ -3,7 +3,7 @@ import { GraduationCap, LayoutDashboard, LogOut, Settings, User } from 'lucide-r
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'profile', label: 'Profilim', icon: User },
-  { id: 'projects', label: 'Projeler', icon: GraduationCap, passive: true },
+  { id: 'posts', label: 'Ilanlar', icon: GraduationCap },
   { id: 'settings', label: 'Ayarlar', icon: Settings, passive: true },
 ];
 

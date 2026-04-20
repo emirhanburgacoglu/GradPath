@@ -72,6 +72,15 @@ public class StudentController : ControllerBase
         return Ok(profile);
     }
 
+    [HttpGet("{userId:guid}/public-profile")]
+    public async Task<IActionResult> GetPublicProfile(Guid userId)
+    {
+        var profile = await _studentService.GetPublicProfileByUserIdAsync(userId);
+
+        if (profile == null) return NotFound("Ogrenci profili bulunamadi.");
+        return Ok(profile);
+    }
+
     [HttpPut("me")]
     public async Task<IActionResult> UpdateProfile(StudentProfileUpdateDto request)
     {

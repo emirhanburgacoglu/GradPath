@@ -18,6 +18,7 @@ public class StudentProjectPost
     public AppUser OwnerUser { get; set; } = null!;
     public ICollection<StudentProjectPostTechnology> Technologies { get; set; } = new List<StudentProjectPostTechnology>();
     public ICollection<StudentProjectPostDepartment> Departments { get; set; } = new List<StudentProjectPostDepartment>();
+    public ICollection<StudentProjectPostApplication> Applications { get; set; } = new List<StudentProjectPostApplication>();
 
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
