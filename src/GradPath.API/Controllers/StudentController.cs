@@ -81,6 +81,36 @@ public class StudentController : ControllerBase
         return Ok(profile);
     }
 
+    [HttpGet("directory/options")]
+    public async Task<IActionResult> GetDirectoryOptions()
+    {
+        var options = await _studentService.GetDirectoryOptionsAsync();
+        return Ok(options);
+    }
+
+    [HttpGet("directory")]
+    public async Task<IActionResult> GetDirectory(
+        [FromQuery] string? query,
+        [FromQuery] int? departmentId,
+        [FromQuery] int? technologyId,
+        [FromQuery] decimal? minCgpa,
+        [FromQuery] bool honorOnly = false)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdString == null) return Unauthorized();
+
+        var userId = Guid.Parse(userIdString);
+        var directory = await _studentService.GetDirectoryAsync(
+            userId,
+            query,
+            departmentId,
+            technologyId,
+            minCgpa,
+            honorOnly);
+
+        return Ok(directory);
+    }
+
     [HttpPut("me")]
     public async Task<IActionResult> UpdateProfile(StudentProfileUpdateDto request)
     {

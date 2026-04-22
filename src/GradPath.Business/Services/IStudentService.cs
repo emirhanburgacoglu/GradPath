@@ -10,6 +10,14 @@ public interface IStudentService
     // Kullanıcı ID'sine göre öğrenci profilini ve temel kullanıcı bilgilerini getirir.
     Task<StudentProfileResponseDto?> GetProfileByUserIdAsync(Guid userId);
     Task<StudentPublicProfileDto?> GetPublicProfileByUserIdAsync(Guid userId);
+    Task<List<StudentDirectoryItemDto>> GetDirectoryAsync(
+        Guid viewerUserId,
+        string? query = null,
+        int? departmentId = null,
+        int? technologyId = null,
+        decimal? minCgpa = null,
+        bool honorOnly = false);
+    Task<StudentDirectoryOptionsDto> GetDirectoryOptionsAsync();
 
     // Transkript PDF'ini işler ve verileri otomatik çıkarır (AI tabanlı).
     Task<bool> ProcessTranscriptAsync(Guid userId, Stream pdfStream);

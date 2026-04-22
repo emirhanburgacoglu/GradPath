@@ -5,20 +5,20 @@ function StatsGrid({ stats }) {
     <section className="stats-grid">
       <article className="card stat-card">
         <div className="stat-card-top">
-          <span>Toplam Proje</span>
+          <span>Oneri Havuzu</span>
           <Target size={18} />
         </div>
         <strong>{stats.totalProjects}</strong>
-        <p>Şu an profilin için sıralanan öneri sayısı</p>
+        <p>Profiline gore siralanan guncel proje onerilerinin toplami.</p>
       </article>
 
       <article className="card stat-card">
         <div className="stat-card-top">
-          <span>En Yüksek Skor</span>
+          <span>En Yakin Eslesme</span>
           <BarChart3 size={18} />
         </div>
         <strong>%{stats.topScore}</strong>
-        <p>Listede görünen en güçlü eşleşme</p>
+        <p>Listede yer alan en guclu proje uyumunun ozet skoru.</p>
       </article>
 
       <article className="card stat-card">
@@ -27,16 +27,16 @@ function StatsGrid({ stats }) {
           <BrainCircuit size={18} />
         </div>
         <strong>%{stats.averageScore}</strong>
-        <p>Öneri havuzunun genel kalite seviyesi</p>
+        <p>Oneri havuzunun genel uyum seviyesini gosteren ortalama.</p>
       </article>
 
       <article className="card stat-card">
         <div className="stat-card-top">
-          <span>Eksik Yetkinlik</span>
+          <span>Gelisim Alani</span>
           <BadgeCheck size={18} />
         </div>
         <strong>{stats.uniqueMissingSkills}</strong>
-        <p>Geliştirirsen daha çok proje açılacak alan</p>
+        <p>Guclendirildiginde daha fazla projeyi acabilecek eksik yetkinlikler.</p>
       </article>
     </section>
   );

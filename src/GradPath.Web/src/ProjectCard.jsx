@@ -3,12 +3,12 @@ import { BrainCircuit, CheckCircle2, CircleDot, Layers3, Sparkles } from 'lucide
 const difficultyMap = {
   1: 'Uygun',
   2: 'Orta Seviye',
-  3: 'Zorlayıcı',
+  3: 'Zorlayici',
 };
 
 const ProjectCard = ({ project }) => {
   const score = Math.round(project.matchScore ?? 0);
-  const difficulty = difficultyMap[project.difficultyScore] ?? 'Değerlendiriliyor';
+  const difficulty = difficultyMap[project.difficultyScore] ?? 'Degerlendiriliyor';
 
   return (
     <article className="project-card">
@@ -16,7 +16,7 @@ const ProjectCard = ({ project }) => {
         <div className="project-card-heading">
           <div className="project-card-kicker">
             <Sparkles size={14} />
-            Akıllı Eşleşme
+            Uyum Analizi
           </div>
 
           <h3>{project.projectTitle}</h3>
@@ -40,7 +40,7 @@ const ProjectCard = ({ project }) => {
 
       <div className="project-skill-grid">
         <div className="project-skill-block">
-          <h4>Eşleşen Yetkinlikler</h4>
+          <h4>Eslesen Yetkinlikler</h4>
           <div className="project-tags">
             {project.matchedTechnologies?.length ? (
               project.matchedTechnologies.map((tech) => (
@@ -50,13 +50,13 @@ const ProjectCard = ({ project }) => {
                 </span>
               ))
             ) : (
-              <span className="project-empty-tag">Henüz eşleşen teknoloji yok</span>
+              <span className="project-empty-tag">Henuz eslesen teknoloji yok</span>
             )}
           </div>
         </div>
 
         <div className="project-skill-block">
-          <h4>Geliştirmen Gerekenler</h4>
+          <h4>Gelistirilecek Alanlar</h4>
           <div className="project-tags">
             {project.missingTechnologies?.length ? (
               project.missingTechnologies.map((tech) => (
@@ -66,7 +66,7 @@ const ProjectCard = ({ project }) => {
                 </span>
               ))
             ) : (
-              <span className="project-empty-tag">Eksik teknoloji görünmüyor</span>
+              <span className="project-empty-tag">Eksik teknoloji gorunmuyor</span>
             )}
           </div>
         </div>
@@ -75,13 +75,13 @@ const ProjectCard = ({ project }) => {
       <div className="project-ai-box">
         <div className="project-ai-title">
           <BrainCircuit size={16} />
-          AI Analizi
+          Analiz Notu
         </div>
 
         <p>
           {project.aiExplanation?.trim()
             ? project.aiExplanation
-            : 'Bu proje için AI açıklaması henüz üretilmedi. Yine de teknik eşleşme skoruna göre öneri listesinde yer alıyor.'}
+            : 'Bu proje icin analiz aciklamasi henuz uretilmedi. Teknik eslesme skoruna gore yine de oneriler arasinda yer aliyor.'}
         </p>
       </div>
     </article>

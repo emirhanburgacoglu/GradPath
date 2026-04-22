@@ -5,21 +5,23 @@ function RecommendationsSection({ loading, recommendations }) {
     <section className="projects-section">
       <div className="section-header">
         <div>
-          <h2 className="section-title">Eşleşen Projeler</h2>
-          <p className="section-note">Backend'den gelen gerçek öneriler burada listeleniyor.</p>
+          <h2 className="section-title">Proje Onerileri</h2>
+          <p className="section-note">
+            Sistem tarafindan hesaplanan uyum skorlarina gore listelenen aktif oneriler.
+          </p>
         </div>
       </div>
 
       {loading ? (
-        <div className="card loading-card">Veriler yükleniyor...</div>
+        <div className="card loading-card">Veriler yukleniyor...</div>
       ) : recommendations.length > 0 ? (
         recommendations.map((project, index) => (
           <ProjectCard key={`${project.projectId}-${index}`} project={project} />
         ))
       ) : (
         <div className="empty-state">
-          Henüz sana uygun proje bulunamadı. Profiline CGPA, yetenek ve CV bilgisi ekleyince bu
-          alan güçlenecek.
+          Henuz sana uygun proje bulunamadi. Profiline CGPA, yetenek ve CV bilgisi ekledikce bu
+          alan daha guclu hale gelir.
         </div>
       )}
     </section>

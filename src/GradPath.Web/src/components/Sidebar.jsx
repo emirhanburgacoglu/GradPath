@@ -1,4 +1,4 @@
-import { GraduationCap, LayoutDashboard, LogOut, Settings, User } from 'lucide-react';
+import { GraduationCap, LayoutDashboard, LogOut, Settings, User, Users } from 'lucide-react';
 
 function Sidebar({ currentView, initials, onLogout, onViewChange, profile }) {
   return (
@@ -6,12 +6,12 @@ function Sidebar({ currentView, initials, onLogout, onViewChange, profile }) {
       <div className="sidebar-brand">
         <div className="sidebar-brand-mark">GP</div>
         <div className="sidebar-brand-copy">
-          <span>Academic Intelligence</span>
+          <span>Project Intelligence Platform</span>
           <strong>GradPath</strong>
         </div>
       </div>
 
-      <div className="sidebar-section-label">Çalışma Alanı</div>
+      <div className="sidebar-section-label">Calisma Alani</div>
 
       <nav style={{ flex: 1 }}>
         <button
@@ -32,11 +32,19 @@ function Sidebar({ currentView, initials, onLogout, onViewChange, profile }) {
         </button>
         <button
           type="button"
+          className={`nav-item ${currentView === 'students' ? 'active' : ''}`}
+          onClick={() => onViewChange('students')}
+        >
+          <Users size={18} />
+          Ogrenci Dizini
+        </button>
+        <button
+          type="button"
           className={`nav-item ${currentView === 'posts' ? 'active' : ''}`}
           onClick={() => onViewChange('posts')}
         >
           <GraduationCap size={18} />
-          Ilanlar
+          Proje Ilanlari
         </button>
         <div className="nav-item nav-item-passive">
           <Settings size={18} />
@@ -47,14 +55,14 @@ function Sidebar({ currentView, initials, onLogout, onViewChange, profile }) {
       <div className="sidebar-profile">
         <div className="sidebar-avatar">{initials}</div>
         <div className="sidebar-profile-copy">
-          <strong>{profile?.fullName || 'GradPath Kullanıcısı'}</strong>
-          <span>{profile?.email || 'Oturum açık'}</span>
+          <strong>{profile?.fullName || 'GradPath kullanicisi'}</strong>
+          <span>{profile?.email || 'Aktif oturum'}</span>
         </div>
       </div>
 
       <button type="button" className="nav-item sidebar-logout" onClick={onLogout}>
         <LogOut size={18} />
-        Çıkış Yap
+        Cikis Yap
       </button>
     </aside>
   );

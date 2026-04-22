@@ -5,9 +5,9 @@ function DashboardHeader({ firstName, onRefresh, refreshing, loading, todayLabel
     <header className="dashboard-header">
       <div>
         <p className="dashboard-date">{todayLabel}</p>
-        <h1 className="dashboard-title">Akademik Uyum Panosu</h1>
+        <h1 className="dashboard-title">Proje ve Uyum Panosu</h1>
         <p className="dashboard-subtitle">
-          Hoş geldin {firstName}. Sistem profilini ve proje eşleşmelerini tek ekranda topladı.
+          Hos geldin {firstName}. Profil, ilan ve eslesme verilerin tek yonetim ekraninda hazir.
         </p>
       </div>
 

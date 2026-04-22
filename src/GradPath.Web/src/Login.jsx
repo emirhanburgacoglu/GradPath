@@ -16,7 +16,7 @@ const Login = ({ onLoginSuccess }) => {
       localStorage.setItem('token', response.data.token);
       onLoginSuccess();
     } catch {
-      setError('Giriş başarısız. E-posta veya şifreyi tekrar kontrol et.');
+      setError('Giris basarisiz. E-posta veya sifreyi tekrar kontrol et.');
     }
   };
 
@@ -26,33 +26,32 @@ const Login = ({ onLoginSuccess }) => {
         <div className="login-brand">
           <div className="login-brand-badge">GP</div>
           <div className="login-brand-text">
-            <span className="login-brand-kicker">Academic Intelligence</span>
+            <span className="login-brand-kicker">Project Intelligence Platform</span>
             <span className="login-brand-name">GradPath</span>
           </div>
         </div>
 
         <div className="login-copy">
-          <h1>Doğru projeyi, doğru öğrenciyle buluşturan ekran.</h1>
+          <h1>Akademik proje surecini tek merkezden yonetin.</h1>
           <p>
-            Akademik profilini, teknik becerilerini ve sistemin ürettiği eşleşmeleri tek merkezden
-            gör. GradPath, proje seçim sürecini sadece listelemek yerine yöneten bir deneyime
-            dönüştürür.
+            GradPath; ogrenci profili, proje ilanlari ve uyum analizlerini tek panelde birlestirir.
+            Karar alma surecini daha izlenebilir, daha olculebilir ve daha profesyonel hale getirir.
           </p>
 
           <div className="login-metrics">
             <div className="login-metric">
-              <strong>AI Destekli</strong>
-              <span>CV ve transkript verilerinden daha güçlü profil çıkarımı.</span>
+              <strong>Kurumsal gorunum</strong>
+              <span>Panel, kart ve veri alanlari daha net bir yonetim duzeni sunar.</span>
             </div>
 
             <div className="login-metric">
-              <strong>Skor Bazlı</strong>
-              <span>Projeler uyum puanı ve eksik yetenek analiziyle sıralanır.</span>
+              <strong>Veri temelli eslesme</strong>
+              <span>Projeler uyum skoru ve eksik yetkinlik bilgileriyle siralanir.</span>
             </div>
 
             <div className="login-metric">
-              <strong>Takım Odaklı</strong>
-              <span>Eksiklerini kapatacak ekip arkadaşı önerilerine hazır altyapı.</span>
+              <strong>Surec takibi</strong>
+              <span>Profil, ilan ve basvuru akislarini ayni panel uzerinden yonetirsin.</span>
             </div>
           </div>
         </div>
@@ -63,13 +62,13 @@ const Login = ({ onLoginSuccess }) => {
           <div className="login-card-top">
             <div className="login-pill">
               <Sparkles size={15} />
-              Öğrenci Girişi
+              Ogrenci Paneli
             </div>
 
-            <h2>Akademik paneline geri dön.</h2>
+            <h2>Kurumsal panele giris yapin.</h2>
             <p>
-              Hesabına giriş yaparak proje eşleşmelerini, profil özetini ve öneri motorunun
-              ürettiği sonuçları görüntüleyebilirsin.
+              Hesabina giris yaparak proje onerilerini, profil ozetini ve yonetim ekranindaki guncel
+              durum bilgisini goruntuleyebilirsin.
             </p>
           </div>
 
@@ -88,11 +87,11 @@ const Login = ({ onLoginSuccess }) => {
             </div>
 
             <div className="field-group">
-              <label className="field-label">Şifre</label>
+              <label className="field-label">Sifre</label>
               <input
                 type="password"
                 className="input-field"
-                placeholder="Şifrenizi girin"
+                placeholder="Sifrenizi girin"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
@@ -101,22 +100,22 @@ const Login = ({ onLoginSuccess }) => {
             <div className="helper-row">
               <span>
                 <ShieldCheck size={14} style={{ verticalAlign: 'text-bottom', marginRight: 6 }} />
-                JWT ile güvenli oturum
+                Guvenli oturum
               </span>
               <span>
                 <ChartSpline size={14} style={{ verticalAlign: 'text-bottom', marginRight: 6 }} />
-                Canlı eşleşme görünümü
+                Canli panel verisi
               </span>
             </div>
 
             <button type="submit" className="btn-primary">
-              Giriş Yap <ArrowRight size={18} style={{ marginLeft: 8, verticalAlign: 'middle' }} />
+              Giris Yap <ArrowRight size={18} style={{ marginLeft: 8, verticalAlign: 'middle' }} />
             </button>
           </div>
 
           <div className="demo-note">
-            <strong>Demo hesap:</strong> Form zaten test kullanıcı bilgileriyle dolu. İstersen
-            doğrudan giriş yapıp yeni tasarımı dashboard tarafında da kontrol edebilirsin.
+            <strong>Demo hesap:</strong> Form test kullanici bilgileriyle dolu geliyor. Istersen
+            dogrudan giris yapip yeni kurumsal arayuzu tum sayfalarda inceleyebilirsin.
           </div>
         </form>
       </section>

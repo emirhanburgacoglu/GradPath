@@ -1,9 +1,10 @@
-import { GraduationCap, LayoutDashboard, LogOut, Settings, User } from 'lucide-react';
+import { GraduationCap, LayoutDashboard, LogOut, Settings, User, Users } from 'lucide-react';
 
 const navItems = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
   { id: 'profile', label: 'Profilim', icon: User },
-  { id: 'posts', label: 'Ilanlar', icon: GraduationCap },
+  { id: 'students', label: 'Ogrenci Dizini', icon: Users },
+  { id: 'posts', label: 'Proje Ilanlari', icon: GraduationCap },
   { id: 'settings', label: 'Ayarlar', icon: Settings, passive: true },
 ];
 
@@ -14,7 +15,7 @@ function AppHeader({ currentView, initials, onLogout, onViewChange, profile }) {
         <div className="app-topbar-brand">
           <div className="app-topbar-brand-mark">GP</div>
           <div className="app-topbar-brand-copy">
-            <span>Academic Intelligence</span>
+            <span>Project Intelligence Platform</span>
             <strong>GradPath</strong>
           </div>
         </div>
@@ -50,14 +51,14 @@ function AppHeader({ currentView, initials, onLogout, onViewChange, profile }) {
           <div className="app-topbar-profile">
             <div className="app-topbar-avatar">{initials}</div>
             <div className="app-topbar-profile-copy">
-              <strong>{profile?.fullName || 'GradPath Kullanıcısı'}</strong>
-              <span>{profile?.email || 'Oturum açık'}</span>
+              <strong>{profile?.fullName || 'GradPath kullanicisi'}</strong>
+              <span>{profile?.email || 'Aktif oturum'}</span>
             </div>
           </div>
 
           <button type="button" className="ghost-button topbar-logout-button" onClick={onLogout}>
             <LogOut size={16} />
-            Çıkış Yap
+            Cikis Yap
           </button>
         </div>
       </div>

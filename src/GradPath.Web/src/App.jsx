@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import Login from './Login';
 import DashboardPage from './pages/DashboardPage';
 import ProfilePage from './pages/ProfilePage';
+import StudentDirectoryPage from './pages/StudentDirectoryPage';
 import StudentProjectPostsPage from './pages/StudentProjectPostsPage';
 import api from './api';
 import './index.css';
@@ -170,6 +171,18 @@ function App() {
   if (currentView === 'posts') {
     return (
       <StudentProjectPostsPage
+        currentView={currentView}
+        initials={initials}
+        onLogout={handleLogout}
+        onViewChange={setCurrentView}
+        profile={profile}
+      />
+    );
+  }
+
+  if (currentView === 'students') {
+    return (
+      <StudentDirectoryPage
         currentView={currentView}
         initials={initials}
         onLogout={handleLogout}

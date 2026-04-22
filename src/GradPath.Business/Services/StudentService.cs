@@ -201,6 +201,238 @@ public class StudentService : IStudentService
         };
     }
 
+    public async Task<List<StudentDirectoryItemDto>> GetDirectoryAsync(
+        Guid viewerUserId,
+        string? query = null,
+        int? departmentId = null,
+        int? technologyId = null,
+        decimal? minCgpa = null,
+        bool honorOnly = false)
+    {
+        var studentRoleId = await _context.Roles
+            .AsNoTracking()
+            .Where(role => role.Name == "Student")
+            .Select(role => role.Id)
+            .FirstOrDefaultAsync();
+
+        if (studentRoleId == Guid.Empty)
+        {
+            return new List<StudentDirectoryItemDto>();
+        }
+
+        var normalizedQuery = (query ?? string.Empty).Trim().ToLowerInvariant();
+        string? normalizedTechnologyName = null;
+
+        if (technologyId.HasValue && technologyId.Value > 0)
+        {
+            normalizedTechnologyName = await _context.Technologies
+                .AsNoTracking()
+                .Where(technology => technology.Id == technologyId.Value)
+                .Select(technology => technology.Name.ToLower())
+                .FirstOrDefaultAsync();
+
+            if (string.IsNullOrWhiteSpace(normalizedTechnologyName))
+            {
+                return new List<StudentDirectoryItemDto>();
+            }
+        }
+
+        var queryableUsers = _context.Users
+            .AsNoTracking()
+            .Where(user => user.Id != viewerUserId)
+            .Where(user => _context.UserRoles.Any(userRole =>
+                userRole.UserId == user.Id
+                && userRole.RoleId == studentRoleId));
+
+        if (departmentId.HasValue && departmentId.Value > 0)
+        {
+            queryableUsers = queryableUsers.Where(user => user.DepartmentId == departmentId.Value);
+        }
+
+        if (!string.IsNullOrWhiteSpace(normalizedTechnologyName))
+        {
+            queryableUsers = queryableUsers.Where(user =>
+                _context.StudentTechnologies.Any(studentTechnology =>
+                    studentTechnology.UserId == user.Id
+                    && studentTechnology.Technology.Name.ToLower() == normalizedTechnologyName));
+        }
+
+        if (minCgpa.HasValue)
+        {
+            queryableUsers = queryableUsers.Where(user =>
+                user.StudentProfile != null
+                && user.StudentProfile.CGPA.HasValue
+                && user.StudentProfile.CGPA.Value >= minCgpa.Value);
+        }
+
+        if (honorOnly)
+        {
+            queryableUsers = queryableUsers.Where(user =>
+                user.StudentProfile != null
+                && user.StudentProfile.IsHonorStudent);
+        }
+
+        if (!string.IsNullOrWhiteSpace(normalizedQuery))
+        {
+            queryableUsers = queryableUsers.Where(user =>
+                user.FullName.ToLower().Contains(normalizedQuery)
+                || (user.Department != null && (
+                    user.Department.Name.ToLower().Contains(normalizedQuery)
+                    || user.Department.Code.ToLower().Contains(normalizedQuery)
+                    || user.Department.FacultyName.ToLower().Contains(normalizedQuery)))
+                || _context.StudentTechnologies.Any(studentTechnology =>
+                    studentTechnology.UserId == user.Id
+                    && studentTechnology.Technology.Name.ToLower().Contains(normalizedQuery))
+                || _context.StudentDomainSignals.Any(signal =>
+                    signal.UserId == user.Id
+                    && signal.Name.ToLower().Contains(normalizedQuery))
+                || _context.StudentCvProjects.Any(project =>
+                    project.UserId == user.Id
+                    && project.Name.ToLower().Contains(normalizedQuery)));
+        }
+
+        var directoryRows = await queryableUsers
+            .OrderByDescending(user => user.StudentProfile != null && user.StudentProfile.IsHonorStudent)
+            .ThenByDescending(user => user.StudentProfile != null ? user.StudentProfile.CGPA : 0m)
+            .ThenBy(user => user.FullName)
+            .Select(user => new
+            {
+                user.Id,
+                user.FullName,
+                DepartmentName = user.Department != null ? user.Department.Name : string.Empty,
+                DepartmentCode = user.Department != null ? user.Department.Code : string.Empty,
+                FacultyName = user.Department != null ? user.Department.FacultyName : string.Empty,
+                CGPA = user.StudentProfile != null ? user.StudentProfile.CGPA : null,
+                TotalECTS = user.StudentProfile != null ? user.StudentProfile.TotalECTS : null,
+                IsHonorStudent = user.StudentProfile != null && user.StudentProfile.IsHonorStudent,
+                ParsedCvData = user.StudentProfile != null ? user.StudentProfile.ParsedCvData : null
+            })
+            .ToListAsync();
+
+        if (directoryRows.Count == 0)
+        {
+            return new List<StudentDirectoryItemDto>();
+        }
+
+        var userIds = directoryRows.Select(row => row.Id).ToList();
+
+        var rawSkills = await _context.StudentTechnologies
+            .AsNoTracking()
+            .Where(studentTechnology => userIds.Contains(studentTechnology.UserId))
+            .Select(studentTechnology => new
+            {
+                studentTechnology.UserId,
+                studentTechnology.TechnologyId,
+                TechnologyName = studentTechnology.Technology.Name,
+                studentTechnology.ProficiencyLevel
+            })
+            .ToListAsync();
+
+        var skillLookup = rawSkills
+            .GroupBy(skill => skill.UserId)
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .Where(skill => !string.IsNullOrWhiteSpace(skill.TechnologyName))
+                    .GroupBy(skill => NormalizeKey(skill.TechnologyName))
+                    .Select(skillGroup => skillGroup
+                        .OrderByDescending(skill => skill.ProficiencyLevel)
+                        .ThenBy(skill => skill.TechnologyId)
+                        .First())
+                    .OrderByDescending(skill => skill.ProficiencyLevel)
+                    .ThenBy(skill => skill.TechnologyName)
+                    .Select(skill => new StudentSkillDto
+                    {
+                        TechnologyId = skill.TechnologyId,
+                        TechnologyName = skill.TechnologyName,
+                        ProficiencyLevel = skill.ProficiencyLevel
+                    })
+                    .ToList());
+
+        var domainLookup = await _context.StudentDomainSignals
+            .AsNoTracking()
+            .Where(signal => userIds.Contains(signal.UserId))
+            .OrderBy(signal => signal.Name)
+            .Select(signal => new { signal.UserId, signal.Name })
+            .ToListAsync();
+
+        var groupedDomainSignals = domainLookup
+            .GroupBy(signal => signal.UserId)
+            .ToDictionary(
+                group => group.Key,
+                group => group
+                    .Select(signal => signal.Name)
+                    .Where(name => !string.IsNullOrWhiteSpace(name))
+                    .Distinct(StringComparer.OrdinalIgnoreCase)
+                    .Take(4)
+                    .ToList());
+
+        var projectCountLookup = await _context.StudentCvProjects
+            .AsNoTracking()
+            .Where(project => userIds.Contains(project.UserId))
+            .GroupBy(project => project.UserId)
+            .Select(group => new { UserId = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(item => item.UserId, item => item.Count);
+
+        var experienceCountLookup = await _context.StudentExperiences
+            .AsNoTracking()
+            .Where(experience => userIds.Contains(experience.UserId))
+            .GroupBy(experience => experience.UserId)
+            .Select(group => new { UserId = group.Key, Count = group.Count() })
+            .ToDictionaryAsync(item => item.UserId, item => item.Count);
+
+        return directoryRows.Select(row =>
+        {
+            var userSkills = skillLookup.TryGetValue(row.Id, out var skills)
+                ? skills
+                : new List<StudentSkillDto>();
+
+            var domainSignals = groupedDomainSignals.TryGetValue(row.Id, out var signals)
+                ? signals
+                : new List<string>();
+
+            return new StudentDirectoryItemDto
+            {
+                UserId = row.Id,
+                FullName = row.FullName,
+                DepartmentName = row.DepartmentName,
+                DepartmentCode = row.DepartmentCode,
+                FacultyName = row.FacultyName,
+                CGPA = row.CGPA,
+                TotalECTS = row.TotalECTS,
+                IsHonorStudent = row.IsHonorStudent,
+                CvSummary = ExtractCvSummary(row.ParsedCvData),
+                SkillCount = userSkills.Count,
+                ProjectCount = projectCountLookup.TryGetValue(row.Id, out var projectCount) ? projectCount : 0,
+                ExperienceCount = experienceCountLookup.TryGetValue(row.Id, out var experienceCount) ? experienceCount : 0,
+                Skills = userSkills.Take(6).ToList(),
+                DomainSignals = domainSignals
+            };
+        }).ToList();
+    }
+
+    public async Task<StudentDirectoryOptionsDto> GetDirectoryOptionsAsync()
+    {
+        var departments = await _context.Departments
+            .AsNoTracking()
+            .OrderBy(department => department.FacultyName)
+            .ThenBy(department => department.Name)
+            .Select(department => new DepartmentOptionDto
+            {
+                Id = department.Id,
+                Name = department.Name,
+                Code = department.Code,
+                FacultyName = department.FacultyName
+            })
+            .ToListAsync();
+
+        return new StudentDirectoryOptionsDto
+        {
+            Departments = departments,
+            Technologies = await GetAvailableTechnologiesAsync()
+        };
+    }
+
     public async Task<bool> UpdateProfileAsync(Guid userId, StudentProfileUpdateDto request)
     {
         var profile = await _context.StudentProfiles.FirstOrDefaultAsync(p => p.UserId == userId);

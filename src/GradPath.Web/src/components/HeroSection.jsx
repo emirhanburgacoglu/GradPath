@@ -6,14 +6,14 @@ function HeroSection({ cgpa, totalECTS, isHonorStudent, stats, initials, profile
       <div className="card dashboard-hero">
         <div className="hero-badge">
           <Sparkles size={15} />
-          Canlı öneri motoru
+          Karar destek paneli
         </div>
 
-        <h2>Proje seçimini sezgiyle değil, görünür verilerle yönet.</h2>
+        <h2>Proje secimini daha kurumsal ve olculebilir bir akisla yonet.</h2>
 
         <p>
-          CGPA, yetenekler ve AI analizini aynı akışta birleştiren paneldesin. Daha iyi eşleşmeler
-          için profilini güncel tut, sistem geri kalanını senin için sıralasın.
+          CGPA, yetenekler ve sistem analizini ayni yonetim panelinde goruyorsun. Profilini guncel
+          tuttukca proje onerileri daha net, daha guvenilir ve daha kullanilabilir hale gelir.
         </p>
 
         <div className="hero-chip-row">
@@ -33,7 +33,7 @@ function HeroSection({ cgpa, totalECTS, isHonorStudent, stats, initials, profile
           </div>
 
           <div className="hero-chip">
-            <span>Öneri</span>
+            <span>Oneriler</span>
             <strong>{stats.totalProjects}</strong>
           </div>
         </div>
@@ -44,7 +44,7 @@ function HeroSection({ cgpa, totalECTS, isHonorStudent, stats, initials, profile
           <div className="profile-avatar">{initials}</div>
 
           <div>
-            <div className="profile-panel-name">{profile?.fullName || 'Profil hazırlanıyor'}</div>
+            <div className="profile-panel-name">{profile?.fullName || 'Profil hazirlaniyor'}</div>
             <div className="profile-panel-mail">{profile?.email || 'E-posta bilgisi yok'}</div>
           </div>
         </div>
@@ -52,7 +52,7 @@ function HeroSection({ cgpa, totalECTS, isHonorStudent, stats, initials, profile
         <div className="profile-summary">
           <div className="profile-summary-title">
             <FileText size={15} />
-            CV Özeti
+            CV Ozeti
           </div>
           <p>{summaryText}</p>
         </div>
