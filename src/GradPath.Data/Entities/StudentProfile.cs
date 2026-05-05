@@ -1,7 +1,7 @@
 namespace GradPath.Data.Entities;
 
 /// <summary>
-/// Öğrencilerin CV ve transkript verilerini saklar.
+/// Öğrencilerin CV ve profil verilerini saklar.
 /// </summary>
 public class StudentProfile
 {
@@ -10,7 +10,6 @@ public class StudentProfile
 
     // Parse Edilmiş Veriler (JSON olarak saklanacak)
     public string ParsedCvData { get; set; } = "{}";           // CV'den çıkan JSON
-    public string ParsedTranscriptData { get; set; } = "{}";   // Transkriptten çıkan JSON
 
     // Özet Bilgiler (Hızlı erişim için ayrıca tutuyoruz)
     public decimal? CGPA { get; set; }                         // 3.26 gibi
@@ -19,9 +18,7 @@ public class StudentProfile
 
     // Dosya Bilgileri
     public string? CvFileName { get; set; }
-    public string? TranscriptFileName { get; set; }
     public DateTime? CvUploadedAt { get; set; }
-    public DateTime? TranscriptUploadedAt { get; set; }
 
     // Navigation Properties
     public AppUser User { get; set; } = null!;
@@ -30,3 +27,4 @@ public class StudentProfile
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
 }
+

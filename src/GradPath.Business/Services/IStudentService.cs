@@ -19,9 +19,6 @@ public interface IStudentService
         bool honorOnly = false);
     Task<StudentDirectoryOptionsDto> GetDirectoryOptionsAsync();
 
-    // Transkript PDF'ini işler ve verileri otomatik çıkarır (AI tabanlı).
-    Task<bool> ProcessTranscriptAsync(Guid userId, Stream pdfStream);
-
     // CV PDF'ini işler ve verileri otomatik çıkarır (AI tabanlı).
     Task<bool> ProcessCvAsync(Guid userId, Stream pdfStream);
 
@@ -30,10 +27,6 @@ public interface IStudentService
 
     // Yüklenen CV dosya adını veritabanına kaydeder.
     Task<bool> UpdateCvFileNameAsync(Guid userId, string fileName);
-
-    // Yüklenen Transkript dosya adını veritabanına kaydeder.
-    Task<bool> UpdateTranscriptFileNameAsync(Guid userId, string fileName);
-
 
     // Yetenek Yönetimi (Skills)
     Task<List<StudentSkillDto>> GetSkillsAsync(Guid userId);
@@ -68,3 +61,4 @@ public interface IStudentService
     Task<bool> RemoveDomainSignalAsync(Guid userId, Guid domainSignalId);
 
 }
+

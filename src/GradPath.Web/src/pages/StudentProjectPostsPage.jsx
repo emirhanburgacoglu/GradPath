@@ -1641,92 +1641,107 @@ function StudentProjectPostsPage({
 
     return (
       <article key={post.id} className="card post-card">
-        <div className="post-card-top">
-          <div className="post-card-copy">
-            <div className="post-card-kicker">
-              {myPostIdSet.has(post.id) ? 'Sana ait ilan' : 'Acik ekip ilani'}
-            </div>
-            <h3>{post.title}</h3>
-            <p>{post.description}</p>
-          </div>
-
-          <div className="post-card-side">
-            <span className={`post-status-pill ${statusTone}`}>{post.status}</span>
-            {isMineTab ? (
-              <div className="profile-item-actions">
-                <button
-                  type="button"
-                  className="ghost-button profile-inline-button"
-                  onClick={() => beginEdit(post)}
-                >
-                  <Pencil size={14} />
-                  Duzenle
-                </button>
-
-                <button
-                  type="button"
-                  className="ghost-button profile-inline-button profile-inline-button-danger"
-                  onClick={() => removePost(post.id)}
-                  disabled={deletingId === post.id}
-                >
-                  <Trash2 size={14} />
-                  {deletingId === post.id ? 'Siliniyor...' : 'Sil'}
-                </button>
-
-                <button
-                  type="button"
-                  className="ghost-button profile-inline-button"
-                  onClick={() => openApplicationManager(post)}
-                >
-                  <ClipboardList size={14} />
-                  Basvurulari yonet
-                </button>
+        <div className="post-card-hero">
+          <div className="post-card-top">
+            <div className="post-card-copy">
+              <div className="post-card-kicker">
+                {myPostIdSet.has(post.id) ? 'Sana ait ilan' : 'Acik ekip ilani'}
               </div>
-            ) : null}
+              <h3>{post.title}</h3>
+              <p>{post.description}</p>
+
+              <div className="post-card-labels">
+                <span className="project-meta-chip">{post.category || 'Kategori yok'}</span>
+                <span className="project-meta-chip subtle">{post.projectType || 'Proje tipi yok'}</span>
+              </div>
+            </div>
+
+            <div className="post-card-side">
+              <span className={`post-status-pill ${statusTone}`}>{post.status}</span>
+            </div>
+          </div>
+
+          <div className="post-overview-grid">
+            <div className="post-overview-card">
+              <span className="post-overview-title">
+                <Users size={14} />
+                Ekip yapisi
+              </span>
+              <strong>{post.teamSize} kisilik ekip</strong>
+              <p>{post.neededMemberCount} kisi araniyor, {post.availableMemberSlotCount || 0} acik slot var.</p>
+            </div>
+
+            <div className="post-overview-card">
+              <span className="post-overview-title">
+                <ClipboardList size={14} />
+                Basvuru durumu
+              </span>
+              <strong>{post.pendingApplicationCount || 0} bekleyen basvuru</strong>
+              <p>{post.acceptedApplicationCount || 0} kisi kabul edildi.</p>
+            </div>
+
+            <div className="post-overview-card">
+              <span className="post-overview-title">
+                <CalendarDays size={14} />
+                Takvim
+              </span>
+              <strong>{formatDateLabel(post.applicationDeadline)}</strong>
+              <p>Son basvuru tarihi.</p>
+            </div>
           </div>
         </div>
 
-        <div className="post-meta-row">
-          <span className="project-meta-chip">{post.category || 'Kategori yok'}</span>
-          <span className="project-meta-chip subtle">{post.projectType || 'Proje tipi yok'}</span>
-          <span className="project-meta-chip">
-            <Users size={14} />
-            Takim: {post.teamSize}
-          </span>
-          <span className="project-meta-chip">
-            <Layers3 size={14} />
-            Aranan: {post.neededMemberCount}
-          </span>
-          <span className="project-meta-chip">
-            <CalendarDays size={14} />
-            {formatDateLabel(post.applicationDeadline)}
-          </span>
-          <span className="project-meta-chip">
-            <ClipboardList size={14} />
-            Bekleyen: {post.pendingApplicationCount || 0}
-          </span>
-          <span className="project-meta-chip">
-            <BadgeCheck size={14} />
-            Kabul: {post.acceptedApplicationCount || 0}
-          </span>
-          <span className="project-meta-chip subtle">
-            Slot: {post.availableMemberSlotCount || 0}
-          </span>
-        </div>
+        <div className="post-card-detail-grid">
+          <div className="post-card-section post-card-detail-panel">
+            <div className="post-card-section-title">Bolumler</div>
+            <div className="project-tags">
+              {renderPostTags(post.departmentNames, 'Bolum secimi yok')}
+            </div>
+          </div>
 
-        <div className="post-card-section">
-          <div className="post-card-section-title">Bolumler</div>
-          <div className="project-tags">
-            {renderPostTags(post.departmentNames, 'Bolum secimi yok')}
+          <div className="post-card-section post-card-detail-panel">
+            <div className="post-card-section-title">Teknolojiler</div>
+            <div className="project-tags">
+              {renderPostTags(post.technologyNames, 'Teknoloji secimi yok')}
+            </div>
           </div>
         </div>
 
-        <div className="post-card-section">
-          <div className="post-card-section-title">Teknolojiler</div>
-          <div className="project-tags">
-            {renderPostTags(post.technologyNames, 'Teknoloji secimi yok')}
+        {isMineTab ? (
+          <div className="post-card-toolbar">
+            <div className="post-card-toolbar-title">Ilan islemleri</div>
+
+            <div className="post-card-owner-actions">
+              <button
+                type="button"
+                className="ghost-button profile-inline-button"
+                onClick={() => beginEdit(post)}
+              >
+                <Pencil size={14} />
+                Duzenle
+              </button>
+
+              <button
+                type="button"
+                className="ghost-button profile-inline-button"
+                onClick={() => openApplicationManager(post)}
+              >
+                <ClipboardList size={14} />
+                Basvurulari yonet
+              </button>
+
+              <button
+                type="button"
+                className="ghost-button profile-inline-button profile-inline-button-danger"
+                onClick={() => removePost(post.id)}
+                disabled={deletingId === post.id}
+              >
+                <Trash2 size={14} />
+                {deletingId === post.id ? 'Siliniyor...' : 'Sil'}
+              </button>
+            </div>
           </div>
-        </div>
+        ) : null}
 
         {!isMineTab ? (
           <div className="post-card-actions">
@@ -2265,8 +2280,48 @@ function StudentProjectPostsPage({
               ogrenci proje ilanlarini tek akista takip et.
             </p>
           </div>
+        </header>
 
-          <div className="dashboard-actions">
+        {actionError ? <div className="dashboard-alert">{actionError}</div> : null}
+        {actionMessage ? <div className="dashboard-alert dashboard-alert-success">{actionMessage}</div> : null}
+
+        <section className="posts-toolbar">
+          <div className="profile-tabs posts-toolbar-tabs">
+            <button
+              type="button"
+              className={`profile-tab ${activeTab === 'mine' ? 'active' : ''}`}
+              onClick={() => {
+                clearFeedback();
+                setActiveTab('mine');
+              }}
+            >
+              Ilanlarim ({myPosts.length})
+            </button>
+
+            <button
+              type="button"
+              className={`profile-tab ${activeTab === 'open' ? 'active' : ''}`}
+              onClick={() => {
+                clearFeedback();
+                setActiveTab('open');
+              }}
+            >
+              Acik Ilanlar ({openPosts.length})
+            </button>
+
+            <button
+              type="button"
+              className={`profile-tab ${activeTab === 'applications' ? 'active' : ''}`}
+              onClick={() => {
+                clearFeedback();
+                setActiveTab('applications');
+              }}
+            >
+              Basvurularim ({myApplications.length})
+            </button>
+          </div>
+
+          <div className="posts-toolbar-actions">
             <button
               className="ghost-button"
               type="button"
@@ -2282,10 +2337,7 @@ function StudentProjectPostsPage({
               Yeni Ilan
             </button>
           </div>
-        </header>
-
-        {actionError ? <div className="dashboard-alert">{actionError}</div> : null}
-        {actionMessage ? <div className="dashboard-alert dashboard-alert-success">{actionMessage}</div> : null}
+        </section>
 
         <section className="posts-stats-grid">
           <article className="card posts-stat-card">
@@ -2311,43 +2363,6 @@ function StudentProjectPostsPage({
             <strong className="posts-stat-value">{openPosts.length}</strong>
             <p className="posts-stat-copy">Tum ogrencilerin gorebildigi aktif ekip arayislari.</p>
           </article>
-        </section>
-
-        <section className="profile-tabs-shell">
-          <div className="profile-tabs">
-            <button
-              type="button"
-              className={`profile-tab ${activeTab === 'mine' ? 'active' : ''}`}
-              onClick={() => {
-                clearFeedback();
-                setActiveTab('mine');
-              }}
-            >
-              Ilanlarim
-            </button>
-
-            <button
-              type="button"
-              className={`profile-tab ${activeTab === 'open' ? 'active' : ''}`}
-              onClick={() => {
-                clearFeedback();
-                setActiveTab('open');
-              }}
-            >
-              Acik Ilanlar
-            </button>
-
-            <button
-              type="button"
-              className={`profile-tab ${activeTab === 'applications' ? 'active' : ''}`}
-              onClick={() => {
-                clearFeedback();
-                setActiveTab('applications');
-              }}
-            >
-              Basvurularim
-            </button>
-          </div>
         </section>
 
         {activeTab === 'mine'

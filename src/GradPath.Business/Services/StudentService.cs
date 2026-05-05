@@ -27,99 +27,6 @@ public class StudentService : IStudentService
         _webHostEnvironment = webHostEnvironment;
     }
 
-    public async Task<bool> ProcessTranscriptAsync(Guid userId, Stream pdfStream)
-    {
-        var rawText = await _pdfService.ExtractTextFromPdfAsync(pdfStream);
-        if (string.IsNullOrWhiteSpace(rawText))
-        {
-            return false;
-        }
-
-        var prompt = $@"Asagidaki transkript metninden su bilgileri cikar ve SADECE JSON formatinda don.
-        JSON yapisi tam olarak soyle olmali:
-        {{
-            ""CGPA"": 3.50,
-            ""TotalECTS"": 180,
-            ""Technologies"": [""C#"", ""React"", ""SQL""]
-        }}
-
-        Eger bir veri bulunamazsa CGPA icin 0, ECTS icin 0, Technologies icin bos liste dondur.
-
-        Transkript Metni:
-        {rawText}";
-
-        var aiResponse = await _groqApiService.GetJsonExtractionAsync(
-            "Sen bir akademik veri analiz asistanÄ±sÄ±n. Sadece saf JSON formatÄ±nda cevap verirsin. JSON dÄ±ÅŸÄ±nda aÃ§Ä±klama veya not yazma.",
-            prompt);
-
-        try
-        {
-            var cleanJson = aiResponse.Replace("```json", "").Replace("```", "").Trim();
-
-            using var doc = JsonDocument.Parse(cleanJson);
-            var root = doc.RootElement;
-
-            var profile = await _context.StudentProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
-            if (profile == null)
-            {
-                return false;
-            }
-
-            if (root.TryGetProperty("CGPA", out var cgpaProp))
-            {
-                profile.CGPA = cgpaProp.GetDecimal();
-            }
-
-            if (root.TryGetProperty("TotalECTS", out var ectsProp))
-            {
-                profile.TotalECTS = ectsProp.GetInt32();
-            }
-
-            profile.UpdatedAt = DateTime.UtcNow;
-            profile.IsHonorStudent = profile.CGPA >= 3.0m;
-
-            if (root.TryGetProperty("Technologies", out var technologiesProp))
-            {
-                var canonicalTechnologyMap = await GetCanonicalTechnologyMapAsync();
-
-                foreach (var technologyValue in technologiesProp.EnumerateArray())
-                {
-                    var technologyName = technologyValue.GetString();
-                    if (string.IsNullOrWhiteSpace(technologyName))
-                    {
-                        continue;
-                    }
-
-                    if (!canonicalTechnologyMap.TryGetValue(technologyName.Trim().ToLowerInvariant(), out var technology))
-                    {
-                        continue;
-                    }
-
-                    var exists = await _context.StudentTechnologies
-                        .AnyAsync(st => st.UserId == userId && st.TechnologyId == technology.Id);
-
-                    if (!exists)
-                    {
-                        _context.StudentTechnologies.Add(new StudentTechnology
-                        {
-                            UserId = userId,
-                            TechnologyId = technology.Id,
-                            ProficiencyLevel = 2
-                        });
-                    }
-                }
-            }
-
-            await _context.SaveChangesAsync();
-        }
-        catch
-        {
-            return false;
-        }
-
-        return true;
-    }
-
     public async Task<StudentProfileResponseDto?> GetProfileByUserIdAsync(Guid userId)
     {
         var profile = await _context.StudentProfiles
@@ -160,7 +67,6 @@ public class StudentService : IStudentService
             TotalECTS = profile.TotalECTS,
             IsHonorStudent = profile.IsHonorStudent,
             CvFileName = profile.CvFileName,
-            TranscriptFileName = profile.TranscriptFileName,
             CvSummary = cvSummary,
             CvAnalysisJson = cvAnalysisJson
         };
@@ -464,22 +370,6 @@ public class StudentService : IStudentService
         await _context.SaveChangesAsync();
         return true;
     }
-
-    public async Task<bool> UpdateTranscriptFileNameAsync(Guid userId, string fileName)
-    {
-        var profile = await _context.StudentProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
-        if (profile == null)
-        {
-            return false;
-        }
-
-        profile.TranscriptFileName = fileName;
-        profile.UpdatedAt = DateTime.UtcNow;
-
-        await _context.SaveChangesAsync();
-        return true;
-    }
-
     public async Task<List<StudentSkillDto>> GetSkillsAsync(Guid userId)
     {
         var rawSkills = await _context.StudentTechnologies
@@ -1376,48 +1266,56 @@ public class StudentService : IStudentService
         {
             return null;
         }
+        var fallbackAnalysis = CvAnalysisBuilder.Build(layoutDocument);
+        var fallbackJson = JsonSerializer.Serialize(fallbackAnalysis);
 
-        var systemPrompt = @"Sen bir insan kaynaklarÄ± veri Ã§Ä±karma asistanÄ±sÄ±n. GÃ¶revin, verilen CV metnini analiz edip aÅŸaÄŸÄ±daki JSON ÅŸemasÄ±na TÄ°TÄ°ZLÄ°KLE uygun ÅŸekilde veri Ã§Ä±karmaktÄ±r. SADECE JSON formatÄ±nda cevap ver, fazladan bir ÅŸey yazma. EÄŸer bir alan bulunamazsa boÅŸ bÄ±rak: string iÃ§in """", liste iÃ§in [].
-JSON ÅžemasÄ±:
+        var systemPrompt = @"Sen bir insan kaynaklarý veri çýkarma asistanýsýn. Görevin, verilen CV metnini analiz edip aþaðýdaki JSON þemasýna TITIZLIKLE uygun þekilde veri çýkarmaktýr. SADECE JSON formatýnda cevap ver, fazladan bir þey yazma. Eðer bir alan bulunamazsa boþ býrak: string için """", liste için [].
+JSON Þemasý:
 {
-  ""RawSummary"": ""TÃ¼m CV'nin kÄ±saca Ã¶zeti (1-2 paragraf)"",
-  ""NormalizedSummary"": ""Kariyer ve profil hakkÄ±nda temiz, dÃ¼zgÃ¼n bir Ã¶zet"",
+  ""RawSummary"": ""Tüm CV'nin kýsaca özeti (1-2 paragraf)"",
+  ""NormalizedSummary"": ""Kariyer ve profil hakkýnda temiz, düzgün bir özet"",
   ""SkillsByCategory"": [
-    { ""CategoryName"": ""Ã–rn: Programming Languages"", ""Skills"": [""C#"", ""Java""] }
+    { ""CategoryName"": ""Örn: Programming Languages"", ""Skills"": [""C#"", ""Java""] }
   ],
   ""Projects"": [
-    { ""Name"": ""Proje adÄ±"", ""Description"": ""AÃ§Ä±klamasÄ±"", ""Technologies"": [""KullanÄ±lan Teknolojiler""], ""Role"": ""KiÅŸinin RolÃ¼"", ""Domain"": ""Alan (Ã–rn: Web, AI)"", ""IsTeamProject"": true/false }
+    { ""Name"": ""Proje adý"", ""Description"": ""Açýklamasý"", ""Technologies"": [""Kullanýlan Teknolojiler""], ""Role"": ""Kiþinin Rolü"", ""Domain"": ""Alan (Örn: Web, AI)"", ""IsTeamProject"": true/false }
   ],
   ""Experiences"": [
-    { ""CompanyName"": ""Åžirket"", ""Position"": ""Pozisyon"", ""StartDateText"": ""BaÅŸlangÄ±Ã§"", ""EndDateText"": ""BitiÅŸ"", ""Description"": ""AÃ§Ä±klama"", ""Technologies"": [""Teknolojiler""] }
+    { ""CompanyName"": ""Þirket"", ""Position"": ""Pozisyon"", ""StartDateText"": ""Baþlangýç"", ""EndDateText"": ""Bitiþ"", ""Description"": ""Açýklama"", ""Technologies"": [""Teknolojiler""] }
   ],
   ""Education"": [
-    { ""SchoolName"": ""Ãœniversite/Okul"", ""Department"": ""BÃ¶lÃ¼m"", ""Degree"": ""Derece (Ã–rn: Lisans)"", ""StartDateText"": ""BaÅŸlangÄ±Ã§"", ""EndDateText"": ""BitiÅŸ"" }
+    { ""SchoolName"": ""Üniversite/Okul"", ""Department"": ""Bölüm"", ""Degree"": ""Derece (Örn: Lisans)"", ""StartDateText"": ""Baþlangýç"", ""EndDateText"": ""Bitiþ"" }
   ],
-  ""DomainSignals"": [""YazÄ±lÄ±mcÄ±nÄ±n Ã¶ne Ã§Ä±ktÄ±ÄŸÄ± 1-2 teknik alan, Ã¶rn: Backend, Frontend, Cloud""]
+  ""DomainSignals"": [""Yazýlýmcýnýn öne çýktýðý 1-2 teknik alan, örn: Backend, Frontend, Cloud""]
 }";
 
-        var userPrompt = $"CV Metni:\n{normalizedText}";
+        var userPrompt = $"CV Metni:`n{normalizedText}";
 
         var jsonStr = await _groqApiService.GetJsonExtractionAsync(systemPrompt, userPrompt);
         if (string.IsNullOrWhiteSpace(jsonStr) || jsonStr == "{}")
         {
-            // KullanÄ±lamaz bir cevap dÃ¶ndÃ¼yse bile en azÄ±ndan boÅŸ ÅŸema dÃ¶nelim 
-            var emptyAnalysis = new CvAnalysisResultDto();
-            return JsonSerializer.Serialize(emptyAnalysis);
+            return fallbackJson;
         }
 
         try
         {
-            // Validasyon: DoÄŸru JSON yapÄ±sÄ±nda olup olmadÄ±ÄŸÄ± kontrol edilir
-            var testParse = JsonSerializer.Deserialize<CvAnalysisResultDto>(jsonStr, new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+            var parsedAnalysis = JsonSerializer.Deserialize<CvAnalysisResultDto>(
+                jsonStr,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+            if (!HasMeaningfulCvAnalysis(parsedAnalysis))
+            {
+                return fallbackJson;
+            }
+
             return jsonStr;
         }
         catch (JsonException)
         {
-            // Fallback (kurtarma) durumu: Eski manuel parse edici
-            var analysis = CvAnalysisBuilder.Build(normalizedText);
-            return JsonSerializer.Serialize(analysis);
+            return fallbackJson;
         }
     }
     private async Task SyncCvAnalysisToDatabaseAsync(Guid userId, CvAnalysisResultDto analysis)
@@ -1766,4 +1664,40 @@ JSON ÅžemasÄ±:
             return false;
         }
     }
+
+    private static bool HasMeaningfulCvAnalysis(CvAnalysisResultDto? analysis)
+    {
+        if (analysis == null)
+        {
+            return false;
+        }
+
+        if (!string.IsNullOrWhiteSpace(analysis.NormalizedSummary))
+        {
+            return true;
+        }
+
+        if ((analysis.SkillsByCategory?.Sum(category => category.Skills?.Count ?? 0) ?? 0) > 0)
+        {
+            return true;
+        }
+
+        if ((analysis.Projects?.Count ?? 0) > 0)
+        {
+            return true;
+        }
+
+        if ((analysis.Experiences?.Count ?? 0) > 0)
+        {
+            return true;
+        }
+
+        if ((analysis.Education?.Count ?? 0) > 0)
+        {
+            return true;
+        }
+
+        return (analysis.DomainSignals?.Count ?? 0) > 0;
+    }
 }
+

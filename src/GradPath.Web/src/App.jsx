@@ -55,6 +55,36 @@ function App() {
     setError('');
   };
 
+  const loadProfileOnly = async (silent = false) => {
+    if (silent) {
+      setRefreshing(true);
+    } else {
+      setLoading(true);
+    }
+
+    setError('');
+
+    try {
+      const profileResult = await api.get('/student/me');
+      setProfile(profileResult.data);
+    } catch (profileError) {
+      setProfile(null);
+
+      if (profileError?.response?.status === 401) {
+        handleLogout();
+        return;
+      }
+
+      setError('Profil verileri su an alinamiyor.');
+    } finally {
+      if (silent) {
+        setRefreshing(false);
+      } else {
+        setLoading(false);
+      }
+    }
+  };
+
   const loadDashboard = async (silent = false) => {
     if (silent) {
       setRefreshing(true);
@@ -151,17 +181,17 @@ function App() {
 
   if (currentView === 'profile') {
     return (
-      <ProfilePage
+        <ProfilePage
         cgpa={cgpa}
         currentView={currentView}
         error={error}
         initials={initials}
-        isHonorStudent={isHonorStudent}
-        onLogout={handleLogout}
-        onRefresh={() => loadDashboard(true)}
-        onViewChange={setCurrentView}
-        profile={profile}
-        refreshing={refreshing}
+          isHonorStudent={isHonorStudent}
+          onLogout={handleLogout}
+          onRefresh={() => loadProfileOnly(true)}
+          onViewChange={setCurrentView}
+          profile={profile}
+          refreshing={refreshing}
         summaryText={summaryText}
         totalECTS={totalECTS}
       />

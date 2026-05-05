@@ -11,7 +11,8 @@ public interface IFileUploadService
     /// Verilen dosyayı sunucudaki belirtilen klasöre kaydeder.
     /// </summary>
     /// <param name="file">Yüklenecek dosya (Web'den gelen IFormFile)</param>
-    /// <param name="folderName">Kaydedileceği klasör adı (Örn: "cvs", "transcripts")</param>
+    /// <param name="folderName">Kaydedileceği klasör adı (Örn: "cvs")</param>
     /// <returns>Sistemin oluşturduğu benzersiz dosya adını döner.</returns>
     Task<string> UploadFileAsync(IFormFile file, string folderName);
 }
+

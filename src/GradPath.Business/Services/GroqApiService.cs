@@ -52,9 +52,9 @@ public class GroqApiService : IGroqApiService
                 .GetProperty("content")
                 .GetString() ?? "Açıklama oluşturulamadı.";
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            return $"AI Analizi şu an yapılamıyor: {ex.Message}";
+            return string.Empty;
         }
     }
 
@@ -99,3 +99,4 @@ public class GroqApiService : IGroqApiService
         }
     }
 }
+

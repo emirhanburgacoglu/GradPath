@@ -1,10 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Award,
-  Briefcase,
-  Building2,
-  FolderKanban,
-  GraduationCap,
   RefreshCw,
   Search,
   SlidersHorizontal,
@@ -139,6 +135,38 @@ function StudentDirectoryPage({
       uniqueDomainSignals,
     };
   }, [students]);
+
+  const activeFilterChips = useMemo(() => {
+    const chips = [];
+    const selectedDepartment = directoryOptions.departments.find(
+      (department) => String(department.id) === String(filters.departmentId)
+    );
+    const selectedTechnology = directoryOptions.technologies.find(
+      (technology) => String(technology.id) === String(filters.technologyId)
+    );
+
+    if (filters.query.trim()) {
+      chips.push({ key: 'query', label: `Arama: ${filters.query.trim()}` });
+    }
+
+    if (selectedDepartment) {
+      chips.push({ key: 'department', label: `Bolum: ${selectedDepartment.name}` });
+    }
+
+    if (selectedTechnology) {
+      chips.push({ key: 'technology', label: `Teknoloji: ${selectedTechnology.name}` });
+    }
+
+    if (filters.minCgpa) {
+      chips.push({ key: 'cgpa', label: `Min GPA: ${filters.minCgpa}` });
+    }
+
+    if (filters.honorOnly) {
+      chips.push({ key: 'honor', label: 'Sadece onur ogrencileri' });
+    }
+
+    return chips;
+  }, [directoryOptions.departments, directoryOptions.technologies, filters]);
 
   const closeStudentProfile = () => {
     setSelectedStudentUserId('');
@@ -321,7 +349,7 @@ function StudentDirectoryPage({
                         selectedStudentProfile.departmentCode,
                       ]
                         .filter(Boolean)
-                        .join(' • ') || 'Bolum bilgisi yok'}
+                        .join(' - ') || 'Bolum bilgisi yok'}
                     </span>
                     {selectedStudentProfile.facultyName ? (
                       <span>{selectedStudentProfile.facultyName}</span>
@@ -389,7 +417,7 @@ function StudentDirectoryPage({
                           >
                             <strong>{education.schoolName || 'Okul bilgisi yok'}</strong>
                             <span>
-                              {[education.department, education.degree].filter(Boolean).join(' • ')}
+                              {[education.department, education.degree].filter(Boolean).join(' - ')}
                             </span>
                             <small>
                               {getDateRange(education.startDateText, education.endDateText) || 'Tarih bilgisi yok'}
@@ -445,7 +473,7 @@ function StudentDirectoryPage({
                           >
                             <strong>{project.name || 'Proje kaydi'}</strong>
                             <span>
-                              {[project.role, project.domain].filter(Boolean).join(' • ') || 'Rol veya domain belirtilmemis'}
+                              {[project.role, project.domain].filter(Boolean).join(' - ') || 'Rol veya domain belirtilmemis'}
                             </span>
                             {project.description ? <p>{project.description}</p> : null}
                             <small>{project.isTeamProject ? 'Takim projesi' : 'Bireysel proje'}</small>
@@ -552,98 +580,112 @@ function StudentDirectoryPage({
             </div>
 
             <form className="profile-form" onSubmit={submitFilters}>
-              <div className="student-directory-filter-grid">
-                <label className="profile-form-field student-directory-filter-search">
-                  <span className="field-label">Arama</span>
-                  <div className="post-search-shell">
-                    <Search size={16} />
-                    <input
-                      className="input-field post-search-input"
-                      value={filters.query}
-                      onChange={(event) =>
-                        setFilters((current) => ({ ...current, query: event.target.value }))
-                      }
-                      placeholder="Isim, bolum, teknoloji veya alan ara"
-                    />
+              <div className="student-directory-filter-shell">
+                <div className="student-directory-filter-primary">
+                  <label className="profile-form-field student-directory-filter-search">
+                    <span className="field-label">Arama</span>
+                    <div className="post-search-shell">
+                      <Search size={16} />
+                      <input
+                        className="input-field post-search-input"
+                        value={filters.query}
+                        onChange={(event) =>
+                          setFilters((current) => ({ ...current, query: event.target.value }))
+                        }
+                        placeholder="Isim, bolum, teknoloji veya alan ara"
+                      />
+                    </div>
+                  </label>
+
+                  <div className="student-directory-filter-actions">
+                    <button type="submit" className="btn-primary profile-submit-button" disabled={refreshing}>
+                      {refreshing ? 'Filtreleniyor...' : 'Sonuclari Goster'}
+                    </button>
+
+                    <button type="button" className="ghost-button profile-inline-button" onClick={clearFilters}>
+                      Filtreleri Temizle
+                    </button>
                   </div>
-                </label>
+                </div>
 
-                <label className="profile-form-field">
-                  <span className="field-label">Bolum</span>
-                  <select
-                    className="input-field"
-                    value={filters.departmentId}
-                    onChange={(event) =>
-                      setFilters((current) => ({ ...current, departmentId: event.target.value }))
-                    }
-                  >
-                    <option value="">Tum bolumler</option>
-                    {directoryOptions.departments.map((department) => (
-                      <option key={department.id} value={department.id}>
-                        {department.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="profile-form-field">
-                  <span className="field-label">Teknoloji</span>
-                  <select
-                    className="input-field"
-                    value={filters.technologyId}
-                    onChange={(event) =>
-                      setFilters((current) => ({ ...current, technologyId: event.target.value }))
-                    }
-                  >
-                    <option value="">Tum teknolojiler</option>
-                    {directoryOptions.technologies.map((technology) => (
-                      <option key={technology.id} value={technology.id}>
-                        {technology.name}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-
-                <label className="profile-form-field">
-                  <span className="field-label">Minimum GPA</span>
-                  <input
-                    type="number"
-                    min="0"
-                    max="4"
-                    step="0.1"
-                    className="input-field"
-                    value={filters.minCgpa}
-                    onChange={(event) =>
-                      setFilters((current) => ({ ...current, minCgpa: event.target.value }))
-                    }
-                    placeholder="Orn. 3.0"
-                  />
-                </label>
-
-                <label className="profile-form-field student-directory-filter-checkbox">
-                  <span className="field-label">Akademik durum</span>
-                  <div className="profile-checkbox-wrap">
-                    <input
-                      type="checkbox"
-                      checked={filters.honorOnly}
+                <div className="student-directory-filter-grid">
+                  <label className="profile-form-field">
+                    <span className="field-label">Bolum</span>
+                    <select
+                      className="input-field"
+                      value={filters.departmentId}
                       onChange={(event) =>
-                        setFilters((current) => ({ ...current, honorOnly: event.target.checked }))
+                        setFilters((current) => ({ ...current, departmentId: event.target.value }))
                       }
+                    >
+                      <option value="">Tum bolumler</option>
+                      {directoryOptions.departments.map((department) => (
+                        <option key={department.id} value={department.id}>
+                          {department.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="profile-form-field">
+                    <span className="field-label">Teknoloji</span>
+                    <select
+                      className="input-field"
+                      value={filters.technologyId}
+                      onChange={(event) =>
+                        setFilters((current) => ({ ...current, technologyId: event.target.value }))
+                      }
+                    >
+                      <option value="">Tum teknolojiler</option>
+                      {directoryOptions.technologies.map((technology) => (
+                        <option key={technology.id} value={technology.id}>
+                          {technology.name}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+
+                  <label className="profile-form-field">
+                    <span className="field-label">Minimum GPA</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="4"
+                      step="0.1"
+                      className="input-field"
+                      value={filters.minCgpa}
+                      onChange={(event) =>
+                        setFilters((current) => ({ ...current, minCgpa: event.target.value }))
+                      }
+                      placeholder="Orn. 3.0"
                     />
-                    <span>Sadece onur ogrencilerini goster</span>
-                  </div>
-                </label>
+                  </label>
+
+                  <label className="profile-form-field student-directory-filter-checkbox">
+                    <span className="field-label">Akademik durum</span>
+                    <div className="profile-checkbox-wrap">
+                      <input
+                        type="checkbox"
+                        checked={filters.honorOnly}
+                        onChange={(event) =>
+                          setFilters((current) => ({ ...current, honorOnly: event.target.checked }))
+                        }
+                      />
+                      <span>Sadece onur ogrencilerini goster</span>
+                    </div>
+                  </label>
+                </div>
               </div>
 
-              <div className="profile-form-actions">
-                <button type="submit" className="btn-primary profile-submit-button" disabled={refreshing}>
-                  {refreshing ? 'Filtreleniyor...' : 'Filtreleri Uygula'}
-                </button>
-
-                <button type="button" className="ghost-button profile-inline-button" onClick={clearFilters}>
-                  Filtreleri Temizle
-                </button>
-              </div>
+              {activeFilterChips.length ? (
+                <div className="student-directory-active-filters">
+                  {activeFilterChips.map((chip) => (
+                    <span key={chip.key} className="student-directory-active-filter-chip">
+                      {chip.label}
+                    </span>
+                  ))}
+                </div>
+              ) : null}
             </form>
           </article>
         </section>
@@ -664,40 +706,57 @@ function StudentDirectoryPage({
                       <div className="student-directory-card-copy">
                         <strong>{student.fullName}</strong>
                         <span>
-                          {[student.departmentName, student.departmentCode].filter(Boolean).join(' • ') || 'Bolum bilgisi yok'}
+                          {[student.departmentName, student.departmentCode].filter(Boolean).join(' - ') || 'Bolum bilgisi yok'}
                         </span>
                         {student.facultyName ? <small>{student.facultyName}</small> : null}
                       </div>
                     </div>
 
-                    <div className="student-directory-card-metrics">
-                      <span className="project-meta-chip">GPA: {student.cgpa ?? '-'}</span>
-                      {student.isHonorStudent ? (
-                        <span className="post-status-pill open">
-                          <Award size={14} />
-                          Onur
-                        </span>
-                      ) : null}
+                    <div className="student-directory-card-aside">
+                      <div className="student-directory-card-metrics">
+                        <span className="project-meta-chip">GPA: {student.cgpa ?? '-'}</span>
+                        {student.isHonorStudent ? (
+                          <span className="post-status-pill open">
+                            <Award size={14} />
+                            Onur
+                          </span>
+                        ) : null}
+                      </div>
+
+                      <div className="student-directory-card-actions">
+                        <button
+                          type="button"
+                          className="ghost-button profile-inline-button"
+                          onClick={() => openStudentProfile(student.userId)}
+                          disabled={isProfileLoading}
+                        >
+                          <Sparkles size={15} />
+                          {isProfileLoading ? 'Profil yukleniyor...' : 'Profili incele'}
+                        </button>
+                      </div>
                     </div>
                   </div>
 
-                  <div className="post-meta-row">
-                    <span className="project-meta-chip">
-                      <Users size={14} />
-                      Yetenek: {student.skillCount}
-                    </span>
-                    <span className="project-meta-chip">
-                      <FolderKanban size={14} />
-                      Proje: {student.projectCount}
-                    </span>
-                    <span className="project-meta-chip">
-                      <Briefcase size={14} />
-                      Deneyim: {student.experienceCount}
-                    </span>
-                    <span className="project-meta-chip subtle">
-                      <GraduationCap size={14} />
-                      AKTS: {student.totalECTS ?? '-'}
-                    </span>
+                  <div className="student-directory-overview-grid">
+                    <div className="student-directory-overview-card">
+                      <span>Yetenek</span>
+                      <strong>{student.skillCount}</strong>
+                    </div>
+
+                    <div className="student-directory-overview-card">
+                      <span>Proje</span>
+                      <strong>{student.projectCount}</strong>
+                    </div>
+
+                    <div className="student-directory-overview-card">
+                      <span>Deneyim</span>
+                      <strong>{student.experienceCount}</strong>
+                    </div>
+
+                    <div className="student-directory-overview-card">
+                      <span>AKTS</span>
+                      <strong>{student.totalECTS ?? '-'}</strong>
+                    </div>
                   </div>
 
                   {student.cvSummary ? (
@@ -710,49 +769,39 @@ function StudentDirectoryPage({
                     </p>
                   )}
 
-                  <div className="post-card-section">
-                    <div className="post-card-section-title">One cikan yetenekler</div>
-                    <div className="project-tags">
-                      {student.skills?.length ? (
-                        student.skills.map((skill) => (
-                          <span
-                            key={`${student.userId}-${skill.technologyId}-${skill.proficiencyLevel}`}
-                            className="tech-tag matched"
-                          >
-                            {skill.technologyName} • {getProficiencyLabel(skill.proficiencyLevel)}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="project-empty-tag">Kayitli yetenek yok</span>
-                      )}
+                  <div className="student-directory-detail-grid">
+                    <div className="post-card-section">
+                      <div className="post-card-section-title">One cikan yetenekler</div>
+                      <div className="project-tags">
+                        {student.skills?.length ? (
+                          student.skills.map((skill) => (
+                            <span
+                              key={`${student.userId}-${skill.technologyId}-${skill.proficiencyLevel}`}
+                              className="tech-tag matched"
+                            >
+                              {skill.technologyName} - {getProficiencyLabel(skill.proficiencyLevel)}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="project-empty-tag">Kayitli yetenek yok</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
 
-                  <div className="post-card-section">
-                    <div className="post-card-section-title">Ilgi alanlari</div>
-                    <div className="project-tags">
-                      {student.domainSignals?.length ? (
-                        student.domainSignals.map((signal) => (
-                          <span key={`${student.userId}-${signal}`} className="tech-tag">
-                            {signal}
-                          </span>
-                        ))
-                      ) : (
-                        <span className="project-empty-tag">Alan bilgisi yok</span>
-                      )}
+                    <div className="post-card-section">
+                      <div className="post-card-section-title">Ilgi alanlari</div>
+                      <div className="project-tags">
+                        {student.domainSignals?.length ? (
+                          student.domainSignals.map((signal) => (
+                            <span key={`${student.userId}-${signal}`} className="tech-tag">
+                              {signal}
+                            </span>
+                          ))
+                        ) : (
+                          <span className="project-empty-tag">Alan bilgisi yok</span>
+                        )}
+                      </div>
                     </div>
-                  </div>
-
-                  <div className="student-directory-card-actions">
-                    <button
-                      type="button"
-                      className="ghost-button profile-inline-button"
-                      onClick={() => openStudentProfile(student.userId)}
-                      disabled={isProfileLoading}
-                    >
-                      <Sparkles size={15} />
-                      {isProfileLoading ? 'Profil yukleniyor...' : 'Profili incele'}
-                    </button>
                   </div>
                 </article>
               );
@@ -771,3 +820,4 @@ function StudentDirectoryPage({
 }
 
 export default StudentDirectoryPage;
+

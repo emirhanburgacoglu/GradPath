@@ -8,6 +8,23 @@ namespace GradPath.Business.Services;
 
 public class MatchingService : IMatchingService
 {
+    private const int MaxAiExplanationCount = 3;
+    private const decimal MinScoreForAiExplanation = 40m;
+
+    private static readonly HashSet<string> GenericTechnologyNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "git",
+        "github",
+        "html",
+        "css",
+        "sql",
+        "rest api",
+        "postgresql",
+        "mysql",
+        "mssql",
+        "linux"
+    };
+
     private readonly GradPathDbContext _context;
     private readonly IGroqApiService _groqApiService;
 
@@ -19,13 +36,13 @@ public class MatchingService : IMatchingService
 
     public async Task<List<RecommendationResponseDto>> GetProjectRecommendationsAsync(Guid userId)
     {
-        var recommendations = new List<RecommendationResponseDto>();
+        var recommendationCandidates = new List<RecommendationCandidate>();
 
         var studentProfile = await _context.StudentProfiles
             .FirstOrDefaultAsync(sp => sp.UserId == userId);
         if (studentProfile == null)
         {
-            return recommendations;
+            return new List<RecommendationResponseDto>();
         }
 
         var cvSignals = ExtractCvSignals(studentProfile.ParsedCvData);
@@ -39,7 +56,7 @@ public class MatchingService : IMatchingService
             && !cvSignals.DeclaredSkills.Any()
             && !cvSignals.ObservedTechnologies.Any())
         {
-            return recommendations;
+            return new List<RecommendationResponseDto>();
         }
 
         var studentTechNames = studentTechs
@@ -47,7 +64,7 @@ public class MatchingService : IMatchingService
             .Concat(cvSignals.DeclaredSkills.Select(name => name.ToLowerInvariant()))
             .Concat(cvSignals.ObservedTechnologies.Select(name => name.ToLowerInvariant()))
             .Distinct()
-            .ToList();
+            .ToHashSet();
 
         var observedTechNames = cvSignals.ObservedTechnologies
             .Select(name => name.ToLowerInvariant())
@@ -64,7 +81,19 @@ public class MatchingService : IMatchingService
         foreach (var project in allProjects)
         {
             var projectTechs = project.ProjectTechnologies
-                .Select(pt => pt.Technology.Name)
+                .Where(pt => pt.Technology != null && !string.IsNullOrWhiteSpace(pt.Technology.Name))
+                .GroupBy(pt => NormalizeTechnologyName(pt.Technology.Name), StringComparer.OrdinalIgnoreCase)
+                .Select(group =>
+                {
+                    var representative = group
+                        .OrderByDescending(item => item.ImportanceLevel)
+                        .ThenBy(item => item.TechnologyId)
+                        .First();
+
+                    return new ProjectTechnologyRequirement(
+                        representative.Technology.Name.Trim(),
+                        Math.Clamp(group.Max(item => item.ImportanceLevel), 1, 3));
+                })
                 .ToList();
 
             if (!projectTechs.Any())
@@ -73,32 +102,67 @@ public class MatchingService : IMatchingService
             }
 
             var matchedTechs = projectTechs
-                .Where(pt => studentTechNames.Contains(pt.ToLowerInvariant()))
+                .Where(pt => studentTechNames.Contains(NormalizeTechnologyName(pt.Name)))
                 .ToList();
 
             var missingTechs = projectTechs
-                .Where(pt => !studentTechNames.Contains(pt.ToLowerInvariant()))
+                .Where(pt => !studentTechNames.Contains(NormalizeTechnologyName(pt.Name)))
                 .ToList();
 
-            decimal techScore = ((decimal)matchedTechs.Count / projectTechs.Count) * 100m;
+            if (!matchedTechs.Any())
+            {
+                continue;
+            }
 
-            var observedTechOverlapCount = projectTechs.Count(projectTech =>
-                observedTechNames.Contains(projectTech.ToLowerInvariant()));
+            var requiredTechCount = projectTechs.Count(technology => technology.ImportanceLevel >= 3);
+            var matchedRequiredTechCount = matchedTechs.Count(technology => technology.ImportanceLevel >= 3);
 
-            decimal observedTechBonus = projectTechs.Count == 0
+            if (requiredTechCount > 0 && matchedRequiredTechCount == 0 && matchedTechs.Count < 2)
+            {
+                continue;
+            }
+
+            decimal totalTechWeight = projectTechs.Sum(GetRequirementWeight);
+            decimal matchedTechWeight = matchedTechs.Sum(GetRequirementWeight);
+            decimal techScore = totalTechWeight == 0
                 ? 0m
-                : ((decimal)observedTechOverlapCount / projectTechs.Count) * 15m;
+                : (matchedTechWeight / totalTechWeight) * 100m;
+
+            if (requiredTechCount > 0 && matchedRequiredTechCount == 0)
+            {
+                techScore *= 0.55m;
+            }
+            else if (requiredTechCount > 1 && matchedRequiredTechCount == 1)
+            {
+                techScore *= 0.8m;
+            }
+
+            decimal observedTechWeight = projectTechs
+                .Where(projectTech => observedTechNames.Contains(NormalizeTechnologyName(projectTech.Name)))
+                .Sum(GetRequirementWeight);
+
+            decimal observedTechBonus = totalTechWeight == 0
+                ? 0m
+                : (observedTechWeight / totalTechWeight) * 8m;
 
             var projectDomain = DetectProjectDomain(project);
-            decimal domainBonus = !string.IsNullOrWhiteSpace(projectDomain)
+            decimal domainBonus = techScore >= 35m
+                                  && !string.IsNullOrWhiteSpace(projectDomain)
                                   && studentDomainSignals.Contains(projectDomain)
-                ? 10m
+                ? 5m
                 : 0m;
 
             decimal cgpa = studentProfile.CGPA ?? 0m;
-            decimal gpaBonus = (cgpa / 4.0m) * 20m;
+            decimal gpaBonus = techScore >= 25m
+                ? (cgpa / 4.0m) * 7m
+                : 0m;
 
             decimal totalMatchScore = Math.Min(techScore + observedTechBonus + domainBonus + gpaBonus, 100m);
+
+            if (totalMatchScore < 30m)
+            {
+                continue;
+            }
 
             int difficultyScore = totalMatchScore >= 70 ? 1 :
                                   (totalMatchScore >= 40 ? 2 : 3);
@@ -111,24 +175,82 @@ public class MatchingService : IMatchingService
                 Category = project.Category,
                 MatchScore = Math.Round(totalMatchScore, 1),
                 DifficultyScore = difficultyScore,
-                MatchedTechnologies = matchedTechs,
-                MissingTechnologies = missingTechs
+                MatchedTechnologies = matchedTechs.Select(technology => technology.Name).ToList(),
+                MissingTechnologies = missingTechs.Select(technology => technology.Name).ToList()
             };
 
-            if (totalMatchScore >= 50)
-            {
-                var studentSummary =
-                    $"Yetenekler: {string.Join(", ", matchedTechs)}, Alanlar: {string.Join(", ", studentDomainSignals)}, Not Ortalamasi: {cgpa}";
-                var projectSummary =
-                    $"Baslik: {project.Title}, Aciklama: {project.Description}, Arananlar: {string.Join(", ", projectTechs)}, Alan: {projectDomain}";
+            var studentSummary =
+                $"Yetenekler: {string.Join(", ", dto.MatchedTechnologies)}, Alanlar: {string.Join(", ", studentDomainSignals)}, Not Ortalamasi: {cgpa}";
+            var projectSummary =
+                $"Baslik: {project.Title}, Aciklama: {project.Description}, Arananlar: {string.Join(", ", projectTechs.Select(item => item.Name))}, Alan: {projectDomain}";
 
-                dto.AIExplanation = await _groqApiService.GetProjectExplanationAsync(studentSummary, projectSummary);
-            }
-
-            recommendations.Add(dto);
+            recommendationCandidates.Add(new RecommendationCandidate(dto, studentSummary, projectSummary));
         }
 
-        return recommendations.OrderByDescending(r => r.MatchScore).ToList();
+        var rankedCandidates = recommendationCandidates
+            .OrderByDescending(candidate => candidate.Dto.MatchScore)
+            .ToList();
+
+        foreach (var candidate in rankedCandidates
+                     .Where(candidate => candidate.Dto.MatchScore >= MinScoreForAiExplanation)
+                     .Take(MaxAiExplanationCount))
+        {
+            candidate.Dto.AIExplanation = await _groqApiService.GetProjectExplanationAsync(
+                candidate.StudentSummary,
+                candidate.ProjectSummary);
+        }
+
+        foreach (var candidate in rankedCandidates.Where(candidate => string.IsNullOrWhiteSpace(candidate.Dto.AIExplanation)))
+        {
+            candidate.Dto.AIExplanation = BuildFallbackExplanation(candidate.Dto);
+        }
+
+        return rankedCandidates
+            .Select(candidate => candidate.Dto)
+            .ToList();
+    }
+
+    private static string NormalizeTechnologyName(string name)
+    {
+        return name.Trim().ToLowerInvariant();
+    }
+
+    private static decimal GetRequirementWeight(ProjectTechnologyRequirement requirement)
+    {
+        var importanceWeight = requirement.ImportanceLevel switch
+        {
+            3 => 3.5m,
+            2 => 2.0m,
+            _ => 1.0m
+        };
+
+        var specificityMultiplier = GenericTechnologyNames.Contains(requirement.Name)
+            ? 0.6m
+            : 1.0m;
+
+        return importanceWeight * specificityMultiplier;
+    }
+
+    private static string BuildFallbackExplanation(RecommendationResponseDto recommendation)
+    {
+        var matched = recommendation.MatchedTechnologies.Take(3).ToList();
+        var missing = recommendation.MissingTechnologies.Take(2).ToList();
+
+        if (matched.Count == 0)
+        {
+            return "Bu proje temel filtreleri gectigi icin listede yer aliyor, ancak teknik eslesme sinirli oldugundan once eksik yetkinlikleri guclendirmek daha dogru olur.";
+        }
+
+        var matchedText = string.Join(", ", matched);
+        var scoreText = $"Bu projede ozellikle {matchedText} tarafinda guclu bir uyum goruluyor ve mevcut uyum skoru %{Math.Round(recommendation.MatchScore)} seviyesinde.";
+
+        if (missing.Count == 0)
+        {
+            return $"{scoreText} Teknik beklentilerin buyuk kismi karsilandigi icin proje iyi bir aday olarak one cikiyor.";
+        }
+
+        var missingText = string.Join(", ", missing);
+        return $"{scoreText} Projeye daha rahat uyum saglamak icin {missingText} alanlarini da gelistirmek faydali olur.";
     }
 
     private static string DetectProjectDomain(GradPath.Data.Entities.Project project)
@@ -206,4 +328,11 @@ public class MatchingService : IMatchingService
         public List<string> DomainSignals { get; set; } = new();
         public List<string> ObservedTechnologies { get; set; } = new();
     }
+
+    private sealed record RecommendationCandidate(
+        RecommendationResponseDto Dto,
+        string StudentSummary,
+        string ProjectSummary);
+
+    private sealed record ProjectTechnologyRequirement(string Name, int ImportanceLevel);
 }

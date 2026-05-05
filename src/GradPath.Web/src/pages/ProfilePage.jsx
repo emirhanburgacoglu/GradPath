@@ -126,6 +126,13 @@ function createEmptySkillForm() {
   };
 }
 
+function createAcademicForm(profile) {
+  return {
+    cgpa: profile?.cgpa?.toString() || '',
+    totalECTS: profile?.totalECTS?.toString() || '',
+  };
+}
+
 function getDateRange(startDateText, endDateText) {
   return [startDateText, endDateText].filter(Boolean).join(' - ');
 }
@@ -320,9 +327,7 @@ function ProfilePage({
 }) {
   const [activeTab, setActiveTab] = useState('overview');
   const [cvFile, setCvFile] = useState(null);
-  const [transcriptFile, setTranscriptFile] = useState(null);
   const [uploadingCv, setUploadingCv] = useState(false);
-  const [uploadingTranscript, setUploadingTranscript] = useState(false);
   const [uploadMessage, setUploadMessage] = useState('');
   const [actionMessage, setActionMessage] = useState('');
   const [actionError, setActionError] = useState('');
@@ -356,6 +361,7 @@ function ProfilePage({
   const [editingSkillId, setEditingSkillId] = useState(null);
   const [isSkillComposerOpen, setIsSkillComposerOpen] = useState(false);
   const [openSkillCategory, setOpenSkillCategory] = useState(null);
+  const [academicForm, setAcademicForm] = useState(() => createAcademicForm(profile));
 
   const analysis = safeParseAnalysis(profile);
   const skillsByCategory = analysis?.SkillsByCategory || [];
@@ -548,66 +554,91 @@ function ProfilePage({
     loadSkillsData();
   }, [profile]);
 
+  useEffect(() => {
+    setAcademicForm(createAcademicForm(profile));
+  }, [profile]);
+
   const handleRefreshClick = async () => {
     clearFeedback();
     await onRefresh();
-    await Promise.all([loadNormalizedProfileData(), loadSkillsData()]);
+    await Promise.allSettled([loadNormalizedProfileData(), loadSkillsData()]);
   };
 
   const handleUpload = async (type) => {
-    const isCv = type === 'cv';
-    const file = isCv ? cvFile : transcriptFile;
+    const file = cvFile;
 
     if (!file) {
-      setUploadMessage(isCv ? 'Once bir CV dosyasi sec.' : 'Once bir transcript dosyasi sec.');
+      setUploadMessage('Once bir CV dosyasi sec.');
       return;
     }
 
     const formData = new FormData();
     formData.append('file', file);
-
-    if (isCv) {
-      setUploadingCv(true);
-    } else {
-      setUploadingTranscript(true);
-    }
+    setUploadingCv(true);
 
     setUploadMessage('');
     clearFeedback();
 
     try {
-      await api.post(isCv ? '/student/upload-cv' : '/student/upload-transcript', formData, {
+      await api.post('/student/upload-cv', formData, {
         headers: {
           'Content-Type': 'multipart/form-data',
         },
       });
 
-      setUploadMessage(
-        isCv
-          ? 'CV basariyla yuklendi. Profil verileri yenileniyor.'
-          : 'Transcript basariyla yuklendi. Profil verileri yenileniyor.'
-      );
-
-      if (isCv) {
-        setCvFile(null);
-      } else {
-        setTranscriptFile(null);
-      }
+      setUploadMessage('CV basariyla yuklendi. Profil guncellendi; detay veriler arka planda yukleniyor.');
+      setCvFile(null);
 
       await onRefresh();
-      await Promise.all([loadNormalizedProfileData(), loadSkillsData()]);
-    } catch (uploadError) {
-      const fallback = isCv
-        ? 'CV yuklenemedi. Dosya formatini ve oturumu kontrol et.'
-        : 'Transcript yuklenemedi. Dosya formatini ve oturumu kontrol et.';
 
-      setUploadMessage(getErrorMessage(uploadError, fallback));
+      Promise.allSettled([loadNormalizedProfileData(), loadSkillsData()]).catch(() => {
+        // Background refresh failures should not block the profile update flow.
+      });
+    } catch (uploadError) {
+      setUploadMessage(
+        getErrorMessage(uploadError, 'CV yuklenemedi. Dosya formatini ve oturumu kontrol et.')
+      );
     } finally {
-      if (isCv) {
-        setUploadingCv(false);
-      } else {
-        setUploadingTranscript(false);
-      }
+      setUploadingCv(false);
+    }
+  };
+
+  const submitAcademicProfile = async (event) => {
+    event.preventDefault();
+    clearFeedback();
+    setSavingSection('academic');
+
+    const parsedCgpa =
+      academicForm.cgpa.trim() === '' ? null : Number.parseFloat(academicForm.cgpa);
+    const parsedTotalECTS =
+      academicForm.totalECTS.trim() === '' ? null : Number.parseInt(academicForm.totalECTS, 10);
+
+    if (academicForm.cgpa.trim() !== '' && Number.isNaN(parsedCgpa)) {
+      setActionError('CGPA icin gecerli bir sayi gir.');
+      setSavingSection('');
+      return;
+    }
+
+    if (academicForm.totalECTS.trim() !== '' && Number.isNaN(parsedTotalECTS)) {
+      setActionError('AKTS icin gecerli bir sayi gir.');
+      setSavingSection('');
+      return;
+    }
+
+    try {
+      await api.put('/student/me', {
+        cgpa: parsedCgpa,
+        totalECTS: parsedTotalECTS,
+      });
+
+      setActionMessage('Akademik bilgiler guncellendi.');
+      await onRefresh();
+    } catch (submitError) {
+      setActionError(
+        getErrorMessage(submitError, 'Akademik bilgiler guncellenemedi.')
+      );
+    } finally {
+      setSavingSection('');
     }
   };
 
@@ -1222,14 +1253,20 @@ function ProfilePage({
                       <span className="skill-accordion-eyebrow">Kategori</span>
                       <div className="skill-category-name">{categoryName}</div>
                       <div className="skill-accordion-metrics">
-                        <span className="skill-metric-chip">{categorySkills.length} kayitli</span>
-                        <span className="skill-metric-chip">{categoryDraftSkills.length} CV onerisi</span>
-                        <span className="skill-metric-chip">{availableCategoryOptions.length} eklenebilir</span>
+                        <span className="skill-metric-chip">
+                          <strong>{categorySkills.length}</strong> kayitli
+                        </span>
+                        <span className="skill-metric-chip">
+                          <strong>{categoryDraftSkills.length}</strong> onerilen
+                        </span>
+                        <span className="skill-metric-chip">
+                          <strong>{availableCategoryOptions.length}</strong> eklenebilir
+                        </span>
                       </div>
                     </div>
 
                     <div className="skill-accordion-trailing">
-                      <span className="skill-accordion-state">{isOpen ? 'Acik' : 'Gor'}</span>
+                      <span className="skill-accordion-state">{isOpen ? 'Acik' : 'Kapali'}</span>
                       <span className="skill-accordion-icon">
                         {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                       </span>
@@ -1241,8 +1278,8 @@ function ProfilePage({
                       <div className="skill-accordion-actions">
                         <div className="skill-accordion-description">
                           {categorySkills.length
-                            ? 'Kartlardan birine tiklayarak seviyeyi guncelleyebilirsin.'
-                            : 'Bu kategori henuz bos. Asagidan yeni teknoloji ekleyebilirsin.'}
+                            ? 'Bir karta tiklayarak seviyeyi duzenleyebilirsin.'
+                            : 'Bu kategori bos. Asagidan yeni teknoloji ekleyebilirsin.'}
                         </div>
 
                         {!isComposerVisible ? (
@@ -1253,7 +1290,7 @@ function ProfilePage({
                             disabled={!availableCategoryOptions.length}
                           >
                             <Plus size={16} />
-                            {availableCategoryOptions.length ? 'Bu kategoriden ekle' : 'Tumu eklenmis'}
+                            {availableCategoryOptions.length ? 'Yeni yetkinlik ekle' : 'Tumu eklenmis'}
                           </button>
                         ) : null}
                       </div>
@@ -1382,7 +1419,7 @@ function ProfilePage({
 
                       <div className="skill-category-subsection skill-category-subsection-primary">
                         <div className="skill-category-head">
-                          <div className="skill-category-name">Kayitli Yetkinlikler</div>
+                          <div className="skill-category-name">Mevcut teknolojiler</div>
                           <div className="skill-category-count">{categorySkills.length} adet</div>
                         </div>
 
@@ -1400,7 +1437,7 @@ function ProfilePage({
                                 <div className="skill-mini-top">
                                   <div className="skill-mini-copy">
                                     <strong>{skill.technologyName || 'Teknoloji bilgisi yok'}</strong>
-                                    <span>Kayitli yetkinlik</span>
+                                    <span>Kayitli teknoloji</span>
                                   </div>
                                 </div>
 
@@ -1408,7 +1445,7 @@ function ProfilePage({
                                   <span className={`skill-level-pill level-${skill.proficiencyLevel}`}>
                                     {getProficiencyLabel(skill.proficiencyLevel)}
                                   </span>
-                                  <span className="skill-mini-hint">Duzenlemek icin tikla</span>
+                                  <span className="skill-mini-hint">Duzenle</span>
                                 </div>
                               </button>
                             ))}
@@ -1423,7 +1460,7 @@ function ProfilePage({
                       {categoryDraftSkills.length ? (
                         <div className="skill-category-subsection">
                           <div className="skill-category-head">
-                            <div className="skill-category-name">CV Taslak Onerileri</div>
+                            <div className="skill-category-name">CV'den onerilenler</div>
                             <div className="skill-category-count">{categoryDraftSkills.length} onerilen</div>
                           </div>
 
@@ -2094,6 +2131,68 @@ function ProfilePage({
     <section className="profile-grid">
       <article className="card profile-block">
         <div className="profile-section-title">
+          <Award size={16} />
+          Akademik Bilgiler
+        </div>
+
+        <div className="profile-inline-hint">
+          Transcript yuklemek yerine not ortalamasi ve AKTS bilgisini dogrudan girebilirsin. Bu
+          bilgiler eslesme skorlarinda ve ogrenci filtrelerinde kullanilir.
+        </div>
+
+        <form className="profile-form" onSubmit={submitAcademicProfile}>
+          <div className="profile-form-grid">
+            <label className="profile-form-field">
+              <span>CGPA</span>
+              <input
+                type="number"
+                min="0"
+                max="4"
+                step="0.01"
+                className="input-field"
+                placeholder="Ornek: 3.26"
+                value={academicForm.cgpa}
+                onChange={(event) =>
+                  setAcademicForm((current) => ({ ...current, cgpa: event.target.value }))
+                }
+              />
+            </label>
+
+            <label className="profile-form-field">
+              <span>Toplam AKTS</span>
+              <input
+                type="number"
+                min="0"
+                max="300"
+                step="1"
+                className="input-field"
+                placeholder="Ornek: 189"
+                value={academicForm.totalECTS}
+                onChange={(event) =>
+                  setAcademicForm((current) => ({
+                    ...current,
+                    totalECTS: event.target.value,
+                  }))
+                }
+              />
+            </label>
+          </div>
+
+          <div className="profile-form-actions">
+            <button
+              type="submit"
+              className="btn-primary profile-submit-button"
+              disabled={savingSection === 'academic'}
+            >
+              <Save size={16} />
+              {savingSection === 'academic' ? 'Kaydediliyor...' : 'Akademik bilgileri kaydet'}
+            </button>
+          </div>
+        </form>
+      </article>
+
+      <article className="card profile-block">
+        <div className="profile-section-title">
           <Upload size={16} />
           CV Yukleme
         </div>
@@ -2114,40 +2213,10 @@ function ProfilePage({
           <button
             type="button"
             className="btn-primary upload-button"
-            onClick={() => handleUpload('cv')}
+            onClick={handleUpload}
             disabled={uploadingCv}
           >
             {uploadingCv ? 'CV Yukleniyor...' : 'CV Yukle'}
-          </button>
-        </div>
-      </article>
-
-      <article className="card profile-block">
-        <div className="profile-section-title">
-          <Upload size={16} />
-          Transcript Yukleme
-        </div>
-
-        <div className="upload-panel">
-          <div className="upload-current-file">
-            <span>Mevcut dosya</span>
-            <strong>{profile?.transcriptFileName || 'Henuz transcript yuklenmemis'}</strong>
-          </div>
-
-          <input
-            type="file"
-            className="input-field"
-            accept=".pdf"
-            onChange={(event) => setTranscriptFile(event.target.files?.[0] || null)}
-          />
-
-          <button
-            type="button"
-            className="btn-primary upload-button"
-            onClick={() => handleUpload('transcript')}
-            disabled={uploadingTranscript}
-          >
-            {uploadingTranscript ? 'Transcript Yukleniyor...' : 'Transcript Yukle'}
           </button>
         </div>
       </article>

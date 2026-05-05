@@ -26,37 +26,31 @@ public class StudentController : ControllerBase
     {
         var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
         if (userIdString == null) return Unauthorized();
+        if (file == null || file.Length == 0) return BadRequest("Gecerli bir CV dosyasi secilmedi.");
 
         var userId = Guid.Parse(userIdString);
         var fileName = await _fileUploadService.UploadFileAsync(file, "cvs");
 
-        await _studentService.UpdateCvFileNameAsync(userId, fileName);
+        var fileSaved = await _studentService.UpdateCvFileNameAsync(userId, fileName);
+        if (!fileSaved)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, "CV dosyasi kaydedildi ama profil kaydi guncellenemedi.");
+        }
 
         using (var stream = file.OpenReadStream())
         {
-            await _studentService.ProcessCvAsync(userId, stream);
+            var processed = await _studentService.ProcessCvAsync(userId, stream);
+            if (!processed)
+            {
+                return StatusCode(StatusCodes.Status422UnprocessableEntity, new
+                {
+                    Message = "CV yuklendi ancak icerik analizi basarisiz oldu. PDF metni okunamamis veya analiz bos donmus olabilir.",
+                    FileName = fileName
+                });
+            }
         }
 
         return Ok(new { Message = "CV basariyla yuklendi ve AI tarafindan analiz edildi.", FileName = fileName });
-    }
-
-    [HttpPost("upload-transcript")]
-    public async Task<IActionResult> UploadTranscript(IFormFile file)
-    {
-        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (userIdString == null) return Unauthorized();
-
-        var userId = Guid.Parse(userIdString);
-        var fileName = await _fileUploadService.UploadFileAsync(file, "transcripts");
-
-        await _studentService.UpdateTranscriptFileNameAsync(userId, fileName);
-
-        using (var stream = file.OpenReadStream())
-        {
-            await _studentService.ProcessTranscriptAsync(userId, stream);
-        }
-
-        return Ok(new { Message = "Transkript basariyla yuklendi ve AI tarafindan analiz edildi.", FileName = fileName });
     }
 
     [HttpGet("me")]
@@ -82,6 +76,7 @@ public class StudentController : ControllerBase
     }
 
     [HttpGet("directory/options")]
+    [AllowAnonymous]
     public async Task<IActionResult> GetDirectoryOptions()
     {
         var options = await _studentService.GetDirectoryOptionsAsync();
