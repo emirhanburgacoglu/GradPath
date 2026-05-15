@@ -4,9 +4,8 @@ import { LogOut, Menu, X } from 'lucide-react';
 const navItems = [
   { id: 'dashboard', label: 'Anasayfa' },
   { id: 'profile', label: 'Profil' },
-  { id: 'students', label: 'Ogrenciler' },
-  { id: 'posts', label: 'Ilanlar' },
-  { id: 'settings', label: 'Ayarlar', passive: true },
+  { id: 'students', label: 'Öğrenciler' },
+  { id: 'posts', label: 'İlanlar' },
 ];
 
 function AppHeader({ currentView, initials, onLogout, onViewChange, profile }) {
@@ -27,26 +26,16 @@ function AppHeader({ currentView, initials, onLogout, onViewChange, profile }) {
   };
 
   const renderNavItems = () =>
-    navItems.map((item) => {
-      if (item.passive) {
-        return (
-          <span key={item.id} className="app-nav-pill passive" aria-hidden="true">
-            {item.label}
-          </span>
-        );
-      }
-
-      return (
-        <button
-          key={item.id}
-          type="button"
-          className={`app-nav-pill ${currentView === item.id ? 'active' : ''}`}
-          onClick={() => handleViewSelect(item.id)}
-        >
-          {item.label}
-        </button>
-      );
-    });
+    navItems.map((item) => (
+      <button
+        key={item.id}
+        type="button"
+        className={`app-nav-pill ${currentView === item.id ? 'active' : ''}`}
+        onClick={() => handleViewSelect(item.id)}
+      >
+        {item.label}
+      </button>
+    ));
 
   return (
     <header className="app-topbar">
@@ -63,7 +52,7 @@ function AppHeader({ currentView, initials, onLogout, onViewChange, profile }) {
           <button
             type="button"
             className="icon-button app-topbar-menu-button"
-            aria-label={isMobileMenuOpen ? 'Menuyu kapat' : 'Menuyu ac'}
+            aria-label={isMobileMenuOpen ? 'Menüyü kapat' : 'Menüyü aç'}
             aria-expanded={isMobileMenuOpen}
             aria-controls="app-topbar-mobile-panel"
             onClick={() => setIsMobileMenuOpen((current) => !current)}
@@ -85,14 +74,14 @@ function AppHeader({ currentView, initials, onLogout, onViewChange, profile }) {
           <div className="app-topbar-profile">
             <div className="app-topbar-avatar">{initials}</div>
             <div className="app-topbar-profile-copy">
-              <strong>{profile?.fullName || 'GradPath kullanicisi'}</strong>
-              <span>{profile?.email || 'Panel kullanicisi'}</span>
+              <strong>{profile?.fullName || 'GradPath kullanıcısı'}</strong>
+              <span>{profile?.email || 'Panel kullanıcısı'}</span>
             </div>
           </div>
 
           <button type="button" className="ghost-button topbar-logout-button" onClick={handleLogoutClick}>
             <LogOut size={16} />
-            Cikis
+            Çıkış
           </button>
         </div>
 
@@ -113,8 +102,8 @@ function AppHeader({ currentView, initials, onLogout, onViewChange, profile }) {
             <div className="app-topbar-profile">
               <div className="app-topbar-avatar">{initials}</div>
               <div className="app-topbar-profile-copy">
-                <strong>{profile?.fullName || 'GradPath kullanicisi'}</strong>
-                <span>{profile?.email || 'Panel kullanicisi'}</span>
+                <strong>{profile?.fullName || 'GradPath kullanıcısı'}</strong>
+                <span>{profile?.email || 'Panel kullanıcısı'}</span>
               </div>
             </div>
 
@@ -124,7 +113,7 @@ function AppHeader({ currentView, initials, onLogout, onViewChange, profile }) {
               onClick={handleLogoutClick}
             >
               <LogOut size={16} />
-              Cikis
+              Çıkış
             </button>
           </div>
         </div>

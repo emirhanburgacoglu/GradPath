@@ -5,7 +5,6 @@ import {
   ChevronDown,
   ChevronUp,
   FileBadge2,
-  FileText,
   GraduationCap,
   Pencil,
   Plus,
@@ -35,7 +34,7 @@ function safeParseAnalysis(profile) {
 
     return {
       SkillsByCategory: rawSkillsByCategory.map((category) => ({
-        CategoryName: category?.CategoryName || category?.categoryName || 'Diger',
+        CategoryName: category?.CategoryName || category?.categoryName || 'Diğer',
         Skills: category?.Skills || category?.skills || [],
       })),
       Projects: rawProjects.map((project) => ({
@@ -156,11 +155,11 @@ function getErrorMessage(error, fallback) {
 function getProficiencyLabel(level) {
   switch (level) {
     case 3:
-      return 'Ileri';
+      return 'İleri';
     case 2:
       return 'Orta';
     default:
-      return 'Baslangic';
+      return 'Başlangıç';
   }
 }
 
@@ -196,7 +195,7 @@ function buildAnalysisSkillCategoryMap(analysisCategories) {
     (category?.Skills || []).forEach((skillName) => {
       const normalizedSkill = normalizeSkillName(skillName);
       if (normalizedSkill) {
-        analysisSkillCategoryMap.set(normalizedSkill, category.CategoryName || 'Diger');
+        analysisSkillCategoryMap.set(normalizedSkill, category.CategoryName || 'Diğer');
       }
     });
   });
@@ -285,7 +284,7 @@ function mapTechnologyCategoryToDisplayCategory(category) {
     return 'Tools & Databases';
   }
 
-  return category || 'Diger';
+    return category || 'Diğer';
 }
 
 function buildTechnologyOptionsByDisplayCategory(technologyOptions, analysisCategories) {
@@ -293,7 +292,7 @@ function buildTechnologyOptionsByDisplayCategory(technologyOptions, analysisCate
 
   (analysisCategories || []).forEach((category) => {
     (category?.Skills || []).forEach((skillName) => {
-      analysisSkillCategoryMap.set(normalizeSkillName(skillName), category.CategoryName || 'Diger');
+      analysisSkillCategoryMap.set(normalizeSkillName(skillName), category.CategoryName || 'Diğer');
     });
   });
 
@@ -361,6 +360,7 @@ function ProfilePage({
   const [editingSkillId, setEditingSkillId] = useState(null);
   const [isSkillComposerOpen, setIsSkillComposerOpen] = useState(false);
   const [openSkillCategory, setOpenSkillCategory] = useState(null);
+  const [skillSearchQuery, setSkillSearchQuery] = useState('');
   const [academicForm, setAcademicForm] = useState(() => createAcademicForm(profile));
 
   const analysis = safeParseAnalysis(profile);
@@ -421,15 +421,57 @@ function ProfilePage({
   const overviewDomainSignals = hasLoadedNormalizedData
     ? domainSignalItems.map((item) => item.name).filter(Boolean)
     : (analysis?.DomainSignals || []).map((item) => item.Name).filter(Boolean);
+  const overviewExperienceCount = hasLoadedNormalizedData
+    ? experienceItems.length
+    : analysis?.Experiences?.length || 0;
+  const overviewProjectCount = hasLoadedNormalizedData
+    ? projectItems.length
+    : analysis?.Projects?.length || 0;
+  const displayedSkillCount = hasLoadedSkills
+    ? skillItems.length
+    : displaySkillsByCategory.reduce(
+        (total, category) => total + (category?.Skills?.length || 0),
+        0
+      );
+  const hasCvFile = Boolean(profile?.cvFileName);
+  const hasCgpa = cgpa !== null && cgpa !== undefined && cgpa !== '';
+  const hasTotalECTS = totalECTS !== null && totalECTS !== undefined && totalECTS !== '';
+  const profileCoverageCount = [
+    hasCvFile,
+    displayedSkillCount > 0,
+    overviewEducation.length > 0,
+    overviewExperienceCount + overviewProjectCount > 0,
+    overviewDomainSignals.length > 0,
+  ].filter(Boolean).length;
+  const profileCoveragePercent = Math.round((profileCoverageCount / 5) * 100);
+  const profileRecordTotal =
+    overviewEducation.length +
+    overviewExperienceCount +
+    overviewProjectCount +
+    overviewDomainSignals.length;
+  const overviewTopSkillGroups = [...displaySkillsByCategory]
+    .sort((left, right) => (right?.Skills?.length || 0) - (left?.Skills?.length || 0))
+    .slice(0, 3);
 
   const tabs = [
-    { id: 'overview', label: 'Genel Bakis' },
-    { id: 'skills', label: 'Yetkinlikler' },
-    { id: 'education', label: 'Egitim' },
-    { id: 'experiences', label: 'Deneyimler' },
-    { id: 'projects', label: 'Projeler' },
-    { id: 'signals', label: 'Alanlar' },
-    { id: 'documents', label: 'Belgeler' },
+    {
+      id: 'overview',
+      label: 'Genel Bakış',
+      description: 'Durum, eksikler ve sonraki adimlar',
+      count: `${profileCoverageCount}/5`,
+    },
+    {
+      id: 'background',
+      label: 'Profil Kayıtları',
+      description: 'Eğitim, deneyim, proje ve alanlar',
+      count: overviewEducation.length + overviewExperienceCount + overviewProjectCount + overviewDomainSignals.length,
+    },
+    {
+      id: 'skills',
+      label: 'Yetkinlikler',
+      description: 'Teknolojiler ve CV önerileri',
+      count: displayedSkillCount,
+    },
   ];
 
   const clearFeedback = () => {
@@ -465,6 +507,7 @@ function ProfilePage({
     setEditingSkillId(null);
     setSkillForm(createEmptySkillForm());
     setIsSkillComposerOpen(false);
+    setSkillSearchQuery('');
   };
 
   const toggleSkillCategory = (categoryName) => {
@@ -479,6 +522,7 @@ function ProfilePage({
     setEditingSkillId(null);
     setSkillForm(createEmptySkillForm());
     setIsSkillComposerOpen(false);
+    setSkillSearchQuery('');
     setOpenSkillCategory(categoryName);
   };
 
@@ -568,7 +612,7 @@ function ProfilePage({
     const file = cvFile;
 
     if (!file) {
-      setUploadMessage('Once bir CV dosyasi sec.');
+      setUploadMessage('Önce bir CV dosyası seç.');
       return;
     }
 
@@ -586,7 +630,7 @@ function ProfilePage({
         },
       });
 
-      setUploadMessage('CV basariyla yuklendi. Profil guncellendi; detay veriler arka planda yukleniyor.');
+      setUploadMessage('CV başarıyla yüklendi. Profil güncellendi; detay veriler arka planda yükleniyor.');
       setCvFile(null);
 
       await onRefresh();
@@ -596,7 +640,7 @@ function ProfilePage({
       });
     } catch (uploadError) {
       setUploadMessage(
-        getErrorMessage(uploadError, 'CV yuklenemedi. Dosya formatini ve oturumu kontrol et.')
+        getErrorMessage(uploadError, 'CV yüklenemedi. Dosya formatını ve oturumu kontrol et.')
       );
     } finally {
       setUploadingCv(false);
@@ -631,11 +675,11 @@ function ProfilePage({
         totalECTS: parsedTotalECTS,
       });
 
-      setActionMessage('Akademik bilgiler guncellendi.');
+      setActionMessage('Akademik bilgiler güncellendi.');
       await onRefresh();
     } catch (submitError) {
       setActionError(
-        getErrorMessage(submitError, 'Akademik bilgiler guncellenemedi.')
+        getErrorMessage(submitError, 'Akademik bilgiler güncellenemedi.')
       );
     } finally {
       setSavingSection('');
@@ -647,6 +691,7 @@ function ProfilePage({
     setEditingSkillId(null);
     setSkillForm(createEmptySkillForm());
     setIsSkillComposerOpen(true);
+    setSkillSearchQuery('');
     setOpenSkillCategory(categoryName);
   };
 
@@ -660,6 +705,7 @@ function ProfilePage({
       technologyName: skill.technologyName || '',
       proficiencyLevel: skill.proficiencyLevel || 2,
     });
+    setSkillSearchQuery(skill.technologyName || '');
   };
 
   const submitSkill = async (event) => {
@@ -668,7 +714,7 @@ function ProfilePage({
     setSavingSection('skill');
 
     if (!skillForm.technologyId) {
-      setActionError('Lutfen listeden bir teknoloji sec.');
+      setActionError('Lütfen listeden bir teknoloji seç.');
       setSavingSection('');
       return;
     }
@@ -681,7 +727,7 @@ function ProfilePage({
 
     try {
       await api.post('/student/skills', payload);
-      setActionMessage(editingSkillId ? 'Yetkinlik guncellendi.' : 'Yetkinlik eklendi.');
+      setActionMessage(editingSkillId ? 'Yetkinlik güncellendi.' : 'Yetkinlik eklendi.');
       resetSkillEditor();
       await loadSkillsData();
     } catch (submitError) {
@@ -756,7 +802,7 @@ function ProfilePage({
         })),
       ]);
 
-      setActionMessage('CV taslagindaki eksik yetkinlikler profile eklendi.');
+      setActionMessage('CV taslağındaki eksik yetkinlikler profile eklendi.');
       await loadSkillsData();
     } catch (submitError) {
       setActionError(getErrorMessage(submitError, 'Taslak yetkinlikler eklenemedi.'));
@@ -800,23 +846,23 @@ function ProfilePage({
     try {
       if (editingEducationId) {
         await api.put(`/student/educations/${editingEducationId}`, payload);
-        setActionMessage('Egitim kaydi guncellendi.');
+        setActionMessage('Eğitim kaydı güncellendi.');
       } else {
         await api.post('/student/educations', payload);
-        setActionMessage('Egitim kaydi eklendi.');
+        setActionMessage('Eğitim kaydı eklendi.');
       }
 
       resetEducationEditor();
       await loadNormalizedProfileData();
     } catch (submitError) {
-      setActionError(getErrorMessage(submitError, 'Egitim kaydi kaydedilemedi.'));
+      setActionError(getErrorMessage(submitError, 'Eğitim kaydı kaydedilemedi.'));
     } finally {
       setSavingSection('');
     }
   };
 
   const removeEducation = async (educationId) => {
-    if (!window.confirm('Bu egitim kaydini silmek istiyor musun?')) {
+    if (!window.confirm('Bu eğitim kaydını silmek istiyor musun?')) {
       return;
     }
 
@@ -829,10 +875,10 @@ function ProfilePage({
         resetEducationEditor();
       }
 
-      setActionMessage('Egitim kaydi silindi.');
+      setActionMessage('Eğitim kaydı silindi.');
       await loadNormalizedProfileData();
     } catch (removeError) {
-      setActionError(getErrorMessage(removeError, 'Egitim kaydi silinemedi.'));
+      setActionError(getErrorMessage(removeError, 'Eğitim kaydı silinemedi.'));
     } finally {
       setDeletingKey('');
     }
@@ -876,7 +922,7 @@ function ProfilePage({
     try {
       if (editingExperienceId) {
         await api.put(`/student/experiences/${editingExperienceId}`, payload);
-        setActionMessage('Deneyim kaydi guncellendi.');
+        setActionMessage('Deneyim kaydı güncellendi.');
       } else {
         await api.post('/student/experiences', payload);
         setActionMessage('Deneyim kaydi eklendi.');
@@ -892,7 +938,7 @@ function ProfilePage({
   };
 
   const removeExperience = async (experienceId) => {
-    if (!window.confirm('Bu deneyim kaydini silmek istiyor musun?')) {
+    if (!window.confirm('Bu deneyim kaydını silmek istiyor musun?')) {
       return;
     }
 
@@ -952,7 +998,7 @@ function ProfilePage({
     try {
       if (editingProjectId) {
         await api.put(`/student/cv-projects/${editingProjectId}`, payload);
-        setActionMessage('Proje kaydi guncellendi.');
+        setActionMessage('Proje kaydı güncellendi.');
       } else {
         await api.post('/student/cv-projects', payload);
         setActionMessage('Proje kaydi eklendi.');
@@ -968,7 +1014,7 @@ function ProfilePage({
   };
 
   const removeProject = async (projectId) => {
-    if (!window.confirm('Bu proje kaydini silmek istiyor musun?')) {
+    if (!window.confirm('Bu proje kaydını silmek istiyor musun?')) {
       return;
     }
 
@@ -1017,7 +1063,7 @@ function ProfilePage({
     try {
       if (editingDomainSignalId) {
         await api.put(`/student/domain-signals/${editingDomainSignalId}`, payload);
-        setActionMessage('Alan sinyali guncellendi.');
+        setActionMessage('Alan sinyali güncellendi.');
       } else {
         await api.post('/student/domain-signals', payload);
         setActionMessage('Alan sinyali eklendi.');
@@ -1055,15 +1101,185 @@ function ProfilePage({
     }
   };
 
+  const renderDocumentsBlock = (sectionId) => (
+    <section id={sectionId} className="profile-grid profile-grid-single">
+      <article className="card profile-block documents-stage-card">
+        <div className="profile-card-header documents-stage-header">
+          <div>
+            <div className="profile-section-title">
+              <Upload size={16} />
+              Belgeler ve Akademik Bilgiler
+            </div>
+          </div>
+        </div>
+
+        <div className="documents-grid">
+          <section className="documents-panel">
+            <div className="documents-panel-head">
+              <div className="profile-section-title">
+                <Award size={16} />
+                Akademik Bilgiler
+              </div>
+            </div>
+
+            <form className="profile-form documents-form" onSubmit={submitAcademicProfile}>
+              <div className="profile-form-grid">
+                <label className="profile-form-field">
+                  <span>CGPA</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="4"
+                    step="0.01"
+                    className="input-field"
+                    placeholder="Örnek: 3.26"
+                    value={academicForm.cgpa}
+                    onChange={(event) =>
+                      setAcademicForm((current) => ({ ...current, cgpa: event.target.value }))
+                    }
+                  />
+                </label>
+
+                <label className="profile-form-field">
+                  <span>Toplam AKTS</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="300"
+                    step="1"
+                    className="input-field"
+                    placeholder="Örnek: 189"
+                    value={academicForm.totalECTS}
+                    onChange={(event) =>
+                      setAcademicForm((current) => ({
+                        ...current,
+                        totalECTS: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+
+              <div className="profile-form-actions">
+                <button
+                  type="submit"
+                  className="btn-primary profile-submit-button documents-submit-button"
+                  disabled={savingSection === 'academic'}
+                >
+                  <Save size={16} />
+                  {savingSection === 'academic' ? 'Kaydediliyor...' : 'Akademik bilgileri kaydet'}
+                </button>
+              </div>
+            </form>
+          </section>
+
+          <section className="documents-panel">
+            <div className="documents-panel-head">
+              <div className="profile-section-title">
+                <Upload size={16} />
+                CV Yükleme
+              </div>
+            </div>
+
+            <div className="upload-panel">
+              <div className="upload-current-file">
+                <span>Mevcut dosya</span>
+                <strong className="upload-current-file-name">
+                  {profile?.cvFileName ? 'CV yüklendi' : 'Henüz CV yüklenmemiş'}
+                </strong>
+              </div>
+
+              <label className="upload-picker">
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={(event) => setCvFile(event.target.files?.[0] || null)}
+                />
+                <span className="upload-picker-button">Dosya seç</span>
+                <span className={`upload-picker-name ${cvFile ? 'selected' : ''}`}>
+                  {cvFile?.name || 'Henüz dosya seçilmedi'}
+                </span>
+              </label>
+
+              <button
+                type="button"
+                className="btn-primary upload-button"
+                onClick={handleUpload}
+                disabled={uploadingCv}
+              >
+                {uploadingCv ? 'CV yükleniyor...' : 'CV yükle'}
+              </button>
+            </div>
+          </section>
+        </div>
+
+        {uploadMessage ? <div className="dashboard-alert upload-alert">{uploadMessage}</div> : null}
+      </article>
+    </section>
+  );
+
   const renderOverview = () => (
     <>
       <section className="profile-overview-grid">
-        <article className="card profile-identity-card">
-          <div className="profile-panel-top">
-            <div className="profile-avatar">{initials}</div>
-            <div>
-              <div className="profile-panel-name">{profile?.fullName || 'Profil hazirlaniyor'}</div>
-              <div className="profile-panel-mail">{profile?.email || 'E-posta bilgisi yok'}</div>
+        <article className="card profile-identity-card overview-hero-card overview-hero-card-expanded">
+          <div className="overview-hero-main">
+            <div className="overview-hero-identity">
+              <div className="profile-panel-top">
+                <div className="profile-avatar">{initials}</div>
+                <div>
+                  <div className="profile-panel-name">
+                    {profile?.fullName || 'Profil hazırlanıyor'}
+                  </div>
+                  <div className="profile-panel-mail">
+                    {profile?.email || 'E-posta bilgisi yok'}
+                  </div>
+                </div>
+              </div>
+
+            </div>
+
+            <div className="overview-hero-coverage">
+              <div className="profile-coverage-card">
+                <div className="profile-coverage-copy">
+                  <span>Profil doluluk</span>
+                  <strong>%{profileCoveragePercent}</strong>
+                </div>
+                <div className="profile-coverage-track" aria-hidden="true">
+                  <span
+                    className="profile-coverage-fill"
+                    style={{ width: `${profileCoveragePercent}%` }}
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="overview-hero-summary-shell">
+              <div className="overview-hero-summary">
+                <span>Profil özeti</span>
+                <p>
+                  {summaryText ||
+                    'CV, akademik bilgiler ve kayıtlı deneyimlerin bu alanda kısa bir toplu görünümü yer alır.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="overview-hero-status-shell">
+              <div className="overview-hero-status-grid">
+                <div className="overview-hero-status-item">
+                  <span>CV durumu</span>
+                  <strong>{hasCvFile ? 'Hazır' : 'Eksik'}</strong>
+                </div>
+                <div className="overview-hero-status-item">
+                  <span>Akademik bilgi</span>
+                  <strong>{hasCgpa && hasTotalECTS ? 'Tamam' : 'Eksik'}</strong>
+                </div>
+                <div className="overview-hero-status-item">
+                  <span>CV önerileri</span>
+                  <strong>
+                    {missingDraftSkills.length ? `${missingDraftSkills.length} bekliyor` : 'Temiz'}
+                  </strong>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1078,35 +1294,47 @@ function ProfilePage({
             </div>
             <div className="profile-keyfact">
               <span>Durum</span>
-              <strong>{isHonorStudent ? 'Onur Ogrencisi' : 'Aktif Ogrenci'}</strong>
+              <strong>{isHonorStudent ? 'Onur Öğrencisi' : 'Aktif Öğrenci'}</strong>
             </div>
           </div>
         </article>
-
-        <article className="card profile-summary-card">
-          <div className="profile-section-title">
-            <FileText size={16} />
-            CV Ozeti
-          </div>
-          <p>{summaryText}</p>
-        </article>
       </section>
 
+      {renderDocumentsBlock('overview-documents')}
+
       <section className="profile-grid">
-        <article className="card profile-block">
-          <div className="profile-section-title">
-            <Wrench size={16} />
-            Yetkinlikler
+        <article className="card profile-block overview-summary-card">
+          <div className="overview-summary-top">
+            <div className="profile-section-title">
+              <Wrench size={16} />
+              Yetkinlik Özetin
+            </div>
+            <button
+              type="button"
+              className="ghost-button profile-inline-button"
+              onClick={() => setActiveTab('skills')}
+            >
+              Yetkinlikleri aç
+            </button>
           </div>
 
-          {displaySkillsByCategory.length ? (
-            <div className="skill-category-stack">
-              {displaySkillsByCategory.map((category) => (
-                <div key={category.CategoryName} className="skill-category-card">
-                  <div className="skill-category-name">{category.CategoryName}</div>
+          <div className="profile-section-meta">
+            <span>{displayedSkillCount} kayıtlı teknoloji</span>
+            <span>{overviewTopSkillGroups.length} öne çıkan kategori</span>
+          </div>
+
+          {overviewTopSkillGroups.length ? (
+            <div className="overview-skill-group-list">
+              {overviewTopSkillGroups.map((group) => (
+                <div key={group.CategoryName} className="overview-skill-group">
+                  <div className="overview-skill-group-head">
+                    <strong>{group.CategoryName}</strong>
+                    <span>{group.Skills?.length || 0} teknoloji</span>
+                  </div>
+
                   <div className="project-tags">
-                    {(category.Skills || []).map((skill) => (
-                      <span key={`${category.CategoryName}-${skill}`} className="tech-tag matched">
+                    {(group.Skills || []).slice(0, 4).map((skill) => (
+                      <span key={`${group.CategoryName}-${skill}`} className="tech-tag matched">
                         {skill}
                       </span>
                     ))}
@@ -1115,57 +1343,82 @@ function ProfilePage({
               ))}
             </div>
           ) : (
-            <div className="empty-state">Henuz analiz edilmis yetkinlik gorunmuyor.</div>
+            <div className="empty-state">Henüz analiz edilmiş yetkinlik görünmüyor.</div>
           )}
         </article>
 
-        <article className="card profile-block">
-          <div className="profile-section-title">
-            <GraduationCap size={16} />
-            Egitim
+        <article className="card profile-block overview-summary-card">
+          <div className="overview-summary-top">
+            <div className="profile-section-title">
+              <FileBadge2 size={16} />
+              Profil Kayıt Özetin
+            </div>
+            <button
+              type="button"
+              className="ghost-button profile-inline-button"
+              onClick={() => setActiveTab('background')}
+            >
+              Kayıtları aç
+            </button>
           </div>
 
-          {overviewEducation.length ? (
-            <div className="profile-list">
-              {overviewEducation.map((item, index) => (
-                <div key={`${item.SchoolName}-${index}`} className="profile-list-item">
-                  <strong>{item.Department || item.Degree || 'Egitim kaydi'}</strong>
-                  <span>{item.SchoolName || 'Okul bilgisi yok'}</span>
-                  {getDateRange(item.StartDateText, item.EndDateText) ? (
-                    <p>{getDateRange(item.StartDateText, item.EndDateText)}</p>
-                  ) : null}
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="empty-state">Egitim bilgisi henuz gorunmuyor.</div>
-          )}
-        </article>
-
-        <article className="card profile-block">
-          <div className="profile-section-title">
-            <Sparkles size={16} />
-            Alan Sinyalleri
+          <div className="profile-section-meta">
+            <span>{profileRecordTotal} toplam kayıt</span>
+            <span>Detaylar Profil Kayıtları sekmesinde</span>
           </div>
 
-          {overviewDomainSignals.length ? (
-            <div className="project-tags">
-              {overviewDomainSignals.map((signal) => (
-                <span key={signal} className="tech-tag matched">
-                  {signal}
-                </span>
-              ))}
+          <div className="overview-summary-metrics">
+            <div className="overview-summary-metric">
+              <span>Eğitim</span>
+              <strong>{overviewEducation.length}</strong>
             </div>
-          ) : (
-            <div className="empty-state">
-              {loadingNormalizedData
-                ? 'Alan sinyalleri yukleniyor.'
-                : 'Alan sinyali henuz gorunmuyor.'}
+
+            <div className="overview-summary-metric">
+              <span>Deneyim</span>
+              <strong>{overviewExperienceCount}</strong>
             </div>
-          )}
+
+            <div className="overview-summary-metric">
+              <span>Proje</span>
+              <strong>{overviewProjectCount}</strong>
+            </div>
+
+            <div className="overview-summary-metric">
+              <span>Alan</span>
+              <strong>{overviewDomainSignals.length}</strong>
+            </div>
+          </div>
+
+          <div className="overview-summary-note">
+            {profileRecordTotal
+              ? 'Kayıtlarını güncel tutman hem görünürlüğünü hem de proje uyumunu güçlendirir.'
+              : 'Henüz detay kaydın yok. Profil Kayıtları sekmesinden ilk eğitim, deneyim veya proje girişini yapabilirsin.'}
+          </div>
         </article>
       </section>
     </>
+  );
+
+  const renderBackground = () => (
+    <div className="profile-group-stack">
+      <section className="profile-grid profile-grid-single">
+        <article className="card profile-note-card">
+          <div className="profile-section-title">
+            <FileBadge2 size={16} />
+            Profil Kayıtları
+          </div>
+          <p>
+            Eğitim, deneyim, proje ve alan sinyallerini ayrı ayrı sekmeler yerine tek akış içinde
+            yönetebilirsin. Bu düzen daha az geçişle daha hızlı güncelleme yapman için tasarlandı.
+          </p>
+        </article>
+      </section>
+
+      {renderEducation()}
+      {renderExperiences()}
+      {renderProjects()}
+      {renderDomainSignals()}
+    </div>
   );
 
   const renderSkills = () => (
@@ -1179,8 +1432,8 @@ function ProfilePage({
             </div>
 
             <div className="profile-section-meta">
-              <span>{skillItems.length} kayitli yetkinlik</span>
-              <span>{missingDraftSkills.length} CV onerisi</span>
+              <span>{skillItems.length} kayıtlı yetkinlik</span>
+              <span>{missingDraftSkills.length} CV önerisi</span>
             </div>
           </div>
 
@@ -1192,39 +1445,32 @@ function ProfilePage({
               disabled={savingSection === 'all-draft-skills'}
             >
               <Plus size={16} />
-              {savingSection === 'all-draft-skills' ? 'Ekleniyor...' : 'Tum CV onerilerini ekle'}
+              {savingSection === 'all-draft-skills' ? 'Ekleniyor...' : 'Tüm CV önerilerini ekle'}
             </button>
           ) : null}
         </div>
 
-        <div className="skill-stage-banner">
-          <div className="skill-stage-copy">
-            <span className="skill-stage-kicker">Kategori Bazli Yonetim</span>
-            <strong>Yetkinliklerini daha temiz ve kontrollu yonet</strong>
-            <p>
-              Bir kategori ac, altindaki mevcut kayitlari incele ve sadece o kategoriye ait teknolojileri secerek yeni
-              yetkinlik ekle.
-            </p>
+        <div className="skills-summary-bar">
+          <div className="skills-summary-copy">
+            <strong>Yetkinliklerini kategori bazlı yönet</strong>
+            <p>Bir kategori aç, kayıtlı teknolojileri düzenle ve CV önerilerini tek yerden ekle.</p>
           </div>
 
-          <div className="skill-stage-stats">
-            <div className="skill-stage-stat">
-              <span>Kategori</span>
-              <strong>{skillAccordionCategories.length}</strong>
-            </div>
-            <div className="skill-stage-stat">
-              <span>Kayitli</span>
-              <strong>{skillItems.length}</strong>
-            </div>
-            <div className="skill-stage-stat">
-              <span>CV Onerisi</span>
-              <strong>{missingDraftSkills.length}</strong>
-            </div>
+          <div className="skills-summary-stats">
+            <span className="skills-summary-chip">
+              <strong>{skillAccordionCategories.length}</strong> kategori
+            </span>
+            <span className="skills-summary-chip">
+              <strong>{skillItems.length}</strong> kayıtlı
+            </span>
+            <span className="skills-summary-chip">
+              <strong>{missingDraftSkills.length}</strong> önerilen
+            </span>
           </div>
         </div>
 
         {loadingSkills ? (
-          <div className="empty-state">Yetkinlikler yukleniyor.</div>
+          <div className="empty-state">Yetkinlikler yükleniyor.</div>
         ) : skillAccordionCategories.length ? (
           <div className="skill-category-stack">
             {skillAccordionCategories.map((categoryName) => {
@@ -1235,6 +1481,13 @@ function ProfilePage({
               );
               const availableCategoryOptions = categoryOptions.filter(
                 (option) => option.id === editingSkillId || !selectedTechnologyIds.has(option.id)
+              );
+              const filteredAvailableCategoryOptions = availableCategoryOptions.filter((option) =>
+                !skillSearchQuery.trim()
+                  ? true
+                  : (option.name || '')
+                      .toLocaleLowerCase('tr-TR')
+                      .includes(skillSearchQuery.trim().toLocaleLowerCase('tr-TR'))
               );
               const isOpen = openSkillCategory === categoryName;
               const isComposerVisible = isOpen && isSkillComposerOpen;
@@ -1250,14 +1503,13 @@ function ProfilePage({
                     onClick={() => toggleSkillCategory(categoryName)}
                   >
                     <div className="skill-accordion-copy">
-                      <span className="skill-accordion-eyebrow">Kategori</span>
-                      <div className="skill-category-name">{categoryName}</div>
+                      <div className="skill-category-name skill-accordion-title">{categoryName}</div>
                       <div className="skill-accordion-metrics">
                         <span className="skill-metric-chip">
-                          <strong>{categorySkills.length}</strong> kayitli
+                          <strong>{categorySkills.length}</strong> kayıtlı
                         </span>
                         <span className="skill-metric-chip">
-                          <strong>{categoryDraftSkills.length}</strong> onerilen
+                          <strong>{categoryDraftSkills.length}</strong> önerilen
                         </span>
                         <span className="skill-metric-chip">
                           <strong>{availableCategoryOptions.length}</strong> eklenebilir
@@ -1266,7 +1518,6 @@ function ProfilePage({
                     </div>
 
                     <div className="skill-accordion-trailing">
-                      <span className="skill-accordion-state">{isOpen ? 'Acik' : 'Kapali'}</span>
                       <span className="skill-accordion-icon">
                         {isOpen ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
                       </span>
@@ -1278,8 +1529,8 @@ function ProfilePage({
                       <div className="skill-accordion-actions">
                         <div className="skill-accordion-description">
                           {categorySkills.length
-                            ? 'Bir karta tiklayarak seviyeyi duzenleyebilirsin.'
-                            : 'Bu kategori bos. Asagidan yeni teknoloji ekleyebilirsin.'}
+                            ? 'Mevcut kayıtları düzenleyebilir, alttan yeni teknoloji ekleyebilirsin.'
+                            : 'Bu kategori boş. İlk teknolojiyi ekleyerek başlayabilirsin.'}
                         </div>
 
                         {!isComposerVisible ? (
@@ -1290,7 +1541,7 @@ function ProfilePage({
                             disabled={!availableCategoryOptions.length}
                           >
                             <Plus size={16} />
-                            {availableCategoryOptions.length ? 'Yeni yetkinlik ekle' : 'Tumu eklenmis'}
+                            {availableCategoryOptions.length ? 'Yeni yetkinlik ekle' : 'Tümü eklenmiş'}
                           </button>
                         ) : null}
                       </div>
@@ -1301,13 +1552,13 @@ function ProfilePage({
                             <div>
                               <div className="profile-composer-title">
                                 {editingSkillId
-                                  ? skillForm.technologyName || `${categoryName} duzenle`
-                                  : `${categoryName} icin yeni yetkinlik`}
+                                  ? skillForm.technologyName || `${categoryName} düzenle`
+                                  : `${categoryName} için yeni yetkinlik`}
                               </div>
                               <div className="profile-composer-subtitle">
                                 {editingSkillId
-                                  ? 'Seviyeyi guncelleyebilir veya bu kaydi kaldirabilirsin.'
-                                  : `Yalnizca ${categoryName} kategorisine ait teknolojiler listeleniyor.`}
+                                  ? 'Seviyeyi güncelleyebilir veya bu kaydı kaldırabilirsin.'
+                                  : `Yalnızca ${categoryName} kategorisine ait teknolojiler listeleniyor.`}
                               </div>
                             </div>
 
@@ -1319,44 +1570,36 @@ function ProfilePage({
                                 disabled={deletingKey === `skill-${editingSkillId}`}
                               >
                                 <Trash2 size={14} />
-                                {deletingKey === `skill-${editingSkillId}` ? 'Siliniyor...' : 'Kaydi sil'}
+                                {deletingKey === `skill-${editingSkillId}` ? 'Siliniyor...' : 'Kaydı sil'}
                               </button>
                             ) : null}
                           </div>
 
                           <div className="profile-form-grid profile-skill-form-grid">
                             <label className="profile-form-field">
-                              <span>Teknoloji</span>
-                              <select
+                              <span>{editingSkillId ? 'Teknoloji' : 'Teknoloji ara'}</span>
+                              <input
                                 className="input-field"
-                                value={skillForm.technologyId}
+                                value={editingSkillId ? skillForm.technologyName : skillSearchQuery}
                                 onChange={(event) =>
-                                  setSkillForm((current) => {
-                                    const selectedTechnologyId = Number(event.target.value);
-                                    const selectedOption = categoryOptions.find(
-                                      (option) => option.id === selectedTechnologyId
-                                    );
-
-                                    return {
-                                      ...current,
-                                      technologyId: selectedTechnologyId,
-                                      technologyName: selectedOption?.name || '',
-                                    };
-                                  })
+                                  editingSkillId
+                                    ? undefined
+                                    : (() => {
+                                        const nextValue = event.target.value;
+                                        setSkillSearchQuery(nextValue);
+                                        setSkillForm((current) => ({
+                                          ...current,
+                                          technologyId:
+                                            current.technologyName === nextValue
+                                              ? current.technologyId
+                                              : 0,
+                                          technologyName: nextValue,
+                                        }));
+                                      })()
                                 }
                                 disabled={Boolean(editingSkillId)}
-                              >
-                                <option value={0}>Bu kategoriden teknoloji sec</option>
-                                {categoryOptions.map((option) => (
-                                  <option
-                                    key={option.id}
-                                    value={option.id}
-                                    disabled={!editingSkillId && selectedTechnologyIds.has(option.id)}
-                                  >
-                                    {option.name}
-                                  </option>
-                                ))}
-                              </select>
+                                placeholder="Örnek: React, Angular, Vue"
+                              />
                             </label>
 
                             <label className="profile-form-field">
@@ -1371,23 +1614,64 @@ function ProfilePage({
                                   }))
                                 }
                               >
-                                <option value={1}>Baslangic</option>
+                                <option value={1}>Başlangıç</option>
                                 <option value={2}>Orta</option>
-                                <option value={3}>Ileri</option>
+                                <option value={3}>İleri</option>
                               </select>
                             </label>
                           </div>
 
+                          {!editingSkillId ? (
+                            <div className="skill-picker-shell">
+                              <div className="skill-picker-head">
+                                <span>Kategorideki uygun teknolojiler</span>
+                                <strong>
+                                  {skillForm.technologyId
+                                    ? `${skillForm.technologyName} seçili`
+                                    : `${filteredAvailableCategoryOptions.length} sonuç`}
+                                </strong>
+                              </div>
+
+                              {filteredAvailableCategoryOptions.length ? (
+                                <div className="skill-picker-list">
+                                  {filteredAvailableCategoryOptions.slice(0, 12).map((option) => (
+                                    <button
+                                      key={option.id}
+                                      type="button"
+                                      className={`skill-picker-chip ${
+                                        skillForm.technologyId === option.id ? 'selected' : ''
+                                      }`}
+                                      onClick={() => {
+                                        setSkillSearchQuery(option.name || '');
+                                        setSkillForm((current) => ({
+                                          ...current,
+                                          technologyId: option.id,
+                                          technologyName: option.name || '',
+                                        }));
+                                      }}
+                                    >
+                                      {option.name}
+                                    </button>
+                                  ))}
+                                </div>
+                              ) : (
+                                <div className="profile-form-hint">
+                                  Bu aramaya uygun teknoloji bulunamadı.
+                                </div>
+                              )}
+                            </div>
+                          ) : null}
+
                           {!loadingSkills && !categoryOptions.length ? (
                             <div className="profile-form-hint">
-                              Bu kategori icin veritabaninda teknoloji secenegi gorunmuyor.
+                              Bu kategori için veritabanında teknoloji seçeneği görünmüyor.
                             </div>
                           ) : null}
 
                           {editingSkillId ? (
                             <div className="profile-form-hint">
-                              Teknoloji adini degistirmek yerine mevcut kaydi silip ayni kategoriden yeni bir kayit
-                              eklemen daha guvenli.
+                              Teknoloji adını değiştirmek yerine mevcut kaydı silip aynı kategoriden yeni bir kayıt
+                              eklemen daha güvenli.
                             </div>
                           ) : null}
 
@@ -1401,7 +1685,7 @@ function ProfilePage({
                               {savingSection === 'skill'
                                 ? 'Kaydediliyor...'
                                 : editingSkillId
-                                  ? 'Seviyeyi guncelle'
+                                  ? 'Seviyeyi güncelle'
                                   : 'Yetkinlik ekle'}
                             </button>
 
@@ -1411,7 +1695,7 @@ function ProfilePage({
                               onClick={resetSkillEditor}
                             >
                               <X size={16} />
-                              Vazgec
+                              Vazgeç
                             </button>
                           </div>
                         </form>
@@ -1424,35 +1708,53 @@ function ProfilePage({
                         </div>
 
                         {categorySkills.length ? (
-                          <div className="skill-card-grid">
-                            {categorySkills.map((skill) => (
-                              <button
-                                key={skill.technologyId}
-                                type="button"
-                                className={`skill-mini-card skill-mini-card-interactive ${
-                                  editingSkillId === skill.technologyId && isSkillComposerOpen ? 'selected' : ''
-                                }`}
-                                onClick={() => beginSkillEdit(skill, categoryName)}
-                              >
-                                <div className="skill-mini-top">
-                                  <div className="skill-mini-copy">
-                                    <strong>{skill.technologyName || 'Teknoloji bilgisi yok'}</strong>
-                                    <span>Kayitli teknoloji</span>
-                                  </div>
-                                </div>
+                          <div className="skill-row-list">
+                            {categorySkills.map((skill) => {
+                              const isDeleting = deletingKey === `skill-${skill.technologyId}`;
 
-                                <div className="skill-mini-footer">
+                              return (
+                                <div
+                                  key={skill.technologyId}
+                                  className={`skill-row-button ${
+                                    editingSkillId === skill.technologyId && isSkillComposerOpen ? 'selected' : ''
+                                  }`}
+                                >
+                                <div className="skill-row-main">
+                                  <div className="skill-row-copy">
+                                    <strong>{skill.technologyName || 'Teknoloji bilgisi yok'}</strong>
+                                    <span>Kayıtlı teknoloji</span>
+                                  </div>
+
                                   <span className={`skill-level-pill level-${skill.proficiencyLevel}`}>
                                     {getProficiencyLabel(skill.proficiencyLevel)}
                                   </span>
-                                  <span className="skill-mini-hint">Duzenle</span>
                                 </div>
-                              </button>
-                            ))}
+
+                                <div className="skill-row-action">
+                                  <button
+                                    type="button"
+                                    className="ghost-button skill-row-inline-button"
+                                    onClick={() => beginSkillEdit(skill, categoryName)}
+                                  >
+                                    Düzenle
+                                  </button>
+
+                                  <button
+                                    type="button"
+                                    className="ghost-button skill-row-inline-button skill-row-inline-button-danger"
+                                    onClick={() => removeSkill(skill.technologyId)}
+                                    disabled={isDeleting}
+                                  >
+                                    {isDeleting ? 'Siliniyor...' : 'Sil'}
+                                  </button>
+                                </div>
+                                </div>
+                              );
+                            })}
                           </div>
                         ) : (
                           <div className="empty-state skill-category-empty">
-                            Bu kategoride henuz kayitli yetkinlik yok.
+                            Bu kategoride henüz kayıtlı yetkinlik yok.
                           </div>
                         )}
                       </div>
@@ -1460,27 +1762,36 @@ function ProfilePage({
                       {categoryDraftSkills.length ? (
                         <div className="skill-category-subsection">
                           <div className="skill-category-head">
-                            <div className="skill-category-name">CV'den onerilenler</div>
-                            <div className="skill-category-count">{categoryDraftSkills.length} onerilen</div>
+                            <div className="skill-category-name">CV'den önerilenler</div>
+                            <div className="skill-category-count">{categoryDraftSkills.length} önerilen</div>
                           </div>
 
-                          <div className="skill-suggestion-grid">
+                          <div className="skill-row-list skill-row-list-suggestions">
                             {categoryDraftSkills.map((skill) => (
                               <button
                                 key={`draft-${categoryName}-${skill.technologyId}`}
                                 type="button"
-                                className="skill-suggestion-chip"
+                                className="skill-row-button skill-row-button-suggestion"
                                 onClick={() => addDraftSkill(skill)}
                                 disabled={savingSection === `draft-skill-${skill.technologyId}`}
                               >
-                                <span className="skill-suggestion-name">{skill.technologyName}</span>
-                                <span className="skill-suggestion-level">
-                                  {getProficiencyLabel(skill.proficiencyLevel || 2)}
-                                </span>
-                                <span className="skill-suggestion-action">
+                                <div className="skill-row-main">
+                                  <div className="skill-row-copy">
+                                    <strong>{skill.technologyName}</strong>
+                                    <span>CV önerisi</span>
+                                  </div>
+
+                                  <span className={`skill-level-pill level-${skill.proficiencyLevel}`}>
+                                    {getProficiencyLabel(skill.proficiencyLevel || 2)}
+                                  </span>
+                                </div>
+
+                                <div className="skill-row-action">
+                                  <span className="skill-add-chip">
+                                    {savingSection === `draft-skill-${skill.technologyId}` ? 'Ekleniyor' : 'Ekle'}
+                                  </span>
                                   <Plus size={14} />
-                                  {savingSection === `draft-skill-${skill.technologyId}` ? 'Ekleniyor' : 'Ekle'}
-                                </span>
+                                </div>
                               </button>
                             ))}
                           </div>
@@ -1493,7 +1804,7 @@ function ProfilePage({
             })}
           </div>
         ) : (
-          <div className="empty-state">Bu profilde henuz yetkinlik kategorisi gorunmuyor.</div>
+          <div className="empty-state">Bu profilde henüz yetkinlik kategorisi görünmüyor.</div>
         )}
       </article>
     </section>
@@ -1505,7 +1816,7 @@ function ProfilePage({
         <div className="profile-card-header">
           <div className="profile-section-title">
             <GraduationCap size={16} />
-            Egitim
+            Eğitim
           </div>
         </div>
 
@@ -1525,14 +1836,14 @@ function ProfilePage({
               </label>
 
               <label className="profile-form-field">
-                <span>Bolum</span>
+                <span>Bölüm</span>
                 <input
                   className="input-field"
                   value={educationForm.department}
                   onChange={(event) =>
                     setEducationForm((current) => ({ ...current, department: event.target.value }))
                   }
-                  placeholder="Bolum"
+                  placeholder="Bölüm"
                 />
               </label>
 
@@ -1549,7 +1860,7 @@ function ProfilePage({
               </label>
 
               <label className="profile-form-field">
-                <span>Baslangic</span>
+                <span>Başlangıç</span>
                 <input
                   className="input-field"
                   value={educationForm.startDateText}
@@ -1579,8 +1890,8 @@ function ProfilePage({
                 {savingSection === 'education'
                   ? 'Kaydediliyor...'
                   : editingEducationId
-                    ? 'Egitimi guncelle'
-                    : 'Egitim ekle'}
+                    ? 'Eğitimi güncelle'
+                    : 'Eğitim ekle'}
               </button>
 
               <button
@@ -1589,7 +1900,7 @@ function ProfilePage({
                 onClick={resetEducationEditor}
               >
                 <X size={16} />
-                Vazgec
+                Vazgeç
               </button>
             </div>
           </form>
@@ -1599,9 +1910,9 @@ function ProfilePage({
               <Plus size={18} />
             </span>
             <span className="profile-composer-collapsed-copy">
-              <span className="profile-composer-collapsed-kicker">Yeni Kayit</span>
-              <strong>Egitim kaydi ekle</strong>
-              <span>Okul, bolum, derece ve tarih bilgilerini hizlica ekle.</span>
+              <span className="profile-composer-collapsed-kicker">Yeni Kayıt</span>
+              <strong>Eğitim kaydı ekle</strong>
+              <span>Okul, bölüm, derece ve tarih bilgilerini hızlıca ekle.</span>
             </span>
             <span className="profile-composer-collapsed-action">
               Formu ac
@@ -1611,14 +1922,14 @@ function ProfilePage({
         )}
 
         {loadingNormalizedData ? (
-          <div className="empty-state">Egitim verileri yukleniyor.</div>
+          <div className="empty-state">Eğitim verileri yükleniyor.</div>
         ) : educationItems.length ? (
           <div className="profile-list">
             {educationItems.map((item) => (
               <div key={item.id} className="profile-list-item">
                 <div className="profile-item-top">
                   <div>
-                    <strong>{item.department || item.degree || 'Egitim kaydi'}</strong>
+                    <strong>{item.department || item.degree || 'Eğitim kaydı'}</strong>
                     <span>{item.schoolName || 'Okul bilgisi yok'}</span>
                   </div>
 
@@ -1629,7 +1940,7 @@ function ProfilePage({
                       onClick={() => beginEducationEdit(item)}
                     >
                       <Pencil size={14} />
-                      Duzenle
+                      Düzenle
                     </button>
 
                     <button
@@ -1651,7 +1962,7 @@ function ProfilePage({
             ))}
           </div>
         ) : (
-          <div className="empty-state">Henuz egitim kaydi yok.</div>
+          <div className="empty-state">Henüz eğitim kaydı yok.</div>
         )}
       </article>
     </section>
@@ -1695,7 +2006,7 @@ function ProfilePage({
               </label>
 
               <label className="profile-form-field">
-                <span>Baslangic</span>
+                <span>Başlangıç</span>
                 <input
                   className="input-field"
                   value={experienceForm.startDateText}
@@ -1731,14 +2042,14 @@ function ProfilePage({
               </label>
 
               <label className="profile-form-field profile-form-field-full">
-                <span>Aciklama</span>
+                <span>Açıklama</span>
                 <textarea
                   className="input-field profile-textarea"
                   value={experienceForm.description}
                   onChange={(event) =>
                     setExperienceForm((current) => ({ ...current, description: event.target.value }))
                   }
-                  placeholder="Bu deneyimde neler yaptin?"
+                  placeholder="Bu deneyimde neler yaptın?"
                 />
               </label>
             </div>
@@ -1749,7 +2060,7 @@ function ProfilePage({
                 {savingSection === 'experience'
                   ? 'Kaydediliyor...'
                   : editingExperienceId
-                    ? 'Deneyimi guncelle'
+                    ? 'Deneyimi güncelle'
                     : 'Deneyim ekle'}
               </button>
 
@@ -1759,7 +2070,7 @@ function ProfilePage({
                 onClick={resetExperienceEditor}
               >
                 <X size={16} />
-                Vazgec
+                Vazgeç
               </button>
             </div>
           </form>
@@ -1769,9 +2080,9 @@ function ProfilePage({
               <Plus size={18} />
             </span>
             <span className="profile-composer-collapsed-copy">
-              <span className="profile-composer-collapsed-kicker">Yeni Kayit</span>
-              <strong>Deneyim kaydi ekle</strong>
-              <span>Kurum, rol, teknolojiler ve kisa aciklamayi tek panelden ekle.</span>
+              <span className="profile-composer-collapsed-kicker">Yeni Kayıt</span>
+              <strong>Deneyim kaydı ekle</strong>
+              <span>Kurum, rol, teknolojiler ve kısa açıklamayı tek panelden ekle.</span>
             </span>
             <span className="profile-composer-collapsed-action">
               Formu ac
@@ -1781,7 +2092,7 @@ function ProfilePage({
         )}
 
         {loadingNormalizedData ? (
-          <div className="empty-state">Deneyim verileri yukleniyor.</div>
+          <div className="empty-state">Deneyim verileri yükleniyor.</div>
         ) : experienceItems.length ? (
           <div className="profile-list">
             {experienceItems.map((item) => (
@@ -1799,7 +2110,7 @@ function ProfilePage({
                       onClick={() => beginExperienceEdit(item)}
                     >
                       <Pencil size={14} />
-                      Duzenle
+                      Düzenle
                     </button>
 
                     <button
@@ -1833,7 +2144,7 @@ function ProfilePage({
             ))}
           </div>
         ) : (
-          <div className="empty-state">Henuz deneyim kaydi yok.</div>
+          <div className="empty-state">Henüz deneyim kaydı yok.</div>
         )}
       </article>
     </section>
@@ -1853,7 +2164,7 @@ function ProfilePage({
           <form className="profile-form profile-collapsible-form" onSubmit={submitProject}>
             <div className="profile-form-grid">
               <label className="profile-form-field">
-                <span>Proje adi</span>
+                <span>Proje adı</span>
                 <input
                   className="input-field"
                   value={projectForm.name}
@@ -1889,7 +2200,7 @@ function ProfilePage({
               </label>
 
               <label className="profile-form-field">
-                <span>Takim projesi mi?</span>
+                <span>Takım projesi mi?</span>
                 <div className="profile-checkbox-wrap">
                   <input
                     type="checkbox"
@@ -1898,7 +2209,7 @@ function ProfilePage({
                       setProjectForm((current) => ({ ...current, isTeamProject: event.target.checked }))
                     }
                   />
-                  <span>Evet, bu kayit bir takim projesi</span>
+                  <span>Evet, bu kayıt bir takım projesi</span>
                 </div>
               </label>
 
@@ -1915,7 +2226,7 @@ function ProfilePage({
               </label>
 
               <label className="profile-form-field profile-form-field-full">
-                <span>Aciklama</span>
+                <span>Açıklama</span>
                 <textarea
                   className="input-field profile-textarea"
                   value={projectForm.description}
@@ -1933,7 +2244,7 @@ function ProfilePage({
                 {savingSection === 'project'
                   ? 'Kaydediliyor...'
                   : editingProjectId
-                    ? 'Projeyi guncelle'
+                    ? 'Projeyi güncelle'
                     : 'Proje ekle'}
               </button>
 
@@ -1943,7 +2254,7 @@ function ProfilePage({
                 onClick={resetProjectEditor}
               >
                 <X size={16} />
-                Vazgec
+                Vazgeç
               </button>
             </div>
           </form>
@@ -1953,9 +2264,9 @@ function ProfilePage({
               <Plus size={18} />
             </span>
             <span className="profile-composer-collapsed-copy">
-              <span className="profile-composer-collapsed-kicker">Yeni Kayit</span>
-              <strong>Proje kaydi ekle</strong>
-              <span>Rol, alan, teknoloji ve aciklama bilgileriyle yeni bir proje tanimla.</span>
+              <span className="profile-composer-collapsed-kicker">Yeni Kayıt</span>
+              <strong>Proje kaydı ekle</strong>
+              <span>Rol, alan, teknoloji ve açıklama bilgileriyle yeni bir proje tanımla.</span>
             </span>
             <span className="profile-composer-collapsed-action">
               Formu ac
@@ -1965,14 +2276,14 @@ function ProfilePage({
         )}
 
         {loadingNormalizedData ? (
-          <div className="empty-state">Proje verileri yukleniyor.</div>
+          <div className="empty-state">Proje verileri yükleniyor.</div>
         ) : projectItems.length ? (
           <div className="profile-list">
             {projectItems.map((item) => (
               <div key={item.id} className="profile-list-item">
                 <div className="profile-item-top">
                   <div>
-                    <strong>{item.name || 'Proje adi yok'}</strong>
+                    <strong>{item.name || 'Proje adı yok'}</strong>
                     <span>{item.domain || 'Alan bilgisi yok'}</span>
                   </div>
 
@@ -1983,7 +2294,7 @@ function ProfilePage({
                       onClick={() => beginProjectEdit(item)}
                     >
                       <Pencil size={14} />
-                      Duzenle
+                      Düzenle
                     </button>
 
                     <button
@@ -2000,7 +2311,7 @@ function ProfilePage({
 
                 {item.role ? <p>Rol: {item.role}</p> : null}
                 {item.description ? <p>{item.description}</p> : null}
-                <p>{item.isTeamProject ? 'Takim projesi' : 'Bireysel proje'}</p>
+                <p>{item.isTeamProject ? 'Takım projesi' : 'Bireysel proje'}</p>
 
                 {item.technologyNames?.length ? (
                   <div className="project-tags profile-item-tags">
@@ -2015,7 +2326,7 @@ function ProfilePage({
             ))}
           </div>
         ) : (
-          <div className="empty-state">Henuz proje kaydi yok.</div>
+          <div className="empty-state">Henüz proje kaydı yok.</div>
         )}
       </article>
     </section>
@@ -2035,7 +2346,7 @@ function ProfilePage({
           <form className="profile-form profile-collapsible-form" onSubmit={submitDomainSignal}>
             <div className="profile-form-grid">
               <label className="profile-form-field profile-form-field-full">
-                <span>Alan adi</span>
+                <span>Alan adı</span>
                 <input
                   className="input-field"
                   value={domainSignalForm.name}
@@ -2053,7 +2364,7 @@ function ProfilePage({
                 {savingSection === 'signal'
                   ? 'Kaydediliyor...'
                   : editingDomainSignalId
-                    ? 'Alani guncelle'
+                    ? 'Alanı güncelle'
                     : 'Alan ekle'}
               </button>
 
@@ -2063,7 +2374,7 @@ function ProfilePage({
                 onClick={resetDomainSignalEditor}
               >
                 <X size={16} />
-                Vazgec
+                Vazgeç
               </button>
             </div>
           </form>
@@ -2073,9 +2384,9 @@ function ProfilePage({
               <Plus size={18} />
             </span>
             <span className="profile-composer-collapsed-copy">
-              <span className="profile-composer-collapsed-kicker">Yeni Kayit</span>
+              <span className="profile-composer-collapsed-kicker">Yeni Kayıt</span>
               <strong>Alan sinyali ekle</strong>
-              <span>Odaklandigin alanlari profilinde gorunur hale getirmek icin yeni sinyal ekle.</span>
+              <span>Odaklandığın alanları profilinde görünür hale getirmek için yeni sinyal ekle.</span>
             </span>
             <span className="profile-composer-collapsed-action">
               Formu ac
@@ -2085,7 +2396,7 @@ function ProfilePage({
         )}
 
         {loadingNormalizedData ? (
-          <div className="empty-state">Alan sinyalleri yukleniyor.</div>
+          <div className="empty-state">Alan sinyalleri yükleniyor.</div>
         ) : domainSignalItems.length ? (
           <div className="profile-list">
             {domainSignalItems.map((item) => (
@@ -2103,7 +2414,7 @@ function ProfilePage({
                       onClick={() => beginDomainSignalEdit(item)}
                     >
                       <Pencil size={14} />
-                      Duzenle
+                      Düzenle
                     </button>
 
                     <button
@@ -2121,124 +2432,18 @@ function ProfilePage({
             ))}
           </div>
         ) : (
-          <div className="empty-state">Henuz alan sinyali yok.</div>
+          <div className="empty-state">Henüz alan sinyali yok.</div>
         )}
       </article>
     </section>
   );
 
-  const renderDocuments = () => (
-    <section className="profile-grid">
-      <article className="card profile-block">
-        <div className="profile-section-title">
-          <Award size={16} />
-          Akademik Bilgiler
-        </div>
-
-        <div className="profile-inline-hint">
-          Transcript yuklemek yerine not ortalamasi ve AKTS bilgisini dogrudan girebilirsin. Bu
-          bilgiler eslesme skorlarinda ve ogrenci filtrelerinde kullanilir.
-        </div>
-
-        <form className="profile-form" onSubmit={submitAcademicProfile}>
-          <div className="profile-form-grid">
-            <label className="profile-form-field">
-              <span>CGPA</span>
-              <input
-                type="number"
-                min="0"
-                max="4"
-                step="0.01"
-                className="input-field"
-                placeholder="Ornek: 3.26"
-                value={academicForm.cgpa}
-                onChange={(event) =>
-                  setAcademicForm((current) => ({ ...current, cgpa: event.target.value }))
-                }
-              />
-            </label>
-
-            <label className="profile-form-field">
-              <span>Toplam AKTS</span>
-              <input
-                type="number"
-                min="0"
-                max="300"
-                step="1"
-                className="input-field"
-                placeholder="Ornek: 189"
-                value={academicForm.totalECTS}
-                onChange={(event) =>
-                  setAcademicForm((current) => ({
-                    ...current,
-                    totalECTS: event.target.value,
-                  }))
-                }
-              />
-            </label>
-          </div>
-
-          <div className="profile-form-actions">
-            <button
-              type="submit"
-              className="btn-primary profile-submit-button"
-              disabled={savingSection === 'academic'}
-            >
-              <Save size={16} />
-              {savingSection === 'academic' ? 'Kaydediliyor...' : 'Akademik bilgileri kaydet'}
-            </button>
-          </div>
-        </form>
-      </article>
-
-      <article className="card profile-block">
-        <div className="profile-section-title">
-          <Upload size={16} />
-          CV Yukleme
-        </div>
-
-        <div className="upload-panel">
-          <div className="upload-current-file">
-            <span>Mevcut dosya</span>
-            <strong>{profile?.cvFileName || 'Henuz CV yuklenmemis'}</strong>
-          </div>
-
-          <input
-            type="file"
-            className="input-field"
-            accept=".pdf"
-            onChange={(event) => setCvFile(event.target.files?.[0] || null)}
-          />
-
-          <button
-            type="button"
-            className="btn-primary upload-button"
-            onClick={handleUpload}
-            disabled={uploadingCv}
-          >
-            {uploadingCv ? 'CV Yukleniyor...' : 'CV Yukle'}
-          </button>
-        </div>
-      </article>
-
-      {uploadMessage ? <div className="dashboard-alert upload-alert">{uploadMessage}</div> : null}
-    </section>
-  );
-
   const renderTabContent = () => {
     switch (activeTab) {
+      case 'background':
+        return renderBackground();
       case 'skills':
         return renderSkills();
-      case 'education':
-        return renderEducation();
-      case 'experiences':
-        return renderExperiences();
-      case 'projects':
-        return renderProjects();
-      case 'signals':
-        return renderDomainSignals();
-      case 'documents':
-        return renderDocuments();
       default:
         return renderOverview();
     }
@@ -2257,11 +2462,11 @@ function ProfilePage({
       <main className="main-content">
         <header className="dashboard-header">
           <div>
-            <p className="dashboard-date">Ogrenci Profili</p>
+            <p className="dashboard-date">Öğrenci Profili</p>
             <h1 className="dashboard-title">Profilim</h1>
             <p className="dashboard-subtitle">
-              CV analizi, akademik durum ve teknik sinyaller tek ekranda. Bu alan artik hem goruntuleme
-              hem de duzenleme deneyimi sunuyor.
+              Bilgileri daha sade bölümlerde topladık. Önce genel durumu gör, sonra yetkinlik,
+              kayıt ve belge alanlarını ihtiyacına göre ilerlet.
             </p>
           </div>
 
@@ -2283,10 +2488,14 @@ function ProfilePage({
               <button
                 key={tab.id}
                 type="button"
-                className={`profile-tab ${activeTab === tab.id ? 'active' : ''}`}
+                className={`profile-tab profile-tab-detailed ${activeTab === tab.id ? 'active' : ''}`}
                 onClick={() => setActiveTab(tab.id)}
               >
-                {tab.label}
+                <div className="profile-tab-copy">
+                  <strong>{tab.label}</strong>
+                  <small>{tab.description}</small>
+                </div>
+                <div className="profile-tab-count">{tab.count}</div>
               </button>
             ))}
           </div>
@@ -2301,8 +2510,9 @@ function ProfilePage({
               Sonraki Adim
             </div>
             <p>
-              Artik egitim, deneyim, proje ve alan sinyali kayitlarini bu ekrandan yonetebiliyorsun.
-              Bir sonraki asamada ayni deneyimi yetkinlikler ve belge akislarina da tasiyabiliriz.
+              Bu akışta önce eksik görünen alanları tamamlayıp sonra proje eşleşmelerine geri
+              dönmek daha rahat bir kullanım sunar. Arayüzü aynı mantıkla diğer ekranlarda da
+              sadelestirmeye devam edebiliriz.
             </p>
           </div>
         </section>

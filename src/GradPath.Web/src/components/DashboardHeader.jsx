@@ -5,14 +5,15 @@ function DashboardHeader({ firstName, onRefresh, refreshing, loading, todayLabel
     <header className="dashboard-header">
       <div>
         <p className="dashboard-date">{todayLabel}</p>
-        <h1 className="dashboard-title">Gosterge Paneli</h1>
+        <h1 className="dashboard-title">Gösterge Paneli</h1>
         <p className="dashboard-subtitle">
-          Hos geldin {firstName}. Profil, ilan ve proje eslesmelerin tek panelde toplanmis durumda.
+          Hoş geldin {firstName}. Bu panelde proje önerilerini inceleyebilir, filtreleyebilir ve
+          sana en uygun seçeneklere daha hızlı odaklanabilirsin.
         </p>
       </div>
 
       <div className="dashboard-actions">
-        <div className="dashboard-status-note">Sistem gorunumu guncel</div>
+        <div className="dashboard-status-note">Sistem görünümü güncel</div>
 
         <button
           className="ghost-button"

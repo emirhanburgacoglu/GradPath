@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Login from './Login';
 import DashboardPage from './pages/DashboardPage';
+import PosterWorkflowPage from './pages/PosterWorkflowPage';
 import ProfilePage from './pages/ProfilePage';
 import StudentDirectoryPage from './pages/StudentDirectoryPage';
 import StudentProjectPostsPage from './pages/StudentProjectPostsPage';
@@ -32,6 +33,9 @@ function resolveCvSummary(profile) {
 }
 
 function App() {
+  const isPosterWorkflowMode =
+    typeof window !== 'undefined' &&
+    new URLSearchParams(window.location.search).get('poster') === 'workflow';
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
   const [currentView, setCurrentView] = useState('dashboard');
   const [recommendations, setRecommendations] = useState([]);
@@ -75,7 +79,7 @@ function App() {
         return;
       }
 
-      setError('Profil verileri su an alinamiyor.');
+      setError('Profil verileri şu an alınamıyor.');
     } finally {
       if (silent) {
         setRefreshing(false);
@@ -174,6 +178,10 @@ function App() {
     rawCvSummary && rawCvSummary !== '{}'
       ? rawCvSummary
       : 'CV özeti henüz oluşmadı. CV yükleyerek ya da profilini zenginleştirerek daha iyi öneriler alabilirsin.';
+
+  if (isPosterWorkflowMode) {
+    return <PosterWorkflowPage />;
+  }
 
   if (!isLoggedIn) {
     return <Login onLoginSuccess={() => setIsLoggedIn(true)} />;

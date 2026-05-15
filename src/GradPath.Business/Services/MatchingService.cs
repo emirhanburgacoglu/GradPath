@@ -74,6 +74,8 @@ public class MatchingService : IMatchingService
             .ToHashSet(StringComparer.OrdinalIgnoreCase);
 
         var allProjects = await _context.Projects
+            .Include(p => p.ProjectDepartments)
+                .ThenInclude(pd => pd.Department)
             .Include(p => p.ProjectTechnologies)
                 .ThenInclude(pt => pt.Technology)
             .ToListAsync();
@@ -173,6 +175,11 @@ public class MatchingService : IMatchingService
                 ProjectTitle = project.Title,
                 ProjectDescription = project.Description,
                 Category = project.Category,
+                DepartmentNames = project.ProjectDepartments
+                    .Where(link => link.Department != null && !string.IsNullOrWhiteSpace(link.Department.Name))
+                    .Select(link => link.Department.Name)
+                    .Distinct()
+                    .ToList(),
                 MatchScore = Math.Round(totalMatchScore, 1),
                 DifficultyScore = difficultyScore,
                 MatchedTechnologies = matchedTechs.Select(technology => technology.Name).ToList(),

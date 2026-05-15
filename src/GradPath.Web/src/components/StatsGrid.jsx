@@ -1,24 +1,24 @@
-import { BadgeCheck, BarChart3, BrainCircuit, Target } from 'lucide-react';
+import { BarChart3, BrainCircuit, Layers3, Target } from 'lucide-react';
 
-function StatsGrid({ stats }) {
+function StatsGrid({ activeFilterCount, stats, totalProjects }) {
   return (
     <section className="stats-grid">
       <article className="card stat-card">
         <div className="stat-card-top">
-          <span>Oneri Havuzu</span>
+          <span>Gösterilen Projeler</span>
           <Target size={18} />
         </div>
-        <strong>{stats.totalProjects}</strong>
-        <p>Profiline gore siralanan guncel proje onerilerinin toplami.</p>
+        <strong>
+          {stats.totalProjects}/{totalProjects}
+        </strong>
       </article>
 
       <article className="card stat-card">
         <div className="stat-card-top">
-          <span>En Yakin Eslesme</span>
+          <span>En Yüksek Uyum</span>
           <BarChart3 size={18} />
         </div>
         <strong>%{stats.topScore}</strong>
-        <p>Listede yer alan en guclu proje uyumunun ozet skoru.</p>
       </article>
 
       <article className="card stat-card">
@@ -27,16 +27,14 @@ function StatsGrid({ stats }) {
           <BrainCircuit size={18} />
         </div>
         <strong>%{stats.averageScore}</strong>
-        <p>Oneri havuzunun genel uyum seviyesini gosteren ortalama.</p>
       </article>
 
       <article className="card stat-card">
         <div className="stat-card-top">
-          <span>Gelisim Alani</span>
-          <BadgeCheck size={18} />
+          <span>Kategori Kapsamı</span>
+          <Layers3 size={18} />
         </div>
-        <strong>{stats.uniqueMissingSkills}</strong>
-        <p>Guclendirildiginde daha fazla projeyi acabilecek eksik yetkinlikler.</p>
+        <strong>{stats.categoryCount}</strong>
       </article>
     </section>
   );

@@ -3,12 +3,12 @@ import { BrainCircuit, CheckCircle2, CircleDot, Layers3, Sparkles } from 'lucide
 const difficultyMap = {
   1: 'Uygun',
   2: 'Orta Seviye',
-  3: 'Zorlayici',
+  3: 'Zorlayıcı',
 };
 
 const ProjectCard = ({ project }) => {
   const score = Math.round(project.matchScore ?? 0);
-  const difficulty = difficultyMap[project.difficultyScore] ?? 'Degerlendiriliyor';
+  const difficulty = difficultyMap[project.difficultyScore] ?? 'Değerlendiriliyor';
 
   return (
     <article className="project-card">
@@ -35,12 +35,19 @@ const ProjectCard = ({ project }) => {
           {project.category || 'Genel Kategori'}
         </div>
 
+        {project.departmentNames?.length ? (
+          <div className="project-meta-chip subtle">
+            Bölüm: {project.departmentNames.slice(0, 2).join(', ')}
+            {project.departmentNames.length > 2 ? ' +' : ''}
+          </div>
+        ) : null}
+
         <div className="project-meta-chip subtle">Zorluk: {difficulty}</div>
       </div>
 
       <div className="project-skill-grid">
         <div className="project-skill-block">
-          <h4>Eslesen Yetkinlikler</h4>
+          <h4>Eşleşen Yetkinlikler</h4>
           <div className="project-tags">
             {project.matchedTechnologies?.length ? (
               project.matchedTechnologies.map((tech) => (
@@ -50,13 +57,13 @@ const ProjectCard = ({ project }) => {
                 </span>
               ))
             ) : (
-              <span className="project-empty-tag">Henuz eslesen teknoloji yok</span>
+              <span className="project-empty-tag">Henüz eşleşen teknoloji yok</span>
             )}
           </div>
         </div>
 
         <div className="project-skill-block">
-          <h4>Gelistirilecek Alanlar</h4>
+          <h4>Geliştirilecek Alanlar</h4>
           <div className="project-tags">
             {project.missingTechnologies?.length ? (
               project.missingTechnologies.map((tech) => (
@@ -66,7 +73,7 @@ const ProjectCard = ({ project }) => {
                 </span>
               ))
             ) : (
-              <span className="project-empty-tag">Eksik teknoloji gorunmuyor</span>
+              <span className="project-empty-tag">Eksik teknoloji görünmüyor</span>
             )}
           </div>
         </div>
@@ -81,7 +88,7 @@ const ProjectCard = ({ project }) => {
         <p>
           {project.aiExplanation?.trim()
             ? project.aiExplanation
-            : 'Bu proje icin analiz aciklamasi henuz uretilmedi. Teknik eslesme skoruna gore yine de oneriler arasinda yer aliyor.'}
+            : 'Bu proje için analiz açıklaması henüz üretilmedi. Teknik eşleşme skoruna göre yine de öneriler arasında yer alıyor.'}
         </p>
       </div>
     </article>

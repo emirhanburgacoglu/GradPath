@@ -47,11 +47,11 @@ function getDateRange(startDateText, endDateText) {
 function getProficiencyLabel(level) {
   switch (level) {
     case 3:
-      return 'Ileri';
+      return 'İleri';
     case 2:
       return 'Orta';
     default:
-      return 'Baslangic';
+      return 'Başlangıç';
   }
 }
 
@@ -150,7 +150,7 @@ function StudentDirectoryPage({
     }
 
     if (selectedDepartment) {
-      chips.push({ key: 'department', label: `Bolum: ${selectedDepartment.name}` });
+      chips.push({ key: 'department', label: `Bölüm: ${selectedDepartment.name}` });
     }
 
     if (selectedTechnology) {
@@ -162,7 +162,7 @@ function StudentDirectoryPage({
     }
 
     if (filters.honorOnly) {
-      chips.push({ key: 'honor', label: 'Sadece onur ogrencileri' });
+      chips.push({ key: 'honor', label: 'Sadece onur öğrencileri' });
     }
 
     return chips;
@@ -218,7 +218,7 @@ function StudentDirectoryPage({
       }
 
       setStudents([]);
-      setActionError(getErrorMessage(error, 'Ogrenci dizini yuklenemedi. Lutfen tekrar dene.'));
+      setActionError(getErrorMessage(error, 'Öğrenci dizini yüklenemedi. Lütfen tekrar dene.'));
     } finally {
       if (silent) {
         setRefreshing(false);
@@ -266,7 +266,7 @@ function StudentDirectoryPage({
     }
 
     if (optionsResult.status === 'rejected' || directoryResult.status === 'rejected') {
-      setActionError('Bazi ogrenci dizini verileri yuklenemedi. Sayfayi yenileyip tekrar deneyebilirsin.');
+      setActionError('Bazı öğrenci dizini verileri yüklenemedi. Sayfayı yenileyip tekrar deneyebilirsin.');
     }
 
     setLoading(false);
@@ -301,7 +301,7 @@ function StudentDirectoryPage({
         return;
       }
 
-      setActionError(getErrorMessage(error, 'Ogrenci profili yuklenemedi. Lutfen tekrar dene.'));
+      setActionError(getErrorMessage(error, 'Öğrenci profili yüklenemedi. Lütfen tekrar dene.'));
     } finally {
       setLoadingProfileId('');
     }
@@ -318,15 +318,15 @@ function StudentDirectoryPage({
           className="selection-modal student-directory-modal"
           role="dialog"
           aria-modal="true"
-          aria-label="Ogrenci profili"
+          aria-label="Öğrenci profili"
           onClick={(event) => event.stopPropagation()}
         >
           <div className="selection-modal-header">
             <div>
-              <div className="selection-modal-kicker">Ogrenci profili</div>
-              <h2>{selectedStudentProfile?.fullName || 'Profil yukleniyor'}</h2>
+              <div className="selection-modal-kicker">Öğrenci profili</div>
+              <h2>{selectedStudentProfile?.fullName || 'Profil yükleniyor'}</h2>
               <p>
-                Yetkinlikler, egitim gecmisi, projeler ve deneyimler bu alanda read-only olarak gorunur.
+                Yetkinlikler, eğitim geçmişi, projeler ve deneyimler bu alanda read-only olarak görünür.
               </p>
             </div>
 
@@ -336,7 +336,7 @@ function StudentDirectoryPage({
           </div>
 
           {loadingProfileId === selectedStudentUserId ? (
-            <div className="empty-state">Profil yukleniyor.</div>
+            <div className="empty-state">Profil yükleniyor.</div>
           ) : selectedStudentProfile ? (
             <>
               <section className="selection-modal-section">
@@ -349,7 +349,7 @@ function StudentDirectoryPage({
                         selectedStudentProfile.departmentCode,
                       ]
                         .filter(Boolean)
-                        .join(' - ') || 'Bolum bilgisi yok'}
+                        .join(' - ') || 'Bölüm bilgisi yok'}
                     </span>
                     {selectedStudentProfile.facultyName ? (
                       <span>{selectedStudentProfile.facultyName}</span>
@@ -360,14 +360,14 @@ function StudentDirectoryPage({
                     <span className="project-meta-chip">GPA: {selectedStudentProfile.cgpa ?? '-'}</span>
                     <span className="project-meta-chip">AKTS: {selectedStudentProfile.totalECTS ?? '-'}</span>
                     {selectedStudentProfile.isHonorStudent ? (
-                      <span className="post-status-pill open">Onur ogrencisi</span>
+                      <span className="post-status-pill open">Onur öğrencisi</span>
                     ) : null}
                   </div>
                 </div>
 
                 {selectedStudentProfile.cvSummary ? (
                   <div className="applicant-public-profile-summary">
-                    <strong>CV ozeti</strong>
+                    <strong>CV özeti</strong>
                     <p>{selectedStudentProfile.cvSummary}</p>
                   </div>
                 ) : null}
@@ -387,12 +387,12 @@ function StudentDirectoryPage({
                         ))}
                       </div>
                     ) : (
-                      <div className="applicant-public-profile-empty">Kayitli yetenek yok.</div>
+                      <div className="applicant-public-profile-empty">Kayıtlı yetenek yok.</div>
                     )}
                   </article>
 
                   <article className="applicant-public-profile-card">
-                    <div className="applicant-public-profile-card-title">Ilgi alanlari</div>
+                    <div className="applicant-public-profile-card-title">İlgi alanları</div>
                     {selectedStudentProfile.domainSignals?.length ? (
                       <div className="project-tags">
                         {selectedStudentProfile.domainSignals.map((signal) => (
@@ -402,12 +402,12 @@ function StudentDirectoryPage({
                         ))}
                       </div>
                     ) : (
-                      <div className="applicant-public-profile-empty">Ilgi alani eklenmemis.</div>
+                      <div className="applicant-public-profile-empty">İlgi alanı eklenmemiş.</div>
                     )}
                   </article>
 
                   <article className="applicant-public-profile-card applicant-public-profile-card-full">
-                    <div className="applicant-public-profile-card-title">Egitim</div>
+                    <div className="applicant-public-profile-card-title">Eğitim</div>
                     {selectedStudentProfile.educations?.length ? (
                       <div className="applicant-public-profile-list">
                         {selectedStudentProfile.educations.map((education) => (
@@ -426,7 +426,7 @@ function StudentDirectoryPage({
                         ))}
                       </div>
                     ) : (
-                      <div className="applicant-public-profile-empty">Egitim kaydi yok.</div>
+                      <div className="applicant-public-profile-empty">Eğitim kaydi yok.</div>
                     )}
                   </article>
 
@@ -439,8 +439,8 @@ function StudentDirectoryPage({
                             key={experience.id || `${experience.companyName}-${experience.position}`}
                             className="applicant-public-profile-item"
                           >
-                            <strong>{experience.companyName || 'Deneyim kaydi'}</strong>
-                            <span>{experience.position || 'Pozisyon belirtilmemis'}</span>
+                            <strong>{experience.companyName || 'Deneyim kaydı'}</strong>
+                            <span>{experience.position || 'Pozisyon belirtilmemiş'}</span>
                             <small>
                               {getDateRange(experience.startDateText, experience.endDateText) || 'Tarih bilgisi yok'}
                             </small>
@@ -458,7 +458,7 @@ function StudentDirectoryPage({
                         ))}
                       </div>
                     ) : (
-                      <div className="applicant-public-profile-empty">Deneyim kaydi yok.</div>
+                      <div className="applicant-public-profile-empty">Deneyim kaydı yok.</div>
                     )}
                   </article>
 
@@ -471,12 +471,12 @@ function StudentDirectoryPage({
                             key={project.id || `${project.name}-${project.role}`}
                             className="applicant-public-profile-item"
                           >
-                            <strong>{project.name || 'Proje kaydi'}</strong>
+                            <strong>{project.name || 'Proje kaydı'}</strong>
                             <span>
-                              {[project.role, project.domain].filter(Boolean).join(' - ') || 'Rol veya domain belirtilmemis'}
+                              {[project.role, project.domain].filter(Boolean).join(' - ') || 'Rol veya alan belirtilmemiş'}
                             </span>
                             {project.description ? <p>{project.description}</p> : null}
-                            <small>{project.isTeamProject ? 'Takim projesi' : 'Bireysel proje'}</small>
+                            <small>{project.isTeamProject ? 'Takım projesi' : 'Bireysel proje'}</small>
                             {project.technologyNames?.length ? (
                               <div className="project-tags">
                                 {project.technologyNames.map((technologyName) => (
@@ -490,14 +490,14 @@ function StudentDirectoryPage({
                         ))}
                       </div>
                     ) : (
-                      <div className="applicant-public-profile-empty">Proje kaydi yok.</div>
+                      <div className="applicant-public-profile-empty">Proje kaydı yok.</div>
                     )}
                   </article>
                 </div>
               </section>
             </>
           ) : (
-            <div className="empty-state">Profil verisi bulunamadi.</div>
+            <div className="empty-state">Profil verisi bulunamadı.</div>
           )}
         </div>
       </div>
@@ -517,10 +517,10 @@ function StudentDirectoryPage({
       <main className="main-content">
         <div className="dashboard-header">
           <div>
-            <p className="dashboard-date">Ogrenci Dizini</p>
-            <h1 className="dashboard-title">Ogrenciler</h1>
+            <p className="dashboard-date">Öğrenci Dizini</p>
+            <h1 className="dashboard-title">Öğrenciler</h1>
             <p className="dashboard-subtitle">
-              Benzer alanlarda calisan ogrencileri filtrele, profillerini incele ve ekip kurma kararini daha bilincli ver.
+              Benzer alanlarda çalışan öğrencileri filtrele, profillerini incele ve ekip kurma kararını daha bilinçli ver.
             </p>
           </div>
 
@@ -539,29 +539,49 @@ function StudentDirectoryPage({
 
         {actionError ? <div className="dashboard-alert">{actionError}</div> : null}
 
-        <section className="posts-stats-grid">
-          <article className="card posts-stat-card">
-            <span className="posts-stat-label">Gorunen Ogrenci</span>
-            <strong className="posts-stat-value">{stats.totalStudents}</strong>
-            <p className="posts-stat-copy">Secili filtrelerle listelenen ogrenci sayisi.</p>
+        <section className="student-directory-stats-grid">
+          <article className="card student-directory-stat-card">
+            <div className="student-directory-stat-top">
+              <span className="student-directory-stat-icon">
+                <Users size={16} />
+              </span>
+              <span className="student-directory-stat-title">Görünen Öğrenci</span>
+              <span className="student-directory-stat-chip">Toplam</span>
+            </div>
+            <strong className="student-directory-stat-value">{stats.totalStudents}</strong>
           </article>
 
-          <article className="card posts-stat-card">
-            <span className="posts-stat-label">Onur Ogrencisi</span>
-            <strong className="posts-stat-value">{stats.honorStudents}</strong>
-            <p className="posts-stat-copy">Yuksek akademik performansa sahip ogrenciler.</p>
+          <article className="card student-directory-stat-card">
+            <div className="student-directory-stat-top">
+              <span className="student-directory-stat-icon">
+                <Award size={16} />
+              </span>
+              <span className="student-directory-stat-title">Onur Öğrencisi</span>
+              <span className="student-directory-stat-chip">Seçili</span>
+            </div>
+            <strong className="student-directory-stat-value">{stats.honorStudents}</strong>
           </article>
 
-          <article className="card posts-stat-card">
-            <span className="posts-stat-label">Ortalama GPA</span>
-            <strong className="posts-stat-value">{stats.averageCgpa}</strong>
-            <p className="posts-stat-copy">Listelenen ogrencilerin guncel not ortalamasi.</p>
+          <article className="card student-directory-stat-card">
+            <div className="student-directory-stat-top">
+              <span className="student-directory-stat-icon">
+                <Sparkles size={16} />
+              </span>
+              <span className="student-directory-stat-title">Ortalama GPA</span>
+              <span className="student-directory-stat-chip">Genel</span>
+            </div>
+            <strong className="student-directory-stat-value">{stats.averageCgpa}</strong>
           </article>
 
-          <article className="card posts-stat-card">
-            <span className="posts-stat-label">Alan Cesitliligi</span>
-            <strong className="posts-stat-value">{stats.uniqueDomainSignals}</strong>
-            <p className="posts-stat-copy">Kesisen teknik alan ve odak sayisi.</p>
+          <article className="card student-directory-stat-card">
+            <div className="student-directory-stat-top">
+              <span className="student-directory-stat-icon">
+                <SlidersHorizontal size={16} />
+              </span>
+              <span className="student-directory-stat-title">Alan Çeşitliliği</span>
+              <span className="student-directory-stat-chip">Odak</span>
+            </div>
+            <strong className="student-directory-stat-value">{stats.uniqueDomainSignals}</strong>
           </article>
         </section>
 
@@ -571,10 +591,7 @@ function StudentDirectoryPage({
               <div>
                 <div className="profile-section-title">
                   <SlidersHorizontal size={16} />
-                  Ogrenci filtreleri
-                </div>
-                <div className="profile-section-meta">
-                  Listeyi bolum, teknoloji, GPA ve arama sorgusuyla daralt.
+                  Öğrenci filtreleri
                 </div>
               </div>
             </div>
@@ -592,14 +609,14 @@ function StudentDirectoryPage({
                         onChange={(event) =>
                           setFilters((current) => ({ ...current, query: event.target.value }))
                         }
-                        placeholder="Isim, bolum, teknoloji veya alan ara"
+                        placeholder="İsim, bölüm, teknoloji veya alan ara"
                       />
                     </div>
                   </label>
 
                   <div className="student-directory-filter-actions">
                     <button type="submit" className="btn-primary profile-submit-button" disabled={refreshing}>
-                      {refreshing ? 'Filtreleniyor...' : 'Sonuclari Goster'}
+                      {refreshing ? 'Filtreleniyor...' : 'Sonuçları Göster'}
                     </button>
 
                     <button type="button" className="ghost-button profile-inline-button" onClick={clearFilters}>
@@ -610,7 +627,7 @@ function StudentDirectoryPage({
 
                 <div className="student-directory-filter-grid">
                   <label className="profile-form-field">
-                    <span className="field-label">Bolum</span>
+                    <span className="field-label">Bölüm</span>
                     <select
                       className="input-field"
                       value={filters.departmentId}
@@ -618,7 +635,7 @@ function StudentDirectoryPage({
                         setFilters((current) => ({ ...current, departmentId: event.target.value }))
                       }
                     >
-                      <option value="">Tum bolumler</option>
+                      <option value="">Tüm bölümler</option>
                       {directoryOptions.departments.map((department) => (
                         <option key={department.id} value={department.id}>
                           {department.name}
@@ -636,7 +653,7 @@ function StudentDirectoryPage({
                         setFilters((current) => ({ ...current, technologyId: event.target.value }))
                       }
                     >
-                      <option value="">Tum teknolojiler</option>
+                      <option value="">Tüm teknolojiler</option>
                       {directoryOptions.technologies.map((technology) => (
                         <option key={technology.id} value={technology.id}>
                           {technology.name}
@@ -657,7 +674,7 @@ function StudentDirectoryPage({
                       onChange={(event) =>
                         setFilters((current) => ({ ...current, minCgpa: event.target.value }))
                       }
-                      placeholder="Orn. 3.0"
+                      placeholder="Örn. 3.0"
                     />
                   </label>
 
@@ -671,7 +688,7 @@ function StudentDirectoryPage({
                           setFilters((current) => ({ ...current, honorOnly: event.target.checked }))
                         }
                       />
-                      <span>Sadece onur ogrencilerini goster</span>
+                      <span>Sadece onur öğrencilerini göster</span>
                     </div>
                   </label>
                 </div>
@@ -691,7 +708,7 @@ function StudentDirectoryPage({
         </section>
 
         {loading ? (
-          <article className="card loading-card">Ogrenci dizini yukleniyor.</article>
+          <article className="card loading-card">Öğrenci dizini yükleniyor.</article>
         ) : students.length ? (
           <section className="student-directory-grid">
             {students.map((student) => {
@@ -706,7 +723,7 @@ function StudentDirectoryPage({
                       <div className="student-directory-card-copy">
                         <strong>{student.fullName}</strong>
                         <span>
-                          {[student.departmentName, student.departmentCode].filter(Boolean).join(' - ') || 'Bolum bilgisi yok'}
+                          {[student.departmentName, student.departmentCode].filter(Boolean).join(' - ') || 'Bölüm bilgisi yok'}
                         </span>
                         {student.facultyName ? <small>{student.facultyName}</small> : null}
                       </div>
@@ -731,7 +748,7 @@ function StudentDirectoryPage({
                           disabled={isProfileLoading}
                         >
                           <Sparkles size={15} />
-                          {isProfileLoading ? 'Profil yukleniyor...' : 'Profili incele'}
+                          {isProfileLoading ? 'Profil yükleniyor...' : 'Profili incele'}
                         </button>
                       </div>
                     </div>
@@ -765,13 +782,13 @@ function StudentDirectoryPage({
                     </p>
                   ) : (
                     <p className="student-directory-card-summary student-directory-card-summary-muted">
-                      Bu ogrenci icin henuz paylasilan bir ozet bulunmuyor.
+                      Bu öğrenci için henüz paylaşılan bir özet bulunmuyor.
                     </p>
                   )}
 
                   <div className="student-directory-detail-grid">
                     <div className="post-card-section">
-                      <div className="post-card-section-title">One cikan yetenekler</div>
+                      <div className="post-card-section-title">Öne çıkan yetenekler</div>
                       <div className="project-tags">
                         {student.skills?.length ? (
                           student.skills.map((skill) => (
@@ -783,13 +800,13 @@ function StudentDirectoryPage({
                             </span>
                           ))
                         ) : (
-                          <span className="project-empty-tag">Kayitli yetenek yok</span>
+                          <span className="project-empty-tag">Kayıtlı yetenek yok</span>
                         )}
                       </div>
                     </div>
 
                     <div className="post-card-section">
-                      <div className="post-card-section-title">Ilgi alanlari</div>
+                      <div className="post-card-section-title">İlgi alanları</div>
                       <div className="project-tags">
                         {student.domainSignals?.length ? (
                           student.domainSignals.map((signal) => (
@@ -809,7 +826,7 @@ function StudentDirectoryPage({
           </section>
         ) : (
           <article className="card empty-state">
-            Secili filtrelerle eslesen ogrenci bulunamadi.
+            Seçili filtrelerle eşleşen öğrenci bulunamadı.
           </article>
         )}
       </main>

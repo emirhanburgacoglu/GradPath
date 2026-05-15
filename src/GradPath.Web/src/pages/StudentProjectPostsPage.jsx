@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   BadgeCheck,
   Building2,
@@ -6,323 +6,36 @@ import {
   Check,
   ClipboardList,
   Clock3,
-  FolderKanban,
   Layers3,
-  Pencil,
   Plus,
   RefreshCw,
   RotateCcw,
-  Save,
   Search,
   Sparkles,
-  Tag,
-  Trash2,
   UserPlus,
-  Users,
   X,
 } from 'lucide-react';
 import AppHeader from '../components/AppHeader';
 import api from '../api';
-
-const projectTypeOptions = [
-  'Hackathon',
-  'Competition',
-  'Startup',
-  'CourseProject',
-  'Research',
-  'OpenSource',
-];
-
-const statusOptions = ['Draft', 'Open', 'Closed', 'Filled'];
-const allTechnologyCategoriesLabel = 'Tum Kategoriler';
-const allDepartmentFacultiesLabel = 'Tum Fakulteler';
-
-const sharedTechnologyPresets = [
-  {
-    key: 'web-stack',
-    label: 'Web Stack',
-    description: 'Arayuz, API ve veri katmanini hizla kur.',
-    names: ['React', 'REST API', 'PostgreSQL'],
-  },
-  {
-    key: 'backend-stack',
-    label: 'Backend Temel',
-    description: 'Servis, ORM ve veritabani omurgasi.',
-    names: ['ASP.NET Core', 'Entity Framework', 'PostgreSQL'],
-  },
-];
-
-const technologyPresetCatalog = {
-  Hackathon: [
-    {
-      key: 'hackathon-mvp',
-      label: 'Hizli MVP',
-      description: 'Demo, sunum ve servis akisini ayni anda kur.',
-      names: ['React', 'REST API', 'PostgreSQL'],
-    },
-    {
-      key: 'hackathon-ai',
-      label: 'AI Prototip',
-      description: 'Model, veri ve analiz cekirdegi.',
-      names: ['Python', 'Machine Learning', 'Scikit-learn'],
-    },
-  ],
-  Competition: [
-    {
-      key: 'competition-ai',
-      label: 'Yarisma AI',
-      description: 'Veri ve model odakli hizli kadro.',
-      names: ['Python', 'Machine Learning', 'Scikit-learn'],
-    },
-    {
-      key: 'competition-cv',
-      label: 'Goruntu Isleme',
-      description: 'Kamera veya algi tabanli takimlar icin.',
-      names: ['Python', 'OpenCV', 'Raspberry Pi'],
-    },
-  ],
-  Startup: [
-    {
-      key: 'startup-web',
-      label: 'Urun Cekirdegi',
-      description: 'Web urununu hizla yayina cikar.',
-      names: ['React', 'REST API', 'PostgreSQL'],
-    },
-    {
-      key: 'startup-mobile',
-      label: 'Mobil MVP',
-      description: 'Mobil arayuz ve servis katmani.',
-      names: ['Flutter', 'REST API', 'PostgreSQL'],
-    },
-  ],
-  CourseProject: [
-    {
-      key: 'course-web',
-      label: 'Ders Projesi Web',
-      description: 'Temel arayuz ve backend iskeleti.',
-      names: ['HTML', 'CSS', 'JavaScript', 'REST API'],
-    },
-    {
-      key: 'course-backend',
-      label: 'Ders Projesi Backend',
-      description: 'Sunucu ve veri katmani icin guvenli baslangic.',
-      names: ['ASP.NET Core', 'Entity Framework', 'PostgreSQL'],
-    },
-  ],
-  Research: [
-    {
-      key: 'research-ai',
-      label: 'Arastirma AI',
-      description: 'Analiz, modelleme ve deney seti.',
-      names: ['Python', 'Machine Learning', 'Scikit-learn'],
-    },
-    {
-      key: 'research-platform',
-      label: 'Arastirma Platformu',
-      description: 'API ve veri odakli arastirma akisi.',
-      names: ['REST API', 'PostgreSQL', 'Git'],
-    },
-  ],
-  OpenSource: [
-    {
-      key: 'opensource-core',
-      label: 'Acik Kaynak Baslangic',
-      description: 'Depo, katkilar ve servis katmani.',
-      names: ['Git', 'GitHub', 'REST API'],
-    },
-    {
-      key: 'opensource-web',
-      label: 'Acik Kaynak Web',
-      description: 'Arayuz tarafina katki verecek ekip.',
-      names: ['React', 'JavaScript', 'CSS'],
-    },
-  ],
-};
-
-function createEmptyPostForm() {
-  return {
-    title: '',
-    description: '',
-    category: '',
-    projectType: 'Hackathon',
-    status: 'Draft',
-    teamSize: 4,
-    neededMemberCount: 2,
-    applicationDeadline: '',
-    technologyIds: [],
-    departmentIds: [],
-  };
-}
-
-function getErrorMessage(error, fallback) {
-  const responseData = error?.response?.data;
-
-  if (typeof responseData === 'string' && responseData.trim()) {
-    return responseData;
-  }
-
-  return responseData?.message || responseData?.title || fallback;
-}
-
-function formatDateLabel(value) {
-  if (!value) {
-    return 'Son tarih belirlenmedi';
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return 'Gecersiz tarih';
-  }
-
-  return new Intl.DateTimeFormat('tr-TR', {
-    day: 'numeric',
-    month: 'short',
-    year: 'numeric',
-  }).format(date);
-}
-
-function toDateTimeLocalValue(value) {
-  if (!value) {
-    return '';
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.getTime())) {
-    return '';
-  }
-
-  const timezoneOffset = date.getTimezoneOffset() * 60000;
-  return new Date(date.getTime() - timezoneOffset).toISOString().slice(0, 16);
-}
-
-function getDateRange(startDateText, endDateText) {
-  return [startDateText, endDateText].filter(Boolean).join(' - ');
-}
-
-function getProficiencyLabel(level) {
-  switch (level) {
-    case 3:
-      return 'Ileri';
-    case 2:
-      return 'Orta';
-    default:
-      return 'Baslangic';
-  }
-}
-
-function toggleSelection(list, value) {
-  return list.includes(value)
-    ? list.filter((item) => item !== value)
-    : [...list, value];
-}
-
-function normalizeLookupValue(value) {
-  return String(value || '').trim().toLowerCase();
-}
-
-function matchesLookupQuery(values, query) {
-  const normalizedQuery = normalizeLookupValue(query);
-
-  if (!normalizedQuery) {
-    return true;
-  }
-
-  return values
-    .filter(Boolean)
-    .some((value) => normalizeLookupValue(value).includes(normalizedQuery));
-}
-
-function getStatusTone(status) {
-  switch (status) {
-    case 'Open':
-      return 'open';
-    case 'Draft':
-      return 'draft';
-    case 'Filled':
-      return 'filled';
-    default:
-      return 'closed';
-  }
-}
-
-function getApplicationTone(status) {
-  switch (status) {
-    case 'Accepted':
-      return 'accepted';
-    case 'Rejected':
-      return 'rejected';
-    case 'Withdrawn':
-      return 'withdrawn';
-    default:
-      return 'pending';
-  }
-}
-
-function sortOptionsForSelection(options, selectedIds, metaSelector) {
-  return [...options].sort((left, right) => {
-    const leftSelected = selectedIds.includes(left.id);
-    const rightSelected = selectedIds.includes(right.id);
-
-    if (leftSelected !== rightSelected) {
-      return leftSelected ? -1 : 1;
-    }
-
-    const metaCompare = String(metaSelector(left) || '').localeCompare(
-      String(metaSelector(right) || ''),
-      'tr',
-      { sensitivity: 'base' }
-    );
-
-    if (metaCompare !== 0) {
-      return metaCompare;
-    }
-
-    return String(left.name || '').localeCompare(String(right.name || ''), 'tr', {
-      sensitivity: 'base',
-    });
-  });
-}
-
-function buildTechnologyPresets(options, projectType) {
-  const optionMap = options.reduce((accumulator, option) => {
-    const normalizedName = normalizeLookupValue(option.name);
-
-    if (normalizedName && !accumulator[normalizedName]) {
-      accumulator[normalizedName] = option;
-    }
-
-    return accumulator;
-  }, {});
-
-  const definitions = [
-    ...(technologyPresetCatalog[projectType] || []),
-    ...sharedTechnologyPresets,
-  ];
-
-  return definitions
-    .map((definition) => {
-      const resolvedOptions = definition.names
-        .map((name) => optionMap[normalizeLookupValue(name)])
-        .filter(Boolean)
-        .filter(
-          (option, index, collection) =>
-            collection.findIndex((candidate) => candidate.id === option.id) === index
-        );
-
-      if (resolvedOptions.length < 2) {
-        return null;
-      }
-
-      return {
-        key: definition.key,
-        label: definition.label,
-        description: definition.description,
-        optionIds: resolvedOptions.map((option) => option.id),
-        optionNames: resolvedOptions.map((option) => option.name),
-      };
-    })
-    .filter(Boolean);
-}
+import PostCard from './studentProjectPosts/components/PostCard';
+import PostComposer from './studentProjectPosts/components/PostComposer';
+import {
+  allDepartmentFacultiesLabel,
+  allTechnologyCategoriesLabel,
+} from './studentProjectPosts/studentProjectPosts.constants';
+import {
+  buildTechnologyPresets,
+  createEmptyPostForm,
+  formatDateLabel,
+  getApplicationTone,
+  getDateRange,
+  getErrorMessage,
+  getProficiencyLabel,
+  matchesLookupQuery,
+  sortOptionsForSelection,
+  toDateTimeLocalValue,
+  toggleSelection,
+} from './studentProjectPosts/studentProjectPosts.utils';
 
 function StudentProjectPostsPage({
   currentView,
@@ -331,13 +44,14 @@ function StudentProjectPostsPage({
   onViewChange,
   profile,
 }) {
-  const [activeTab, setActiveTab] = useState('mine');
+  const [activeTab, setActiveTab] = useState('open');
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [deletingId, setDeletingId] = useState('');
   const [actionMessage, setActionMessage] = useState('');
   const [actionError, setActionError] = useState('');
+  const [applicationStatusFilter, setApplicationStatusFilter] = useState('All');
   const [myPosts, setMyPosts] = useState([]);
   const [openPosts, setOpenPosts] = useState([]);
   const [myApplications, setMyApplications] = useState([]);
@@ -388,6 +102,35 @@ function StudentProjectPostsPage({
   const managedAvailableSlotCount = applicationManagerPost
     ? Math.max((applicationManagerPost.neededMemberCount || 0) - managedAcceptedCount, 0)
     : 0;
+  const filteredMyApplications = myApplications.filter((application) => (
+    applicationStatusFilter === 'All' || application.status === applicationStatusFilter
+  ));
+  const myPostSections = useMemo(() => {
+    const openItems = myPosts.filter((post) => post.status === 'Open');
+    const draftItems = myPosts.filter((post) => post.status === 'Draft');
+    const otherItems = myPosts.filter((post) => post.status !== 'Open' && post.status !== 'Draft');
+
+    return [
+      {
+        id: 'open',
+        title: 'Açık ilanlarım',
+        description: 'Şu an öğrencilerin görebildiği ve başvuru alabilen ilanlar.',
+        posts: openItems,
+      },
+      {
+        id: 'draft',
+        title: 'Taslaklar',
+        description: 'Henüz yayına almadığın, üzerinde çalışmaya devam ettiğin ilanlar.',
+        posts: draftItems,
+      },
+      {
+        id: 'other',
+        title: 'Kapanan ilanlar',
+        description: 'Süreci tamamlanan ya da yeni başvuru almayan ilanlar.',
+        posts: otherItems,
+      },
+    ].filter((section) => section.posts.length);
+  }, [myPosts]);
 
   const filteredOpenPosts = openPosts.filter((post) => {
     const normalizedQuery = openQuery.trim().toLowerCase();
@@ -415,19 +158,25 @@ function StudentProjectPostsPage({
     .filter((option) => postForm.departmentIds.includes(option.id))
     .sort((left, right) => left.name.localeCompare(right.name, 'tr', { sensitivity: 'base' }));
 
-  const technologyCategories = [
-    allTechnologyCategoriesLabel,
-    ...Array.from(
-      new Set(technologyOptions.map((option) => option.category).filter(Boolean))
-    ).sort((left, right) => left.localeCompare(right, 'tr', { sensitivity: 'base' })),
-  ];
+  const technologyCategories = useMemo(
+    () => [
+      allTechnologyCategoriesLabel,
+      ...Array.from(
+        new Set(technologyOptions.map((option) => option.category).filter(Boolean))
+      ).sort((left, right) => left.localeCompare(right, 'tr', { sensitivity: 'base' })),
+    ],
+    [technologyOptions]
+  );
 
-  const departmentFaculties = [
-    allDepartmentFacultiesLabel,
-    ...Array.from(
-      new Set(departmentOptions.map((option) => option.facultyName).filter(Boolean))
-    ).sort((left, right) => left.localeCompare(right, 'tr', { sensitivity: 'base' })),
-  ];
+  const departmentFaculties = useMemo(
+    () => [
+      allDepartmentFacultiesLabel,
+      ...Array.from(
+        new Set(departmentOptions.map((option) => option.facultyName).filter(Boolean))
+      ).sort((left, right) => left.localeCompare(right, 'tr', { sensitivity: 'base' })),
+    ],
+    [departmentOptions]
+  );
 
   const filteredTechnologyOptions = sortOptionsForSelection(
     technologyOptions.filter((option) => {
@@ -471,6 +220,44 @@ function StudentProjectPostsPage({
   }, {});
 
   const technologyPresets = buildTechnologyPresets(technologyOptions, postForm.projectType);
+  const viewOptions = useMemo(() => ([
+    {
+      id: 'mine',
+      icon: Layers3,
+      label: 'İlanlarım',
+      description: 'Oluşturduğun tüm ilanlar',
+      count: myPosts.length,
+    },
+    {
+      id: 'open',
+      icon: Search,
+      label: 'Açık İlanlar',
+      description: 'Öğrencilere açık ilanlar',
+      count: openPosts.length,
+    },
+    {
+      id: 'applications',
+      icon: ClipboardList,
+      label: 'Başvurularım',
+      description: 'Gönderdiğin başvurular',
+      count: myApplications.length,
+    },
+  ]), [myApplications.length, myPosts.length, openPosts.length]);
+  const applicationFilters = useMemo(() => ([
+    { id: 'All', label: 'Tum', count: myApplications.length },
+    { id: 'Pending', label: 'Bekleyen', count: pendingMyApplicationCount },
+    { id: 'Accepted', label: 'Kabul', count: acceptedMyApplicationCount },
+    {
+      id: 'Rejected',
+      label: 'Red',
+      count: myApplications.filter((application) => application.status === 'Rejected').length,
+    },
+    {
+      id: 'Withdrawn',
+      label: 'Geri cekilen',
+      count: myApplications.filter((application) => application.status === 'Withdrawn').length,
+    },
+  ]), [acceptedMyApplicationCount, myApplications, pendingMyApplicationCount]);
 
   const clearFeedback = () => {
     setActionMessage('');
@@ -541,7 +328,7 @@ function StudentProjectPostsPage({
     }
   }, [activeDepartmentFaculty, departmentFaculties]);
 
-  const loadPostsData = async (silent = false) => {
+  const loadPostsData = useCallback(async (silent = false) => {
     if (silent) {
       setRefreshing(true);
     } else {
@@ -620,11 +407,11 @@ function StudentProjectPostsPage({
     } else {
       setLoading(false);
     }
-  };
+  }, [onLogout]);
 
   useEffect(() => {
     loadPostsData();
-  }, []);
+  }, [loadPostsData]);
 
   const beginCreate = () => {
     clearFeedback();
@@ -699,22 +486,22 @@ function StudentProjectPostsPage({
     clearFeedback();
 
     if (!postForm.title.trim() || !postForm.description.trim() || !postForm.category.trim()) {
-      setActionError('Baslik, aciklama ve kategori alanlari zorunlu.');
+      setActionError('Başlık, açıklama ve kategori alanları zorunlu.');
       return;
     }
 
     if (postForm.teamSize < 1 || postForm.teamSize > 20) {
-      setActionError('Takim boyutu 1 ile 20 arasinda olmali.');
+      setActionError('Takım boyutu 1 ile 20 arasında olmalı.');
       return;
     }
 
     if (postForm.neededMemberCount < 0 || postForm.neededMemberCount > 20) {
-      setActionError('Aranan uye sayisi 0 ile 20 arasinda olmali.');
+      setActionError('Aranan üye sayısı 0 ile 20 arasında olmalı.');
       return;
     }
 
     if (postForm.neededMemberCount > postForm.teamSize) {
-      setActionError('Aranan uye sayisi takim boyutundan buyuk olamaz.');
+      setActionError('Aranan üye sayısı takım boyutundan büyük olamaz.');
       return;
     }
 
@@ -738,10 +525,10 @@ function StudentProjectPostsPage({
     try {
       if (editingPostId) {
         await api.put(`/student-project-posts/${editingPostId}`, payload);
-        setActionMessage('Ilan basariyla guncellendi.');
+        setActionMessage('İlan başarıyla güncellendi.');
       } else {
         await api.post('/student-project-posts', payload);
-        setActionMessage('Ilan basariyla olusturuldu.');
+        setActionMessage('İlan başarıyla oluşturuldu.');
       }
 
       resetComposer();
@@ -752,14 +539,14 @@ function StudentProjectPostsPage({
         return;
       }
 
-      setActionError(getErrorMessage(error, 'Ilan kaydedilemedi. Bilgileri kontrol edip tekrar dene.'));
+      setActionError(getErrorMessage(error, 'İlan kaydedilemedi. Bilgileri kontrol edip tekrar dene.'));
     } finally {
       setSaving(false);
     }
   };
 
   const removePost = async (postId) => {
-    if (!window.confirm('Bu ilani silmek istedigine emin misin?')) {
+    if (!window.confirm('Bu ilanı silmek istediğine emin misin?')) {
       return;
     }
 
@@ -768,7 +555,7 @@ function StudentProjectPostsPage({
 
     try {
       await api.delete(`/student-project-posts/${postId}`);
-      setActionMessage('Ilan basariyla silindi.');
+      setActionMessage('İlan başarıyla silindi.');
 
       if (editingPostId === postId) {
         resetComposer();
@@ -781,7 +568,7 @@ function StudentProjectPostsPage({
         return;
       }
 
-      setActionError(getErrorMessage(error, 'Ilan silinemedi. Lutfen tekrar dene.'));
+      setActionError(getErrorMessage(error, 'İlan silinemedi. Lütfen tekrar dene.'));
     } finally {
       setDeletingId('');
     }
@@ -800,7 +587,7 @@ function StudentProjectPostsPage({
       }
 
       setManagedApplications([]);
-      setActionError(getErrorMessage(error, 'Basvurular yuklenemedi. Lutfen tekrar dene.'));
+      setActionError(getErrorMessage(error, 'Başvurular yüklenemedi. Lütfen tekrar dene.'));
     } finally {
       setLoadingManagedApplications(false);
     }
@@ -840,7 +627,7 @@ function StudentProjectPostsPage({
 
       setSelectedApplicantUserId('');
       setSelectedApplicantProfile(null);
-      setActionError(getErrorMessage(error, 'Aday profili yuklenemedi. Lutfen tekrar dene.'));
+      setActionError(getErrorMessage(error, 'Aday profili yüklenemedi. Lütfen tekrar dene.'));
     } finally {
       setLoadingApplicantProfileId('');
     }
@@ -852,15 +639,17 @@ function StudentProjectPostsPage({
 
     try {
       const response = await api.post(`/student-project-posts/${postId}/apply`);
-      setActionMessage(response.data || 'Basvurun basariyla gonderildi.');
+      setActionMessage(response.data || 'Başvurun başarıyla gönderildi.');
       await loadPostsData(true);
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } catch (error) {
       if (error?.response?.status === 401) {
         onLogout();
         return;
       }
 
-      setActionError(getErrorMessage(error, 'Basvuru gonderilemedi. Lutfen tekrar dene.'));
+      setActionError(getErrorMessage(error, 'Başvuru gönderilemedi. Lütfen tekrar dene.'));
+      window.scrollTo({ top: 0, behavior: 'smooth' });
     } finally {
       setApplyingPostId('');
     }
@@ -872,7 +661,7 @@ function StudentProjectPostsPage({
 
     try {
       const response = await api.delete(`/student-project-posts/${postId}/apply`);
-      setActionMessage(response.data || 'Basvurun geri cekildi.');
+      setActionMessage(response.data || 'Başvurun geri çekildi.');
       await loadPostsData(true);
     } catch (error) {
       if (error?.response?.status === 401) {
@@ -880,7 +669,7 @@ function StudentProjectPostsPage({
         return;
       }
 
-      setActionError(getErrorMessage(error, 'Basvuru geri cekilemedi. Lutfen tekrar dene.'));
+      setActionError(getErrorMessage(error, 'Başvuru geri çekilemedi. Lütfen tekrar dene.'));
     } finally {
       setWithdrawingPostId('');
     }
@@ -895,7 +684,7 @@ function StudentProjectPostsPage({
         `/student-project-posts/${postId}/applications/${applicationId}/${decision}`
       );
 
-      setActionMessage(response.data || 'Basvuru durumu guncellendi.');
+      setActionMessage(response.data || 'Başvuru durumu güncellendi.');
       await Promise.all([loadPostsData(true), loadManagedApplications(postId)]);
     } catch (error) {
       if (error?.response?.status === 401) {
@@ -903,7 +692,7 @@ function StudentProjectPostsPage({
         return;
       }
 
-      setActionError(getErrorMessage(error, 'Basvuru durumu guncellenemedi. Lutfen tekrar dene.'));
+      setActionError(getErrorMessage(error, 'Başvuru durumu güncellenemedi. Lütfen tekrar dene.'));
     } finally {
       setApplicationDecisionId('');
     }
@@ -963,33 +752,21 @@ function StudentProjectPostsPage({
     );
   };
 
-  const renderPostTags = (items, fallbackText) => {
-    if (!items?.length) {
-      return <span className="project-empty-tag">{fallbackText}</span>;
-    }
-
-    return items.map((item) => (
-      <span key={item} className="tech-tag matched">
-        {item}
-      </span>
-    ));
-  };
-
   const renderApplicationManagerModal = () => (
     <div className="selection-modal-overlay" onClick={closeApplicationManager}>
       <div
         className="selection-modal application-manager-modal"
         role="dialog"
         aria-modal="true"
-        aria-label="Basvuru yonetimi"
+        aria-label="Başvuru yönetimi"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="selection-modal-header">
           <div>
             <div className="selection-modal-kicker">Owner paneli</div>
-            <h2>Basvurulari yonet</h2>
+            <h2>Başvuruları yönet</h2>
             <p>
-              <strong>{applicationManagerPost?.title || 'Ilan'}</strong> icin gelen basvurulari
+              <strong>{applicationManagerPost?.title || 'İlan'}</strong> için gelen başvuruları
               buradan kabul edebilir veya reddedebilirsin.
             </p>
           </div>
@@ -1006,8 +783,8 @@ function StudentProjectPostsPage({
         <section className="selection-modal-section">
           <div className="selection-modal-section-head">
             <div>
-              <strong>Ilan ozeti</strong>
-              <span>Kalan slot, bekleyen ve kabul edilen basvurulari hizla gor.</span>
+              <strong>İlan özeti</strong>
+              <span>Kalan slot, bekleyen ve kabul edilen başvuruları hızla gör.</span>
             </div>
           </div>
 
@@ -1035,7 +812,7 @@ function StudentProjectPostsPage({
               <div className="selection-modal-section-head">
                 <div>
                   <strong>Aday profili</strong>
-                  <span>Basvuran ogrencinin read-only profil gorunumu.</span>
+                  <span>Başvuran öğrencinin salt okunur profil görünümü.</span>
                 </div>
 
                 <button
@@ -1064,7 +841,7 @@ function StudentProjectPostsPage({
                           selectedApplicantProfile.departmentCode,
                         ]
                           .filter(Boolean)
-                          .join(' • ') || 'Bolum bilgisi yok'}
+                          .join(' • ') || 'Bölüm bilgisi yok'}
                       </span>
                       {selectedApplicantProfile.facultyName ? (
                         <span>{selectedApplicantProfile.facultyName}</span>
@@ -1079,7 +856,7 @@ function StudentProjectPostsPage({
                         AKTS: {selectedApplicantProfile.totalECTS ?? '-'}
                       </span>
                       <span className="project-meta-chip subtle">
-                        {selectedApplicantProfile.isHonorStudent ? 'Onur ogrencisi' : 'Standart profil'}
+                        {selectedApplicantProfile.isHonorStudent ? 'Onur öğrencisi' : 'Standart profil'}
                       </span>
                     </div>
                   </div>
@@ -1191,7 +968,7 @@ function StudentProjectPostsPage({
                                 {[project.role, project.domain].filter(Boolean).join(' • ') || 'Rol veya domain belirtilmemis'}
                               </span>
                               {project.description ? <p>{project.description}</p> : null}
-                              <small>{project.isTeamProject ? 'Takim projesi' : 'Bireysel proje'}</small>
+                              <small>{project.isTeamProject ? 'Takım projesi' : 'Bireysel proje'}</small>
                               {project.technologyNames?.length ? (
                                 <div className="project-tags">
                                   {project.technologyNames.map((technologyName) => (
@@ -1216,13 +993,13 @@ function StudentProjectPostsPage({
 
           <div className="selection-modal-section-head">
             <div>
-              <strong>Basvuran ogrenciler</strong>
-              <span>Bekleyen basvurular ilk sirada listelenir.</span>
+              <strong>Başvuran öğrenciler</strong>
+              <span>Bekleyen başvurular ilk sırada listelenir.</span>
             </div>
           </div>
 
           {loadingManagedApplications ? (
-            <div className="empty-state">Basvurular yukleniyor.</div>
+            <div className="empty-state">Başvurular yükleniyor.</div>
           ) : managedApplications.length ? (
             <div className="application-card-list">
               {managedApplications.map((application) => {
@@ -1320,15 +1097,15 @@ function StudentProjectPostsPage({
         className="selection-modal"
         role="dialog"
         aria-modal="true"
-        aria-label="Teknoloji secimi"
+        aria-label="Teknoloji seçimi"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="selection-modal-header">
           <div>
             <div className="selection-modal-kicker">Arama + kategori + preset</div>
-            <h2>Teknoloji sec</h2>
+            <h2>Teknoloji seç</h2>
             <p>
-              Buyuk listelerde once ara, sonra kategoriyle daralt veya hazir paket ekle.
+              Büyük listelerde önce ara, sonra kategoriyle daralt veya hazır paket ekle.
             </p>
           </div>
 
@@ -1349,7 +1126,7 @@ function StudentProjectPostsPage({
           </label>
 
           <span className="selection-toolbar-count">
-            {filteredTechnologyOptions.length} sonuc
+            {filteredTechnologyOptions.length} sonuç
           </span>
         </div>
 
@@ -1357,8 +1134,8 @@ function StudentProjectPostsPage({
           <section className="selection-modal-section">
             <div className="selection-modal-section-head">
               <div>
-                <strong>{postForm.projectType} icin hizli paketler</strong>
-                <span>Tek tikla uygun teknoloji setini ekle, sonra ince ayar yap.</span>
+                <strong>{postForm.projectType} için hızlı paketler</strong>
+                <span>Tek tıkla uygun teknoloji setini ekle, sonra ince ayar yap.</span>
               </div>
             </div>
 
@@ -1377,7 +1154,7 @@ function StudentProjectPostsPage({
                   >
                     <div className="selection-preset-top">
                       <strong>{preset.label}</strong>
-                      <span>{isPresetReady ? 'Hazir' : 'Paketi ekle'}</span>
+                      <span>{isPresetReady ? 'Hazır' : 'Paketi ekle'}</span>
                     </div>
 
                     <p>{preset.description}</p>
@@ -1398,7 +1175,7 @@ function StudentProjectPostsPage({
           <div className="selection-modal-section-head">
             <div>
               <strong>Kategori filtresi</strong>
-              <span>Liste buyudukce sadece ilgili gruplari ac.</span>
+              <span>Liste büyüdükçe sadece ilgili grupları aç.</span>
             </div>
           </div>
 
@@ -1421,8 +1198,8 @@ function StudentProjectPostsPage({
         <section className="selection-modal-section">
           <div className="selection-modal-section-head">
             <div>
-              <strong>Secilen teknolojiler</strong>
-              <span>{selectedTechnologyOptions.length} teknoloji ilanda kullanilacak.</span>
+              <strong>Seçilen teknolojiler</strong>
+              <span>{selectedTechnologyOptions.length} teknoloji ilanda kullanılacak.</span>
             </div>
 
             {selectedTechnologyOptions.length ? (
@@ -1440,7 +1217,7 @@ function StudentProjectPostsPage({
 
           {renderSelectionPreview(
             selectedTechnologyOptions,
-            'Henuz teknoloji secilmedi. Arama yapabilir veya hazir paket ekleyebilirsin.',
+            'Henüz teknoloji seçilmedi. Arama yapabilir veya hazır paket ekleyebilirsin.',
             (option) => option.category
           )}
         </section>
@@ -1450,13 +1227,13 @@ function StudentProjectPostsPage({
             <div>
               <strong>
                 {activeTechnologyCategory === allTechnologyCategoriesLabel
-                  ? 'Tum teknolojiler'
+                  ? 'Tüm teknolojiler'
                   : activeTechnologyCategory}
               </strong>
               <span>
                 {technologyQuery.trim()
-                  ? 'Arama sonucunu sec veya kaldir.'
-                  : 'Ihtiyacina uygun teknolojileri isaretle.'}
+                  ? 'Arama sonucunu seç veya kaldır.'
+                  : 'İhtiyacına uygun teknolojileri işaretle.'}
               </span>
             </div>
           </div>
@@ -1466,7 +1243,7 @@ function StudentProjectPostsPage({
             postForm.technologyIds,
             toggleTechnologySelection,
             (option) => option.category,
-            'Bu filtreye uygun teknoloji bulunamadi.'
+            'Bu filtreye uygun teknoloji bulunamadı.'
           )}
         </section>
 
@@ -1485,15 +1262,15 @@ function StudentProjectPostsPage({
         className="selection-modal"
         role="dialog"
         aria-modal="true"
-        aria-label="Bolum secimi"
+        aria-label="Bölüm seçimi"
         onClick={(event) => event.stopPropagation()}
       >
         <div className="selection-modal-header">
           <div>
-            <div className="selection-modal-kicker">Arama + fakulte filtresi</div>
-            <h2>Bolum sec</h2>
+            <div className="selection-modal-kicker">Arama + fakülte filtresi</div>
+            <h2>Bölüm seç</h2>
             <p>
-              Ilanini hangi bolumlerin gorecegini arayarak veya fakulteye gore filtreleyerek belirle.
+              İlanını hangi bölümlerin göreceğini arayarak veya fakülteye göre filtreleyerek belirle.
             </p>
           </div>
 
@@ -1509,20 +1286,20 @@ function StudentProjectPostsPage({
               className="input-field post-search-input"
               value={departmentQuery}
               onChange={(event) => setDepartmentQuery(event.target.value)}
-              placeholder="Bolum, kod veya fakulte ara"
+              placeholder="Bölüm, kod veya fakülte ara"
             />
           </label>
 
           <span className="selection-toolbar-count">
-            {filteredDepartmentOptions.length} sonuc
+            {filteredDepartmentOptions.length} sonuç
           </span>
         </div>
 
         <section className="selection-modal-section">
           <div className="selection-modal-section-head">
             <div>
-              <strong>Fakulte filtresi</strong>
-              <span>Kalabalik bolum listesinde once fakulteyi daralt.</span>
+              <strong>Fakülte filtresi</strong>
+              <span>Kalabalık bölüm listesinde önce fakülteyi daralt.</span>
             </div>
           </div>
 
@@ -1545,8 +1322,8 @@ function StudentProjectPostsPage({
         <section className="selection-modal-section">
           <div className="selection-modal-section-head">
             <div>
-              <strong>Secilen bolumler</strong>
-              <span>{selectedDepartmentOptions.length} bolum ilani gorebilecek.</span>
+              <strong>Seçilen bölümler</strong>
+              <span>{selectedDepartmentOptions.length} bölüm ilanı görebilecek.</span>
             </div>
 
             {selectedDepartmentOptions.length ? (
@@ -1564,7 +1341,7 @@ function StudentProjectPostsPage({
 
           {renderSelectionPreview(
             selectedDepartmentOptions,
-            'Henuz bolum secilmedi. Fakulteye gore daraltip ilgili bolumleri isaretleyebilirsin.',
+            'Henüz bölüm seçilmedi. Fakülteye göre daraltıp ilgili bölümleri işaretleyebilirsin.',
             (option) => option.facultyName || option.code
           )}
         </section>
@@ -1574,13 +1351,13 @@ function StudentProjectPostsPage({
             <div>
               <strong>
                 {activeDepartmentFaculty === allDepartmentFacultiesLabel
-                  ? 'Tum bolumler'
+                  ? 'Tüm bölümler'
                   : activeDepartmentFaculty}
               </strong>
               <span>
                 {departmentQuery.trim()
-                  ? 'Arama sonuclarindan uygun bolumleri sec.'
-                  : 'Ilanin hangi bolumlere gidecegini belirle.'}
+                  ? 'Arama sonuçlarından uygun bölümleri seç.'
+                  : 'İlanın hangi bölümlere gideceğini belirle.'}
               </span>
             </div>
           </div>
@@ -1591,7 +1368,7 @@ function StudentProjectPostsPage({
                 <div key={facultyName} className="selection-group">
                   <div className="selection-group-head">
                     <strong>{facultyName}</strong>
-                    <span>{options.length} bolum</span>
+                    <span>{options.length} bölüm</span>
                   </div>
 
                   {renderSelectionRows(
@@ -1599,7 +1376,7 @@ function StudentProjectPostsPage({
                     postForm.departmentIds,
                     toggleDepartmentSelection,
                     (option) => [option.code, option.facultyName].filter(Boolean).join(' • '),
-                    'Bu fakultede gosterilecek bolum bulunamadi.'
+                    'Bu fakültede gösterilecek bölüm bulunamadı.'
                   )}
                 </div>
               ))}
@@ -1630,481 +1407,77 @@ function StudentProjectPostsPage({
     </div>
   );
 
-  const renderPostCard = (post, isMineTab = false) => {
-    const statusTone = getStatusTone(post.status);
-    const isOwnPost = myPostIdSet.has(post.id);
-    const myApplication = myApplicationMap[post.id];
-    const applicationTone = myApplication ? getApplicationTone(myApplication.status) : '';
-    const canApply = !isOwnPost && post.status === 'Open' && post.availableMemberSlotCount > 0;
-    const isApplying = applyingPostId === post.id;
-    const isWithdrawing = withdrawingPostId === post.id;
-
-    return (
-      <article key={post.id} className="card post-card">
-        <div className="post-card-hero">
-          <div className="post-card-top">
-            <div className="post-card-copy">
-              <div className="post-card-kicker">
-                {myPostIdSet.has(post.id) ? 'Sana ait ilan' : 'Acik ekip ilani'}
-              </div>
-              <h3>{post.title}</h3>
-              <p>{post.description}</p>
-
-              <div className="post-card-labels">
-                <span className="project-meta-chip">{post.category || 'Kategori yok'}</span>
-                <span className="project-meta-chip subtle">{post.projectType || 'Proje tipi yok'}</span>
-              </div>
-            </div>
-
-            <div className="post-card-side">
-              <span className={`post-status-pill ${statusTone}`}>{post.status}</span>
-            </div>
-          </div>
-
-          <div className="post-overview-grid">
-            <div className="post-overview-card">
-              <span className="post-overview-title">
-                <Users size={14} />
-                Ekip yapisi
-              </span>
-              <strong>{post.teamSize} kisilik ekip</strong>
-              <p>{post.neededMemberCount} kisi araniyor, {post.availableMemberSlotCount || 0} acik slot var.</p>
-            </div>
-
-            <div className="post-overview-card">
-              <span className="post-overview-title">
-                <ClipboardList size={14} />
-                Basvuru durumu
-              </span>
-              <strong>{post.pendingApplicationCount || 0} bekleyen basvuru</strong>
-              <p>{post.acceptedApplicationCount || 0} kisi kabul edildi.</p>
-            </div>
-
-            <div className="post-overview-card">
-              <span className="post-overview-title">
-                <CalendarDays size={14} />
-                Takvim
-              </span>
-              <strong>{formatDateLabel(post.applicationDeadline)}</strong>
-              <p>Son basvuru tarihi.</p>
-            </div>
-          </div>
-        </div>
-
-        <div className="post-card-detail-grid">
-          <div className="post-card-section post-card-detail-panel">
-            <div className="post-card-section-title">Bolumler</div>
-            <div className="project-tags">
-              {renderPostTags(post.departmentNames, 'Bolum secimi yok')}
-            </div>
-          </div>
-
-          <div className="post-card-section post-card-detail-panel">
-            <div className="post-card-section-title">Teknolojiler</div>
-            <div className="project-tags">
-              {renderPostTags(post.technologyNames, 'Teknoloji secimi yok')}
-            </div>
-          </div>
-        </div>
-
-        {isMineTab ? (
-          <div className="post-card-toolbar">
-            <div className="post-card-toolbar-title">Ilan islemleri</div>
-
-            <div className="post-card-owner-actions">
-              <button
-                type="button"
-                className="ghost-button profile-inline-button"
-                onClick={() => beginEdit(post)}
-              >
-                <Pencil size={14} />
-                Duzenle
-              </button>
-
-              <button
-                type="button"
-                className="ghost-button profile-inline-button"
-                onClick={() => openApplicationManager(post)}
-              >
-                <ClipboardList size={14} />
-                Basvurulari yonet
-              </button>
-
-              <button
-                type="button"
-                className="ghost-button profile-inline-button profile-inline-button-danger"
-                onClick={() => removePost(post.id)}
-                disabled={deletingId === post.id}
-              >
-                <Trash2 size={14} />
-                {deletingId === post.id ? 'Siliniyor...' : 'Sil'}
-              </button>
-            </div>
-          </div>
-        ) : null}
-
-        {!isMineTab ? (
-          <div className="post-card-actions">
-            {isOwnPost ? (
-              <button
-                type="button"
-                className="ghost-button profile-inline-button"
-                onClick={() => openApplicationManager(post)}
-              >
-                <ClipboardList size={15} />
-                Basvurulari yonet
-              </button>
-            ) : null}
-
-            {!isOwnPost && myApplication ? (
-              <>
-                <span className={`post-status-pill application-status-pill ${applicationTone}`}>
-                  Basvuru: {myApplication.status}
-                </span>
-
-                {myApplication.status === 'Pending' ? (
-                  <button
-                    type="button"
-                    className="ghost-button profile-inline-button"
-                    onClick={() => withdrawApplication(post.id)}
-                    disabled={isWithdrawing}
-                  >
-                    <RotateCcw size={15} />
-                    {isWithdrawing ? 'Geri cekiliyor...' : 'Basvuruyu geri cek'}
-                  </button>
-                ) : null}
-
-                {(myApplication.status === 'Rejected' || myApplication.status === 'Withdrawn') && canApply ? (
-                  <button
-                    type="button"
-                    className="ghost-button profile-inline-button"
-                    onClick={() => applyToPost(post.id)}
-                    disabled={isApplying}
-                  >
-                    <UserPlus size={15} />
-                    {isApplying ? 'Gonderiliyor...' : 'Tekrar basvur'}
-                  </button>
-                ) : null}
-              </>
-            ) : null}
-
-            {!isOwnPost && !myApplication && canApply ? (
-              <button
-                type="button"
-                className="ghost-button profile-inline-button"
-                onClick={() => applyToPost(post.id)}
-                disabled={isApplying}
-              >
-                <UserPlus size={15} />
-                {isApplying ? 'Gonderiliyor...' : 'Basvur'}
-              </button>
-            ) : null}
-
-            {!isOwnPost && !canApply && !myApplication ? (
-              <span className="post-inline-note">
-                Bu ilan su an basvuru kabul etmiyor.
-              </span>
-            ) : null}
-          </div>
-        ) : null}
-      </article>
-    );
-  };
-
-  const renderComposer = () => (
-    <article className="card profile-block">
-      <div className="profile-card-header">
-        <div>
-          <div className="profile-section-title">
-            <Sparkles size={16} />
-            Ilan Bestecisi
-          </div>
-          <div className="profile-section-meta">
-            <span>Ilanini taslak olarak kaydedebilir ya da dogrudan yayina acabilirsin.</span>
-          </div>
-        </div>
-
-        {!isComposerOpen ? (
-          <button type="button" className="ghost-button profile-inline-button" onClick={beginCreate}>
-            <Plus size={16} />
-            Yeni Ilan
-          </button>
-        ) : null}
-      </div>
-
-      {isComposerOpen ? (
-        <form className="profile-form profile-collapsible-form" onSubmit={submitPost}>
-          <div className="profile-form-grid">
-            <label className="profile-form-field">
-              <span>Baslik</span>
-              <input
-                className="input-field"
-                value={postForm.title}
-                onChange={(event) =>
-                  setPostForm((current) => ({ ...current, title: event.target.value }))
-                }
-                placeholder="Hackathon icin ekip arkadasi araniyor"
-              />
-            </label>
-
-            <label className="profile-form-field">
-              <span>Kategori</span>
-              <input
-                className="input-field"
-                value={postForm.category}
-                onChange={(event) =>
-                  setPostForm((current) => ({ ...current, category: event.target.value }))
-                }
-                placeholder="AI, Web, Mobile..."
-              />
-            </label>
-
-            <label className="profile-form-field">
-              <span>Proje tipi</span>
-              <select
-                className="input-field"
-                value={postForm.projectType}
-                onChange={(event) =>
-                  setPostForm((current) => ({ ...current, projectType: event.target.value }))
-                }
-              >
-                {projectTypeOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="profile-form-field">
-              <span>Durum</span>
-              <select
-                className="input-field"
-                value={postForm.status}
-                onChange={(event) =>
-                  setPostForm((current) => ({ ...current, status: event.target.value }))
-                }
-              >
-                {statusOptions.map((option) => (
-                  <option key={option} value={option}>
-                    {option}
-                  </option>
-                ))}
-              </select>
-            </label>
-
-            <label className="profile-form-field">
-              <span>Takim boyutu</span>
-              <input
-                type="number"
-                min="1"
-                max="20"
-                className="input-field"
-                value={postForm.teamSize}
-                onChange={(event) =>
-                  setPostForm((current) => ({
-                    ...current,
-                    teamSize: Number(event.target.value),
-                  }))
-                }
-              />
-            </label>
-
-            <label className="profile-form-field">
-              <span>Aranan uye sayisi</span>
-              <input
-                type="number"
-                min="0"
-                max="20"
-                className="input-field"
-                value={postForm.neededMemberCount}
-                onChange={(event) =>
-                  setPostForm((current) => ({
-                    ...current,
-                    neededMemberCount: Number(event.target.value),
-                  }))
-                }
-              />
-            </label>
-
-            <label className="profile-form-field profile-form-field-full">
-              <span>Basvuru son tarihi</span>
-              <input
-                type="datetime-local"
-                className="input-field"
-                value={postForm.applicationDeadline}
-                onChange={(event) =>
-                  setPostForm((current) => ({
-                    ...current,
-                    applicationDeadline: event.target.value,
-                  }))
-                }
-              />
-            </label>
-
-            <label className="profile-form-field profile-form-field-full">
-              <span>Aciklama</span>
-              <textarea
-                className="input-field profile-textarea"
-                value={postForm.description}
-                onChange={(event) =>
-                  setPostForm((current) => ({ ...current, description: event.target.value }))
-                }
-                placeholder="Projeyi, hedefini, aradigin katkiyi ve ekip beklentini yaz."
-              />
-            </label>
-          </div>
-
-          <div className="post-picker-grid">
-            <div className="post-picker-card">
-              <div className="post-picker-card-head">
-                <div>
-                  <div className="post-picker-card-title">
-                    <Tag size={16} />
-                    Teknoloji secimi
-                  </div>
-                  <p>Arama, kategori ve hizli paketlerle ekibini daha rahat kur.</p>
-                </div>
-
-                <span className="post-selector-count">{postForm.technologyIds.length} secili</span>
-              </div>
-
-              {renderSelectionPreview(
-                selectedTechnologyOptions,
-                'Henuz teknoloji secilmedi. Buyuk listelerde arama ve paket onerileriyle ilerle.',
-                (option) => option.category
-              )}
-
-              <div className="post-picker-actions">
-                <button
-                  type="button"
-                  className="ghost-button profile-inline-button"
-                  onClick={openTechnologySelector}
-                >
-                  <FolderKanban size={16} />
-                  {selectedTechnologyOptions.length ? 'Teknolojileri duzenle' : 'Teknoloji ekle'}
-                </button>
-
-                {selectedTechnologyOptions.length ? (
-                  <button
-                    type="button"
-                    className="ghost-button profile-inline-button"
-                    onClick={() =>
-                      setPostForm((current) => ({ ...current, technologyIds: [] }))
-                    }
-                  >
-                    Temizle
-                  </button>
-                ) : null}
-              </div>
-            </div>
-
-            <div className="post-picker-card">
-              <div className="post-picker-card-head">
-                <div>
-                  <div className="post-picker-card-title">
-                    <Building2 size={16} />
-                    Bolum secimi
-                  </div>
-                  <p>Bolumleri tek ekranda arayip fakultelere gore daralt.</p>
-                </div>
-
-                <span className="post-selector-count">{postForm.departmentIds.length} secili</span>
-              </div>
-
-              {renderSelectionPreview(
-                selectedDepartmentOptions,
-                'Henuz bolum secilmedi. Fakulte filtresiyle daha hedefli gorunurluk kurabilirsin.',
-                (option) => option.facultyName || option.code
-              )}
-
-              <div className="post-picker-actions">
-                <button
-                  type="button"
-                  className="ghost-button profile-inline-button"
-                  onClick={openDepartmentSelector}
-                >
-                  <Building2 size={16} />
-                  {selectedDepartmentOptions.length ? 'Bolumleri duzenle' : 'Bolum sec'}
-                </button>
-
-                {selectedDepartmentOptions.length ? (
-                  <button
-                    type="button"
-                    className="ghost-button profile-inline-button"
-                    onClick={() =>
-                      setPostForm((current) => ({ ...current, departmentIds: [] }))
-                    }
-                  >
-                    Temizle
-                  </button>
-                ) : null}
-              </div>
-            </div>
-          </div>
-
-          <div className="profile-form-actions">
-            <button type="submit" className="btn-primary post-submit-button" disabled={saving}>
-              <Save size={16} />
-              {saving
-                ? 'Kaydediliyor...'
-                : editingPostId
-                  ? 'Ilani guncelle'
-                  : 'Ilani kaydet'}
-            </button>
-
-            <button
-              type="button"
-              className="ghost-button profile-inline-button"
-              onClick={resetComposer}
-            >
-              <X size={16} />
-              Vazgec
-            </button>
-          </div>
-        </form>
-      ) : (
-        <button type="button" className="profile-composer-collapsed" onClick={beginCreate}>
-          <span className="profile-composer-collapsed-icon">
-            <Plus size={18} />
-          </span>
-          <span className="profile-composer-collapsed-copy">
-            <span className="profile-composer-collapsed-kicker">Yeni Kayit</span>
-            <strong>Takim ilani ac</strong>
-            <span>Taslak kaydet, acik ilani yayinla ve ekip arayisini buradan yonet.</span>
-          </span>
-          <span className="profile-composer-collapsed-action">Formu ac</span>
-        </button>
-      )}
-    </article>
-  );
-
   const renderMyPosts = () => (
-    <section className="profile-grid profile-grid-single">
-      {renderComposer()}
+    <section className="posts-workspace">
+      {isComposerOpen ? (
+        <PostComposer
+          key={`${isComposerOpen ? 'open' : 'closed'}-${editingPostId ?? 'new'}`}
+          editingPostId={editingPostId}
+          isComposerOpen={isComposerOpen}
+          onBeginCreate={beginCreate}
+          onCancel={resetComposer}
+          onOpenDepartmentSelector={openDepartmentSelector}
+          onOpenTechnologySelector={openTechnologySelector}
+          onSubmit={submitPost}
+          postForm={postForm}
+          saving={saving}
+          selectedDepartmentOptions={selectedDepartmentOptions}
+          selectedTechnologyOptions={selectedTechnologyOptions}
+          setPostForm={setPostForm}
+        />
+      ) : null}
 
-      <article className="card profile-block">
-        <div className="profile-card-header">
+      <article className="card profile-block posts-panel">
+        <div className="posts-panel-head">
           <div>
-            <div className="profile-section-title">
-              <Layers3 size={16} />
-              Ilanlarim
-            </div>
-            <div className="profile-section-meta">
-              <span>Taslaklari duzenleyebilir, acik ilanlarini yonetebilirsin.</span>
-            </div>
+            <h2 className="posts-panel-title">İlanlarım</h2>
+            <p className="posts-panel-meta">
+              {myPosts.length} ilan • {myOpenCount} açık • {myDraftCount} taslak
+            </p>
           </div>
         </div>
 
         {loading ? (
-          <div className="empty-state">Ilanlar yukleniyor.</div>
+          <div className="empty-state">İlanlar yükleniyor.</div>
         ) : myPosts.length ? (
-          <div className="post-card-grid post-card-grid-single">
-            {myPosts.map((post) => renderPostCard(post, true))}
+          <div className="posts-group-stack">
+            {myPostSections.map((section) => (
+              <section key={section.id} className="posts-group-section">
+                <div className="posts-group-head">
+                  <strong>{section.title}</strong>
+                  <span className="posts-group-count">{section.posts.length}</span>
+                </div>
+
+                <div className="post-card-grid post-card-grid-single">
+                  {section.posts.map((post) => (
+                    <PostCard
+                      key={post.id}
+                      applyingPostId={applyingPostId}
+                      deletingId={deletingId}
+                      isMineTab
+                      isOwnPost={myPostIdSet.has(post.id)}
+                      myApplication={myApplicationMap[post.id]}
+                      onApply={applyToPost}
+                      onEdit={beginEdit}
+                      onManageApplications={openApplicationManager}
+                      onRemove={removePost}
+                      onWithdraw={withdrawApplication}
+                      post={post}
+                      withdrawingPostId={withdrawingPostId}
+                    />
+                  ))}
+                </div>
+              </section>
+            ))}
           </div>
         ) : (
-          <div className="empty-state">
-            Henuz kendi ilanin yok. Ustteki besteciyi acip ilk ilani hazirlayabilirsin.
+          <div className="empty-state empty-state-rich posts-empty-state">
+            <strong>Henüz ilanın yok.</strong>
+            <p>
+              {isComposerOpen
+                ? 'Formu doldurup ilk ilanını kaydettiğinde burada görünecek.'
+                : 'Yeni İlan butonuyla ilk ilanını oluşturabilirsin.'}
+            </p>
           </div>
         )}
       </article>
@@ -2112,42 +1485,34 @@ function StudentProjectPostsPage({
   );
 
   const renderMyApplications = () => (
-    <section className="profile-grid profile-grid-single">
-      <article className="card profile-block">
-        <div className="profile-card-header">
+    <section className="posts-workspace">
+      <article className="card profile-block posts-panel">
+        <div className="posts-panel-head">
           <div>
-            <div className="profile-section-title">
-              <ClipboardList size={16} />
-              Basvurularim
-            </div>
-            <div className="profile-section-meta">
-              <span>Gonderdigin basvurularin durumunu ve acik ilan sonucunu buradan takip et.</span>
-            </div>
+            <h2 className="posts-panel-title">Başvurularım</h2>
+            <p className="posts-panel-meta">{myApplications.length} toplam başvuru</p>
           </div>
         </div>
 
-        <div className="application-summary-grid">
-          <article className="application-summary-card">
-            <span>Toplam</span>
-            <strong>{myApplications.length}</strong>
-          </article>
-
-          <article className="application-summary-card">
-            <span>Bekleyen</span>
-            <strong>{pendingMyApplicationCount}</strong>
-          </article>
-
-          <article className="application-summary-card">
-            <span>Kabul</span>
-            <strong>{acceptedMyApplicationCount}</strong>
-          </article>
+        <div className="posts-filter-row">
+          {applicationFilters.map((filter) => (
+            <button
+              key={filter.id}
+              type="button"
+              className={`posts-filter-chip ${applicationStatusFilter === filter.id ? 'active' : ''}`}
+              onClick={() => setApplicationStatusFilter(filter.id)}
+            >
+              <span>{filter.label}</span>
+              <strong>{filter.count}</strong>
+            </button>
+          ))}
         </div>
 
         {loading ? (
-          <div className="empty-state">Basvurular yukleniyor.</div>
-        ) : myApplications.length ? (
+          <div className="empty-state">Başvurular yükleniyor.</div>
+        ) : filteredMyApplications.length ? (
           <div className="application-card-list">
-            {myApplications.map((application) => {
+            {filteredMyApplications.map((application) => {
               const applicationTone = getApplicationTone(application.status);
               const isPending = application.status === 'Pending';
               const isRejectedOrWithdrawn =
@@ -2173,7 +1538,7 @@ function StudentProjectPostsPage({
                       {formatDateLabel(application.applicationDeadline)}
                     </span>
                     <span className="project-meta-chip subtle">
-                      Ilan durumu: {application.postStatus}
+                      İlan durumu: {application.postStatus}
                     </span>
                   </div>
 
@@ -2188,7 +1553,7 @@ function StudentProjectPostsPage({
                         <RotateCcw size={15} />
                         {withdrawingPostId === application.studentProjectPostId
                           ? 'Geri cekiliyor...'
-                          : 'Basvuruyu geri cek'}
+                          : 'Başvuruyu geri çek'}
                       </button>
                     ) : null}
 
@@ -2202,7 +1567,7 @@ function StudentProjectPostsPage({
                         <UserPlus size={15} />
                         {applyingPostId === application.studentProjectPostId
                           ? 'Gonderiliyor...'
-                          : 'Tekrar basvur'}
+                          : 'Tekrar başvur'}
                       </button>
                     ) : null}
                   </div>
@@ -2212,8 +1577,9 @@ function StudentProjectPostsPage({
           </div>
         ) : (
           <div className="empty-state">
-            Henuz herhangi bir ilana basvurmadin. Acik ilanlar sekmesinden ilgini ceken ilanlara
-            basvurabilirsin.
+            {myApplications.length
+              ? 'Bu filtreye uyan başvuru bulunamadı.'
+              : 'Henüz herhangi bir ilana başvurmadın. Açık ilanlar sekmesinden ilgini çeken ilanlara başvurabilirsin.'}
           </div>
         )}
       </article>
@@ -2221,39 +1587,53 @@ function StudentProjectPostsPage({
   );
 
   const renderOpenPosts = () => (
-    <section className="profile-grid profile-grid-single">
-      <article className="card profile-block">
-        <div className="profile-card-header">
+    <section className="posts-workspace">
+      <article className="card profile-block posts-panel">
+        <div className="posts-panel-head">
           <div>
-            <div className="profile-section-title">
-              <Search size={16} />
-              Acik Ilanlar
-            </div>
-            <div className="profile-section-meta">
-              <span>Sistemdeki acik ekip arayislarini filtreleyip inceleyebilirsin.</span>
-            </div>
+            <h2 className="posts-panel-title">Açık İlanlar</h2>
+            <p className="posts-panel-meta">
+              {openQuery.trim() ? `${filteredOpenPosts.length} sonuç` : `${openPosts.length} ilan`}
+            </p>
           </div>
         </div>
 
-        <label className="post-search-shell post-search-shell-wide">
-          <Search size={16} />
-          <input
-            className="input-field post-search-input"
-            value={openQuery}
-            onChange={(event) => setOpenQuery(event.target.value)}
-            placeholder="Baslik, kategori, teknoloji veya bolum ara"
-          />
-        </label>
+        <div className="posts-search-row">
+          <label className="post-search-shell">
+            <Search size={16} />
+            <input
+              className="input-field post-search-input"
+              value={openQuery}
+              onChange={(event) => setOpenQuery(event.target.value)}
+              placeholder="Başlık, kategori, teknoloji veya bölüm ara"
+            />
+          </label>
+        </div>
 
         {loading ? (
-          <div className="empty-state">Acik ilanlar yukleniyor.</div>
+          <div className="empty-state">Açık ilanlar yükleniyor.</div>
         ) : filteredOpenPosts.length ? (
           <div className="post-card-grid">
-            {filteredOpenPosts.map((post) => renderPostCard(post))}
+            {filteredOpenPosts.map((post) => (
+              <PostCard
+                key={post.id}
+                applyingPostId={applyingPostId}
+                deletingId={deletingId}
+                isOwnPost={myPostIdSet.has(post.id)}
+                myApplication={myApplicationMap[post.id]}
+                onApply={applyToPost}
+                onEdit={beginEdit}
+                onManageApplications={openApplicationManager}
+                onRemove={removePost}
+                onWithdraw={withdrawApplication}
+                post={post}
+                withdrawingPostId={withdrawingPostId}
+              />
+            ))}
           </div>
         ) : (
           <div className="empty-state">
-            Bu filtreye uygun acik ilan bulunamadi.
+            Bu filtreye uygun açık ilan bulunamadı.
           </div>
         )}
       </article>
@@ -2270,58 +1650,19 @@ function StudentProjectPostsPage({
         profile={profile}
       />
 
-      <main className="main-content">
-        <header className="dashboard-header">
-          <div>
-            <p className="dashboard-date">Ogrenci Proje Ilanlari</p>
-            <h1 className="dashboard-title">Ilanlar</h1>
-            <p className="dashboard-subtitle">
-              Kendi ekip arayislarini yonet, taslaklar olustur ve sistemde yayinlanan acik
-              ogrenci proje ilanlarini tek akista takip et.
-            </p>
-          </div>
-        </header>
-
-        {actionError ? <div className="dashboard-alert">{actionError}</div> : null}
-        {actionMessage ? <div className="dashboard-alert dashboard-alert-success">{actionMessage}</div> : null}
-
-        <section className="posts-toolbar">
-          <div className="profile-tabs posts-toolbar-tabs">
-            <button
-              type="button"
-              className={`profile-tab ${activeTab === 'mine' ? 'active' : ''}`}
-              onClick={() => {
-                clearFeedback();
-                setActiveTab('mine');
-              }}
-            >
-              Ilanlarim ({myPosts.length})
-            </button>
-
-            <button
-              type="button"
-              className={`profile-tab ${activeTab === 'open' ? 'active' : ''}`}
-              onClick={() => {
-                clearFeedback();
-                setActiveTab('open');
-              }}
-            >
-              Acik Ilanlar ({openPosts.length})
-            </button>
-
-            <button
-              type="button"
-              className={`profile-tab ${activeTab === 'applications' ? 'active' : ''}`}
-              onClick={() => {
-                clearFeedback();
-                setActiveTab('applications');
-              }}
-            >
-              Basvurularim ({myApplications.length})
-            </button>
+      <main className="main-content posts-page-main">
+        <section className="posts-page-header">
+          <div className="posts-page-header-copy">
+            <h1>İlanlar</h1>
+            <p>İlan aç, açık ilanları incele ve başvurularını yönet.</p>
           </div>
 
-          <div className="posts-toolbar-actions">
+          <div className="posts-page-header-actions">
+            <button className="btn-primary posts-hero-primary" type="button" onClick={beginCreate}>
+              <Plus size={16} />
+              Yeni İlan
+            </button>
+
             <button
               className="ghost-button"
               type="button"
@@ -2329,40 +1670,42 @@ function StudentProjectPostsPage({
               disabled={refreshing}
             >
               <RefreshCw size={16} className={refreshing ? 'spin' : ''} />
-              {refreshing ? 'Yenileniyor' : 'Listeyi Yenile'}
-            </button>
-
-            <button className="ghost-button" type="button" onClick={beginCreate}>
-              <Plus size={16} />
-              Yeni Ilan
+              {refreshing ? 'Yenileniyor' : 'Yenile'}
             </button>
           </div>
         </section>
 
-        <section className="posts-stats-grid">
-          <article className="card posts-stat-card">
-            <span className="posts-stat-label">Toplam Ilan</span>
-            <strong className="posts-stat-value">{myPosts.length}</strong>
-            <p className="posts-stat-copy">Olusturdugun tum taslak ve yayinlanmis ilanlar.</p>
-          </article>
+        {actionError ? <div className="dashboard-alert">{actionError}</div> : null}
+        {actionMessage ? <div className="dashboard-alert dashboard-alert-success">{actionMessage}</div> : null}
 
-          <article className="card posts-stat-card">
-            <span className="posts-stat-label">Taslaklar</span>
-            <strong className="posts-stat-value">{myDraftCount}</strong>
-            <p className="posts-stat-copy">Henuz anonim kullanicilara acilmamis ilanlar.</p>
-          </article>
+        <section className="posts-tabbar">
+          <div className="posts-view-grid">
+            {viewOptions.map((option) => {
+              const Icon = option.icon;
 
-          <article className="card posts-stat-card">
-            <span className="posts-stat-label">Acik Ilanlarim</span>
-            <strong className="posts-stat-value">{myOpenCount}</strong>
-            <p className="posts-stat-copy">Yayinda olan ve ekip arkadasi bekleyen ilanlarin.</p>
-          </article>
-
-          <article className="card posts-stat-card">
-            <span className="posts-stat-label">Sistemde Acik</span>
-            <strong className="posts-stat-value">{openPosts.length}</strong>
-            <p className="posts-stat-copy">Tum ogrencilerin gorebildigi aktif ekip arayislari.</p>
-          </article>
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={`posts-view-card posts-view-card-${option.id} ${activeTab === option.id ? 'active' : ''}`}
+                  onClick={() => {
+                    clearFeedback();
+                    setActiveTab(option.id);
+                  }}
+                >
+                  <div className="posts-view-card-top">
+                    <span className="posts-view-icon">
+                      <Icon size={16} />
+                    </span>
+                    <div className="posts-view-card-copy">
+                      <strong>{option.label}</strong>
+                    </div>
+                    <span className="posts-view-count">{option.count}</span>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
         </section>
 
         {activeTab === 'mine'
@@ -2370,19 +1713,6 @@ function StudentProjectPostsPage({
           : activeTab === 'applications'
             ? renderMyApplications()
             : renderOpenPosts()}
-
-        <section className="profile-footer-note">
-          <div className="card profile-note-card">
-            <div className="profile-section-title">
-              <Sparkles size={16} />
-              Gorunurluk Notu
-            </div>
-            <p>
-              Draft ilanlar sadece sana gorunur. Ilani Open durumuna getirdiginde acik listeye
-              duser ve herkes tarafindan goruntulenebilir hale gelir.
-            </p>
-          </div>
-        </section>
       </main>
 
       {selectionModal === 'technology' ? renderTechnologyModal() : null}

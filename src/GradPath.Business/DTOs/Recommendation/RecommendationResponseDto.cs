@@ -6,6 +6,7 @@ public class RecommendationResponseDto
     public string ProjectTitle { get; set; } = string.Empty;
     public string ProjectDescription { get; set; } = string.Empty;
     public string Category { get; set; } = string.Empty;
+    public List<string> DepartmentNames { get; set; } = new();
     
     // Algoritmanın hesaplayacağı skor
     public decimal MatchScore { get; set; } 

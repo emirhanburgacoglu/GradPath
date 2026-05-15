@@ -1,7 +1,8 @@
+import { useEffect, useMemo, useState } from 'react';
+
 import AppHeader from '../components/AppHeader';
 import DashboardHeader from '../components/DashboardHeader';
 import HeroSection from '../components/HeroSection';
-import StatsGrid from '../components/StatsGrid';
 import RecommendationsSection from '../components/RecommendationsSection';
 
 function DashboardPage({
@@ -10,7 +11,6 @@ function DashboardPage({
   error,
   firstName,
   initials,
-  isHonorStudent,
   loading,
   onLogout,
   onRefresh,
@@ -19,10 +19,152 @@ function DashboardPage({
   recommendations,
   refreshing,
   stats,
-  summaryText,
   todayLabel,
   totalECTS,
 }) {
+  const recommendationsPerPage = 6;
+  const [filters, setFilters] = useState({
+    department: 'all',
+    category: 'all',
+  });
+  const [currentPage, setCurrentPage] = useState(1);
+
+  const departmentOptions = useMemo(
+    () =>
+      [...new Set(recommendations.flatMap((item) => item.departmentNames || []).filter(Boolean))].sort(
+        (left, right) => left.localeCompare(right, 'tr')
+      ),
+    [recommendations]
+  );
+
+  const departmentScopedRecommendations = useMemo(
+    () =>
+      filters.department === 'all'
+        ? recommendations
+        : recommendations.filter((item) => (item.departmentNames || []).includes(filters.department)),
+    [filters.department, recommendations]
+  );
+
+  const categoryOptions = useMemo(
+    () =>
+      [...new Set(departmentScopedRecommendations.map((item) => item.category).filter(Boolean))].sort(
+        (left, right) => left.localeCompare(right, 'tr')
+      ),
+    [departmentScopedRecommendations]
+  );
+
+  useEffect(() => {
+    if (filters.category !== 'all' && !categoryOptions.includes(filters.category)) {
+      setFilters((current) => ({
+        ...current,
+        category: 'all',
+      }));
+    }
+  }, [categoryOptions, filters.category]);
+
+  const filteredRecommendations = useMemo(() => {
+    return departmentScopedRecommendations.filter((item) => {
+      const matchesCategory = filters.category === 'all' || item.category === filters.category;
+
+      return matchesCategory;
+    });
+  }, [departmentScopedRecommendations, filters.category]);
+
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredRecommendations.length / recommendationsPerPage)
+  );
+
+  const pagedRecommendations = useMemo(() => {
+    const startIndex = (currentPage - 1) * recommendationsPerPage;
+    return filteredRecommendations.slice(startIndex, startIndex + recommendationsPerPage);
+  }, [currentPage, filteredRecommendations]);
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filters.category, filters.department]);
+
+  useEffect(() => {
+    if (currentPage > totalPages) {
+      setCurrentPage(totalPages);
+    }
+  }, [currentPage, totalPages]);
+
+  const filteredStats = useMemo(() => {
+    const totalProjects = filteredRecommendations.length;
+    const topScore = totalProjects
+      ? Math.round(Math.max(...filteredRecommendations.map((item) => item.matchScore || 0)))
+      : 0;
+    const averageScore = totalProjects
+      ? Math.round(
+          filteredRecommendations.reduce((sum, item) => sum + (item.matchScore || 0), 0) /
+            totalProjects
+        )
+      : 0;
+    const categoryCount = new Set(
+      filteredRecommendations.map((item) => item.category).filter(Boolean)
+    ).size;
+
+    return {
+      totalProjects,
+      topScore,
+      averageScore,
+      categoryCount,
+    };
+  }, [filteredRecommendations]);
+
+  const activeFilterCount = useMemo(
+    () =>
+      [
+        filters.department !== 'all',
+        filters.category !== 'all',
+      ].filter(Boolean).length,
+    [filters]
+  );
+
+  const hasCgpa = cgpa !== null && cgpa !== undefined && cgpa !== '';
+  const hasTotalECTS = totalECTS !== null && totalECTS !== undefined && totalECTS !== '';
+  const showProfilePrompt = !profile?.cvFileName || !hasCgpa || !hasTotalECTS;
+
+  const handleFilterChange = (field, value) => {
+    setFilters((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  const clearFilters = () => {
+    setFilters({
+      department: 'all',
+      category: 'all',
+    });
+    setCurrentPage(1);
+  };
+
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+
+    if (typeof window !== 'undefined') {
+      const projectsSection = document.querySelector('.projects-section');
+
+      if (projectsSection) {
+        const sectionTop =
+          projectsSection.getBoundingClientRect().top + window.scrollY - 24;
+
+        window.scrollTo({
+          top: Math.max(sectionTop, 0),
+          behavior: 'smooth',
+        });
+        return;
+      }
+
+      window.scrollTo({
+        top: 0,
+        behavior: 'smooth',
+      });
+    }
+  };
+
   return (
     <div className="app-layout">
       <AppHeader
@@ -45,18 +187,30 @@ function DashboardPage({
         {error ? <div className="dashboard-alert">{error}</div> : null}
 
         <HeroSection
-          cgpa={cgpa}
-          initials={initials}
-          isHonorStudent={isHonorStudent}
-          profile={profile}
+          activeFilterCount={activeFilterCount}
+          categoryOptions={categoryOptions}
+          departmentOptions={departmentOptions}
+          filteredCount={filteredRecommendations.length}
+          filters={filters}
+          firstName={firstName}
+          onClearFilters={clearFilters}
+          onFilterChange={handleFilterChange}
+          onOpenProfile={() => onViewChange('profile')}
+          showProfilePrompt={showProfilePrompt}
           stats={stats}
-          summaryText={summaryText}
-          totalECTS={totalECTS}
         />
 
-        <StatsGrid stats={stats} />
-
-        <RecommendationsSection loading={loading} recommendations={recommendations} />
+        <RecommendationsSection
+          activeFilterCount={activeFilterCount}
+          currentPage={currentPage}
+          loading={loading}
+          onClearFilters={clearFilters}
+          onPageChange={handlePageChange}
+          recommendations={pagedRecommendations}
+          totalPages={totalPages}
+          totalResults={filteredRecommendations.length}
+          totalRecommendations={recommendations.length}
+        />
       </main>
     </div>
   );
