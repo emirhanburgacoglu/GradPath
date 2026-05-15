@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { LogOut, Menu, X } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
+import { ChevronDown, LogOut, Menu, User, X } from 'lucide-react';
 
 const navItems = [
   { id: 'dashboard', label: 'Anasayfa' },
@@ -8,21 +8,67 @@ const navItems = [
   { id: 'posts', label: 'İlanlar' },
 ];
 
-function AppHeader({ currentView, initials, onLogout, onViewChange, profile }) {
+function AppHeader({
+  currentView,
+  initials,
+  onLogout,
+  onViewChange,
+  profile,
+  isAuthenticated = true,
+  authMode = 'login',
+  onAuthModeChange,
+}) {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const profileMenuRef = useRef(null);
 
   useEffect(() => {
     setIsMobileMenuOpen(false);
-  }, [currentView]);
+    setIsProfileMenuOpen(false);
+  }, [currentView, authMode]);
+
+  useEffect(() => {
+    if (!isProfileMenuOpen || !isAuthenticated) {
+      return undefined;
+    }
+
+    const handlePointerDown = (event) => {
+      if (!profileMenuRef.current?.contains(event.target)) {
+        setIsProfileMenuOpen(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsProfileMenuOpen(false);
+      }
+    };
+
+    window.addEventListener('mousedown', handlePointerDown);
+    window.addEventListener('keydown', handleEscape);
+
+    return () => {
+      window.removeEventListener('mousedown', handlePointerDown);
+      window.removeEventListener('keydown', handleEscape);
+    };
+  }, [isAuthenticated, isProfileMenuOpen]);
 
   const handleViewSelect = (viewId) => {
     setIsMobileMenuOpen(false);
-    onViewChange(viewId);
+    setIsProfileMenuOpen(false);
+    onViewChange?.(viewId);
   };
 
   const handleLogoutClick = () => {
     setIsMobileMenuOpen(false);
-    onLogout();
+    setIsProfileMenuOpen(false);
+    onLogout?.();
+  };
+
+  const handleGuestAuthSelect = (mode) => {
+    setIsMobileMenuOpen(false);
+    setIsProfileMenuOpen(false);
+    onAuthModeChange?.(mode);
   };
 
   const renderNavItems = () =>
@@ -66,23 +112,73 @@ function AppHeader({ currentView, initials, onLogout, onViewChange, profile }) {
         </nav>
 
         <div className="app-topbar-actions app-topbar-actions-desktop">
-          <div className="app-topbar-status">
-            <span className="app-status-dot" />
-            Aktif oturum
-          </div>
+          {isAuthenticated ? (
+            <>
+              <div className="app-topbar-status">
+                <span className="app-status-dot" />
+                Aktif oturum
+              </div>
 
-          <div className="app-topbar-profile">
-            <div className="app-topbar-avatar">{initials}</div>
-            <div className="app-topbar-profile-copy">
-              <strong>{profile?.fullName || 'GradPath kullanıcısı'}</strong>
-              <span>{profile?.email || 'Panel kullanıcısı'}</span>
+              <div
+                ref={profileMenuRef}
+                className={`app-topbar-profile-menu ${isProfileMenuOpen ? 'open' : ''}`}
+              >
+                <button
+                  type="button"
+                  className="app-topbar-profile app-topbar-profile-trigger"
+                  aria-haspopup="menu"
+                  aria-expanded={isProfileMenuOpen}
+                  onClick={() => setIsProfileMenuOpen((current) => !current)}
+                >
+                  <div className="app-topbar-avatar">{initials}</div>
+                  <div className="app-topbar-profile-copy">
+                    <strong>{profile?.fullName || 'GradPath kullanıcısı'}</strong>
+                    <span>{profile?.email || 'Panel kullanıcısı'}</span>
+                  </div>
+                  <ChevronDown size={16} className="app-topbar-profile-caret" />
+                </button>
+
+                <div className="app-topbar-profile-dropdown" role="menu" aria-label="Profil menüsü">
+                  <button
+                    type="button"
+                    className="app-topbar-profile-action"
+                    role="menuitem"
+                    onClick={() => handleViewSelect('profile')}
+                  >
+                    <User size={16} />
+                    Profile git
+                  </button>
+
+                  <button
+                    type="button"
+                    className="app-topbar-profile-action danger"
+                    role="menuitem"
+                    onClick={handleLogoutClick}
+                  >
+                    <LogOut size={16} />
+                    Çıkış yap
+                  </button>
+                </div>
+              </div>
+            </>
+          ) : (
+            <div className="app-topbar-guest-auth" role="tablist" aria-label="Kimlik doğrulama modu">
+              <button
+                type="button"
+                className={`app-topbar-guest-auth-button ${authMode === 'login' ? 'active' : ''}`}
+                onClick={() => handleGuestAuthSelect('login')}
+              >
+                Giriş Yap
+              </button>
+              <button
+                type="button"
+                className={`app-topbar-guest-auth-button ${authMode === 'register' ? 'active' : ''}`}
+                onClick={() => handleGuestAuthSelect('register')}
+              >
+                Kayıt Ol
+              </button>
             </div>
-          </div>
-
-          <button type="button" className="ghost-button topbar-logout-button" onClick={handleLogoutClick}>
-            <LogOut size={16} />
-            Çıkış
-          </button>
+          )}
         </div>
 
         <div
@@ -94,27 +190,57 @@ function AppHeader({ currentView, initials, onLogout, onViewChange, profile }) {
           </nav>
 
           <div className="app-topbar-actions app-topbar-actions-mobile">
-            <div className="app-topbar-status">
-              <span className="app-status-dot" />
-              Aktif oturum
-            </div>
+            {isAuthenticated ? (
+              <>
+                <div className="app-topbar-status">
+                  <span className="app-status-dot" />
+                  Aktif oturum
+                </div>
 
-            <div className="app-topbar-profile">
-              <div className="app-topbar-avatar">{initials}</div>
-              <div className="app-topbar-profile-copy">
-                <strong>{profile?.fullName || 'GradPath kullanıcısı'}</strong>
-                <span>{profile?.email || 'Panel kullanıcısı'}</span>
+                <div className="app-topbar-profile">
+                  <div className="app-topbar-avatar">{initials}</div>
+                  <div className="app-topbar-profile-copy">
+                    <strong>{profile?.fullName || 'GradPath kullanıcısı'}</strong>
+                    <span>{profile?.email || 'Panel kullanıcısı'}</span>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  className="ghost-button topbar-logout-button topbar-profile-button-mobile"
+                  onClick={() => handleViewSelect('profile')}
+                >
+                  <User size={16} />
+                  Profile git
+                </button>
+
+                <button
+                  type="button"
+                  className="ghost-button topbar-logout-button topbar-logout-button-mobile"
+                  onClick={handleLogoutClick}
+                >
+                  <LogOut size={16} />
+                  Çıkış yap
+                </button>
+              </>
+            ) : (
+              <div className="app-topbar-guest-auth app-topbar-guest-auth-mobile" role="tablist" aria-label="Kimlik doğrulama modu">
+                <button
+                  type="button"
+                  className={`app-topbar-guest-auth-button ${authMode === 'login' ? 'active' : ''}`}
+                  onClick={() => handleGuestAuthSelect('login')}
+                >
+                  Giriş Yap
+                </button>
+                <button
+                  type="button"
+                  className={`app-topbar-guest-auth-button ${authMode === 'register' ? 'active' : ''}`}
+                  onClick={() => handleGuestAuthSelect('register')}
+                >
+                  Kayıt Ol
+                </button>
               </div>
-            </div>
-
-            <button
-              type="button"
-              className="ghost-button topbar-logout-button topbar-logout-button-mobile"
-              onClick={handleLogoutClick}
-            >
-              <LogOut size={16} />
-              Çıkış
-            </button>
+            )}
           </div>
         </div>
       </div>
