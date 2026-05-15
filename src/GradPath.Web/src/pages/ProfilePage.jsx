@@ -17,6 +17,7 @@ import {
   X,
 } from 'lucide-react';
 import AppHeader from '../components/AppHeader';
+import AppFooter from '../components/AppFooter';
 import api from '../api';
 
 function safeParseAnalysis(profile) {
@@ -2459,7 +2460,7 @@ function ProfilePage({
         profile={profile}
       />
 
-      <main className="main-content">
+      <main className="main-content profile-page">
         <header className="dashboard-header">
           <div>
             <p className="dashboard-date">Öğrenci Profili</p>
@@ -2517,6 +2518,8 @@ function ProfilePage({
           </div>
         </section>
       </main>
+
+      <AppFooter currentView={currentView} onViewChange={onViewChange} />
     </div>
   );
 }

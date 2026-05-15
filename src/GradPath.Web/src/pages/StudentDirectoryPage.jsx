@@ -9,6 +9,7 @@ import {
   X,
 } from 'lucide-react';
 import AppHeader from '../components/AppHeader';
+import AppFooter from '../components/AppFooter';
 import api from '../api';
 
 function createEmptyFilters() {
@@ -373,7 +374,7 @@ function StudentDirectoryPage({
                 ) : null}
 
                 <div className="applicant-public-profile-grid">
-                  <article className="applicant-public-profile-card">
+                  <article className="applicant-public-profile-card applicant-public-profile-card-accent">
                     <div className="applicant-public-profile-card-title">Yetenekler</div>
                     {selectedStudentProfile.skills?.length ? (
                       <div className="project-tags">
@@ -391,7 +392,7 @@ function StudentDirectoryPage({
                     )}
                   </article>
 
-                  <article className="applicant-public-profile-card">
+                  <article className="applicant-public-profile-card applicant-public-profile-card-accent">
                     <div className="applicant-public-profile-card-title">İlgi alanları</div>
                     {selectedStudentProfile.domainSignals?.length ? (
                       <div className="project-tags">
@@ -514,7 +515,7 @@ function StudentDirectoryPage({
         profile={profile}
       />
 
-      <main className="main-content">
+      <main className="main-content student-directory-page">
         <div className="dashboard-header">
           <div>
             <p className="dashboard-date">Öğrenci Dizini</p>
@@ -831,6 +832,7 @@ function StudentDirectoryPage({
         )}
       </main>
 
+      <AppFooter currentView={currentView} onViewChange={onViewChange} />
       {renderProfileModal()}
     </div>
   );

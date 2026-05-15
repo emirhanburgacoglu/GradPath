@@ -16,6 +16,7 @@ import {
   X,
 } from 'lucide-react';
 import AppHeader from '../components/AppHeader';
+import AppFooter from '../components/AppFooter';
 import api from '../api';
 import PostCard from './studentProjectPosts/components/PostCard';
 import PostComposer from './studentProjectPosts/components/PostComposer';
@@ -869,7 +870,7 @@ function StudentProjectPostsPage({
                   ) : null}
 
                   <div className="applicant-public-profile-grid">
-                    <article className="applicant-public-profile-card">
+                    <article className="applicant-public-profile-card applicant-public-profile-card-accent">
                       <div className="applicant-public-profile-card-title">Yetenekler</div>
                       {selectedApplicantProfile.skills?.length ? (
                         <div className="project-tags">
@@ -887,7 +888,7 @@ function StudentProjectPostsPage({
                       )}
                     </article>
 
-                    <article className="applicant-public-profile-card">
+                    <article className="applicant-public-profile-card applicant-public-profile-card-accent">
                       <div className="applicant-public-profile-card-title">Ilgi alanlari</div>
                       {selectedApplicantProfile.domainSignals?.length ? (
                         <div className="project-tags">
@@ -1715,6 +1716,7 @@ function StudentProjectPostsPage({
             : renderOpenPosts()}
       </main>
 
+      <AppFooter currentView={currentView} onViewChange={onViewChange} />
       {selectionModal === 'technology' ? renderTechnologyModal() : null}
       {selectionModal === 'department' ? renderDepartmentModal() : null}
       {applicationManagerPost ? renderApplicationManagerModal() : null}

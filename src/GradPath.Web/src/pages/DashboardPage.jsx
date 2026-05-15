@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 
 import AppHeader from '../components/AppHeader';
+import AppFooter from '../components/AppFooter';
 import DashboardHeader from '../components/DashboardHeader';
 import HeroSection from '../components/HeroSection';
 import RecommendationsSection from '../components/RecommendationsSection';
@@ -212,6 +213,8 @@ function DashboardPage({
           totalRecommendations={recommendations.length}
         />
       </main>
+
+      <AppFooter currentView={currentView} onViewChange={onViewChange} />
     </div>
   );
 }
