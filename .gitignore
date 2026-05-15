@@ -490,3 +490,6 @@ appsettings.*.json
 
 # Runtime uploads
 src/GradPath.API/wwwroot/uploads/
+
+# Local build outputs
+build-artifacts/
