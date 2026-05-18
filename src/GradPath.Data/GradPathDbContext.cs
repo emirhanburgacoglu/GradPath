@@ -19,6 +19,7 @@ public class GradPathDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<Project> Projects { get; set; } = null!;
     public DbSet<Technology> Technologies { get; set; } = null!;
     public DbSet<StudentProfile> StudentProfiles { get; set; } = null!;
+    public DbSet<AdvisorProfile> AdvisorProfiles { get; set; } = null!;
     public DbSet<Recommendation> Recommendations { get; set; } = null!;
     public DbSet<TeamMatch> TeamMatches { get; set; } = null!;
 
@@ -58,6 +59,9 @@ public class GradPathDbContext : IdentityDbContext<AppUser, AppRole, Guid>
         builder.Entity<StudentCvProjectTechnology>()
             .HasKey(set => new { set.StudentCvProjectId, set.TechnologyId });
 
+        builder.Entity<AdvisorProfile>()
+            .HasKey(ap => ap.UserId);
+
         builder.Entity<StudentEducation>()
             .HasOne(se => se.User)
             .WithMany()
@@ -74,6 +78,12 @@ public class GradPathDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             .HasOne(sp => sp.User)
             .WithMany()
             .HasForeignKey(sp => sp.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<AdvisorProfile>()
+            .HasOne(ap => ap.User)
+            .WithOne(user => user.AdvisorProfile)
+            .HasForeignKey<AdvisorProfile>(ap => ap.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
         builder.Entity<StudentDomainSignal>()

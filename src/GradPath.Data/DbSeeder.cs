@@ -8,7 +8,7 @@ public static class DbSeeder
 {
     public static async Task SeedRolesAndAdminAsync(RoleManager<AppRole> roleManager, GradPathDbContext context)
     {
-        string[] roleNames = { "Admin", "Student" };
+        string[] roleNames = { "Admin", "Student", "Advisor" };
         foreach (var roleName in roleNames)
         {
             if (!await roleManager.RoleExistsAsync(roleName))

@@ -15,6 +15,7 @@ public class AppUser : IdentityUser<Guid>
     // Navigation Properties (İlişkiler)
     public Department? Department { get; set; }
     public StudentProfile? StudentProfile { get; set; }
+    public AdvisorProfile? AdvisorProfile { get; set; }
     public ICollection<Recommendation> Recommendations { get; set; } = new List<Recommendation>();
     public ICollection<TeamMatch> InitiatedMatches { get; set; } = new List<TeamMatch>();
     public ICollection<TeamMatch> ReceivedMatches { get; set; } = new List<TeamMatch>();
