@@ -16,9 +16,9 @@ const defaultRegisterForm = {
 };
 
 const loginFeaturePoints = [
-  'Ogrenci profili ve proje verisini ayni akista toplar.',
+  'Ogrenci profili, proje secimi ve danismanlik surecini tek akista toplar.',
   'Eslesme mantigini daha gorunur ve olculebilir hale getirir.',
-  'Basvuru sureclerini tek panel uzerinden takip etmeni saglar.',
+  'Bitirme projesi surecini tek panel uzerinden takip etmeni saglar.',
 ];
 
 const loginPreviewCards = [
@@ -27,20 +27,31 @@ const loginPreviewCards = [
     detail: 'Yetkinlik, belge ve akademik kayitlar duzenli sekilde ilerler.',
   },
   {
-    title: 'Akilli Eslesme',
-    detail: 'Ilanlar uyum mantigiyla siralanir ve onceliklendirilir.',
+    title: 'Proje Eslesmesi',
+    detail: 'Bitirme projeleri uyum mantigiyla siralanir ve degerlendirilir.',
   },
   {
-    title: 'Basvuru Takibi',
-    detail: 'Acik surecler tek panelde net durum kartlariyla izlenir.',
+    title: 'Danismanlik Akisi',
+    detail: 'Proje secimi ve danisman sureci tek panelde izlenir.',
   },
 ];
 
 const loginWorkflowSteps = [
   'Profilini olustur',
-  'Ilanlari incele',
-  'Uyum skorunu degerlendir',
+  'Projeni sec',
+  'Danisman surecini takip et',
 ];
+
+const roleBasedLoginDefaults = {
+  student: {
+    email: 'ayse@test.com',
+    password: 'Ayse123!',
+  },
+  advisor: {
+    email: 'mehmet.hoca@test.com',
+    password: 'Advisor123!',
+  },
+};
 
 function getApiErrorMessage(error, fallbackMessage) {
   const responseData = error?.response?.data;
@@ -122,9 +133,21 @@ const Login = ({ onLoginSuccess }) => {
       };
     }
 
-    if (authMode === 'login') {
+    if (authMode === 'login-role') {
       return {
-        title: 'Kurumsal panele giris yapin.',
+        title: 'Giris yapmak istedigin hesap turunu sec.',
+      };
+    }
+
+    if (authMode === 'login-advisor') {
+      return {
+        title: 'Danisman hesabinla giris yap.',
+      };
+    }
+
+    if (authMode === 'login-student') {
+      return {
+        title: 'Ogrenci hesabinla giris yap.',
       };
     }
 
@@ -134,7 +157,14 @@ const Login = ({ onLoginSuccess }) => {
   }, [authMode]);
 
   const switchMode = (nextMode) => {
-    setAuthMode(nextMode);
+    setAuthMode(nextMode === 'login' ? 'login-role' : nextMode);
+    setError('');
+    setInfoMessage('');
+  };
+
+  const openLoginForRole = (role) => {
+    setLoginForm(roleBasedLoginDefaults[role] || defaultLoginForm);
+    setAuthMode(role === 'advisor' ? 'login-advisor' : 'login-student');
     setError('');
     setInfoMessage('');
   };
@@ -154,6 +184,7 @@ const Login = ({ onLoginSuccess }) => {
     try {
       const response = await api.post('/auth/login', loginForm);
       localStorage.setItem('token', response.data.token);
+      localStorage.setItem('roles', JSON.stringify(response.data.roles || []));
       onLoginSuccess();
     } catch (requestError) {
       setError(getApiErrorMessage(requestError, 'Giris basarisiz. E-posta veya sifreyi tekrar kontrol et.'));
@@ -177,6 +208,7 @@ const Login = ({ onLoginSuccess }) => {
       });
 
       localStorage.setItem('token', response.data.token);
+      localStorage.setItem('roles', JSON.stringify(response.data.roles || []));
       onLoginSuccess();
     } catch (requestError) {
       setError(getApiErrorMessage(requestError, 'Kayit olusturulamadi. Bilgileri kontrol edip tekrar dene.'));
@@ -186,7 +218,7 @@ const Login = ({ onLoginSuccess }) => {
   };
 
   const renderAuthCard = () => (
-    <div className={`login-card login-card-${authMode}`}>
+    <div className={`login-card login-card-${authMode} ${authMode === 'login-role' ? 'login-card-compact' : ''}`}>
       <button
         type="button"
         className="login-modal-close"
@@ -201,22 +233,58 @@ const Login = ({ onLoginSuccess }) => {
           <div className="login-card-top">
             <div className="login-pill">
               {authMode === 'register' ? <UserPlus size={15} /> : <Sparkles size={15} />}
-              {authMode === 'register' ? 'Yeni Ogrenci Hesabi' : 'Ogrenci Paneli'}
+              {authMode === 'register'
+                ? 'Yeni Ogrenci Hesabi'
+                : authMode === 'login-role'
+                  ? 'Giris Secimi'
+                  : authMode === 'login-advisor'
+                    ? 'Danisman Girisi'
+                    : 'Ogrenci Girisi'}
             </div>
 
             <h2>{currentHeading.title}</h2>
             <p>
               {authMode === 'register'
-                ? 'Universite e-posta bilginle yeni hesabini olustur ve profiline dogrudan basla.'
-                : 'Kayitli hesabinizla panele erisin ve sureclerinizi kaldiginiz yerden yonetin.'}
+                ? 'Universite e-posta bilginle yeni ogrenci hesabini olustur ve profiline dogrudan basla.'
+                : authMode === 'login-role'
+                  ? 'Acilan pencereden ogrenci veya danisman secimini yap. Sonraki adimda sana uygun giris formu gosterilecek.'
+                  : authMode === 'login-advisor'
+                    ? 'Danisman hesaplari kurum tarafindan tanimlanir. Mevcut bilgilerinizle giris yaparak panelinizi yonetebilirsiniz.'
+                    : 'Ogrenci hesabinizla giris yaparak proje ve danismanlik surecinizi kaldiginiz yerden yonetebilirsiniz.'}
             </p>
           </div>
 
-          <div className="login-form-shell">
-            {authMode === 'login' ? (
+          <div className={`login-form-shell ${authMode === 'login-role' ? 'login-form-shell-compact' : ''}`}>
+            {authMode === 'login-role' ? (
+              <div className="login-form login-role-grid">
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => openLoginForRole('student')}
+                >
+                  Ogrenci
+                </button>
+
+                <button
+                  type="button"
+                  className="btn-primary"
+                  onClick={() => openLoginForRole('advisor')}
+                >
+                  Danisman
+                </button>
+              </div>
+            ) : authMode === 'login-student' || authMode === 'login-advisor' ? (
               <form className="login-form" onSubmit={handleLogin}>
                 {error ? <div className="error-banner">{error}</div> : null}
                 {infoMessage ? <div className="info-banner">{infoMessage}</div> : null}
+
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() => switchMode('login')}
+                >
+                  Geri don
+                </button>
 
                 <div className="field-group">
                   <label className="field-label">E-posta adresi</label>
@@ -356,7 +424,11 @@ const Login = ({ onLoginSuccess }) => {
         </div>
 
         <div className="demo-note">
-          {authMode === 'login' ? (
+          {authMode === 'login-role' ? (
+            <>
+              <strong>Giris secimi:</strong> Once rolunu sec, sonra sana uygun giris formuyla devam et.
+            </>
+          ) : authMode === 'login-student' ? (
             <>
               <strong>Demo hesap:</strong> Form test kullanici bilgileriyle dolu geliyor. Istersen
               dogrudan giris yapip yeni kurumsal arayuzu tum sayfalarda inceleyebilirsin.
@@ -364,7 +436,7 @@ const Login = ({ onLoginSuccess }) => {
           ) : (
             <>
               <strong>Kayit notu:</strong> Hesap olusturuldugunda sana otomatik bir ogrenci profili
-              acilir. Giris yaptiktan sonra profil, yetkinlik ve proje alanlarini duzenleyebilirsin.
+              acilir. Danisman hesaplari ise ayrica kurum tarafindan tanimlanir.
             </>
           )}
         </div>
@@ -380,66 +452,66 @@ const Login = ({ onLoginSuccess }) => {
         isAuthenticated={false}
         authMode={authMode}
         onAuthModeChange={switchMode}
-        onViewChange={() => {}}
+        onViewChange={() => { }}
         profile={null}
       />
 
       <main className="main-content login-main-content">
         <div className="login-shell">
           <section className="login-hero">
-          <div className="login-copy">
-            <div className="login-brand">
-              <div className="login-brand-badge">GP</div>
-              <div className="login-brand-text">
-                <span className="login-brand-kicker">Project Intelligence Platform</span>
-                <span className="login-brand-name">GradPath</span>
+            <div className="login-copy">
+              <div className="login-brand">
+                <div className="login-brand-badge">GP</div>
+                <div className="login-brand-text">
+                  <span className="login-brand-kicker">Project Intelligence Platform</span>
+                  <span className="login-brand-name">GradPath</span>
+                </div>
+              </div>
+
+              <h1>Akademik proje surecini tek merkezden yonetin.</h1>
+              <p>
+                GradPath; ogrenci profili, proje ilanlari ve uyum analizlerini tek panelde birlestirir.
+                Karar alma surecini daha izlenebilir, daha olculebilir ve daha profesyonel hale getirir.
+              </p>
+
+              <div className="login-feature-list">
+                {loginFeaturePoints.map((point) => (
+                  <div key={point} className="login-feature-item">
+                    <span className="login-feature-dot" />
+                    <span>{point}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <h1>Akademik proje surecini tek merkezden yonetin.</h1>
-            <p>
-              GradPath; ogrenci profili, proje ilanlari ve uyum analizlerini tek panelde birlestirir.
-              Karar alma surecini daha izlenebilir, daha olculebilir ve daha profesyonel hale getirir.
-            </p>
-
-            <div className="login-feature-list">
-              {loginFeaturePoints.map((point) => (
-                <div key={point} className="login-feature-item">
-                  <span className="login-feature-dot" />
-                  <span>{point}</span>
+            <div className="login-preview-panel">
+              <div className="login-preview-header">
+                <div>
+                  <span className="login-preview-kicker">Calisma alani</span>
+                  <strong className="login-preview-title">Tek panel, net akis</strong>
                 </div>
-              ))}
-            </div>
-          </div>
-
-          <div className="login-preview-panel">
-            <div className="login-preview-header">
-              <div>
-                <span className="login-preview-kicker">Calisma alani</span>
-                <strong className="login-preview-title">Tek panel, net akis</strong>
+                <span className="login-preview-badge">Kurumsal gorunum</span>
               </div>
-              <span className="login-preview-badge">Kurumsal gorunum</span>
-            </div>
 
-            <div className="login-preview-grid">
-              {loginPreviewCards.map((card) => (
-                <article key={card.title} className="login-preview-card">
-                  <strong>{card.title}</strong>
-                  <span>{card.detail}</span>
-                </article>
-              ))}
-            </div>
+              <div className="login-preview-grid">
+                {loginPreviewCards.map((card) => (
+                  <article key={card.title} className="login-preview-card">
+                    <strong>{card.title}</strong>
+                    <span>{card.detail}</span>
+                  </article>
+                ))}
+              </div>
 
-            <div className="login-preview-flow">
-              {loginWorkflowSteps.map((step, index) => (
-                <div key={step} className="login-preview-flow-item">
-                  <span className="login-preview-flow-index">0{index + 1}</span>
-                  <span>{step}</span>
-                </div>
-              ))}
+              <div className="login-preview-flow">
+                {loginWorkflowSteps.map((step, index) => (
+                  <div key={step} className="login-preview-flow-item">
+                    <span className="login-preview-flow-index">0{index + 1}</span>
+                    <span>{step}</span>
+                  </div>
+                ))}
+              </div>
             </div>
-          </div>
-        </section>
+          </section>
         </div>
       </main>
 

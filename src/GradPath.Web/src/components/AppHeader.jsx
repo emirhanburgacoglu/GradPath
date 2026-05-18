@@ -18,6 +18,7 @@ function AppHeader({
   authMode = 'login',
   onAuthModeChange,
 }) {
+  const isLoginAuthMode = authMode?.startsWith('login');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
   const profileMenuRef = useRef(null);
@@ -165,7 +166,7 @@ function AppHeader({
             <div className="app-topbar-guest-auth" role="tablist" aria-label="Kimlik doğrulama modu">
               <button
                 type="button"
-                className={`app-topbar-guest-auth-button ${authMode === 'login' ? 'active' : ''}`}
+                className={`app-topbar-guest-auth-button ${isLoginAuthMode ? 'active' : ''}`}
                 onClick={() => handleGuestAuthSelect('login')}
               >
                 Giriş Yap
@@ -183,7 +184,7 @@ function AppHeader({
 
         <div
           id="app-topbar-mobile-panel"
-          className={`app-topbar-mobile-panel ${isMobileMenuOpen ? 'open' : ''}`}
+          className={`app-topbar-mobile-panel ${isMobileMenuOpen ? 'open' : ''} ${!isAuthenticated ? 'app-topbar-mobile-panel-guest' : ''}`}
         >
           <nav className="app-topbar-nav app-topbar-nav-mobile" aria-label="Mobil gezinme">
             {renderNavItems()}
@@ -227,7 +228,7 @@ function AppHeader({
               <div className="app-topbar-guest-auth app-topbar-guest-auth-mobile" role="tablist" aria-label="Kimlik doğrulama modu">
                 <button
                   type="button"
-                  className={`app-topbar-guest-auth-button ${authMode === 'login' ? 'active' : ''}`}
+                  className={`app-topbar-guest-auth-button ${isLoginAuthMode ? 'active' : ''}`}
                   onClick={() => handleGuestAuthSelect('login')}
                 >
                   Giriş Yap

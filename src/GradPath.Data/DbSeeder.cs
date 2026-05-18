@@ -133,6 +133,36 @@ public static class DbSeeder
 
             await context.SaveChangesAsync();
         }
+        if (!await context.Users.AnyAsync(u => u.Email == "mehmet.hoca@test.com"))
+        {
+            var advisor = new AppUser
+            {
+                UserName = "mehmet.hoca@test.com",
+                Email = "mehmet.hoca@test.com",
+                EmailConfirmed = true,
+                FullName = "Dr. Mehmet Kaya",
+                DepartmentId = department.Id
+            };
+
+            await userManager.CreateAsync(advisor, "Advisor123!");
+            await userManager.AddToRoleAsync(advisor, "Advisor");
+
+            context.AdvisorProfiles.Add(new AdvisorProfile
+            {
+                UserId = advisor.Id,
+                AcademicTitle = "Dr. Ogr. Uyesi",
+                ExpertiseAreas = "Yapay zeka, makine ogrenmesi, veri analizi",
+                OfficeLocation = "A Blok 301",
+                ShortBio = "Bitirme projelerinde AI ve veri odakli calismalara danismanlik verir.",
+                MaxConcurrentStudents = 6,
+                IsAcceptingRequests = true,
+                SourceUrl = null,
+                LastSyncedAt = null,
+                CreatedAt = DateTime.UtcNow
+            });
+
+            await context.SaveChangesAsync();
+        }
 
         var technologyMap = (await context.Technologies
             .AsNoTracking()

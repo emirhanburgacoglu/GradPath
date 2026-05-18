@@ -32,6 +32,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 // 2. DbContext Kaydı (PostgreSQL Sürücüsü ile)
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
+builder.Services.AddScoped<IAdvisorService, AdvisorService>();
 builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<IStudentProjectPostService, GradPath.Business.Services.StudentProjectPostService>();
 

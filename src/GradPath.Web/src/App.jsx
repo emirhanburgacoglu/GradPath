@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import Login from './Login';
+import AdvisorDashboardPage from './pages/AdvisorDashboardPage';
 import DashboardPage from './pages/DashboardPage';
 import PosterWorkflowPage from './pages/PosterWorkflowPage';
 import ProfilePage from './pages/ProfilePage';
@@ -38,6 +39,13 @@ function App() {
     new URLSearchParams(window.location.search).get('poster') === 'workflow';
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
   const [currentView, setCurrentView] = useState('dashboard');
+  const [userRoles, setUserRoles] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem('roles') || '[]');
+    } catch {
+      return [];
+    }
+  });
   const [recommendations, setRecommendations] = useState([]);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -52,11 +60,23 @@ function App() {
 
   const handleLogout = () => {
     localStorage.removeItem('token');
+    localStorage.removeItem('roles');
     setIsLoggedIn(false);
+    setUserRoles([]);
     setCurrentView('dashboard');
     setRecommendations([]);
     setProfile(null);
     setError('');
+  };
+
+  const handleLoginSuccess = () => {
+    setIsLoggedIn(true);
+
+    try {
+      setUserRoles(JSON.parse(localStorage.getItem('roles') || '[]'));
+    } catch {
+      setUserRoles([]);
+    }
   };
 
   const loadProfileOnly = async (silent = false) => {
@@ -69,7 +89,7 @@ function App() {
     setError('');
 
     try {
-      const profileResult = await api.get('/student/me');
+      const profileResult = await api.get(isAdvisor ? '/advisors/me' : '/student/me');
       setProfile(profileResult.data);
     } catch (profileError) {
       setProfile(null);
@@ -97,6 +117,30 @@ function App() {
     }
 
     setError('');
+    if (isAdvisor) {
+      try {
+        const profileResult = await api.get('/advisors/me');
+        setProfile(profileResult.data);
+        setRecommendations([]);
+      } catch (profileError) {
+        setProfile(null);
+
+        if (profileError?.response?.status === 401) {
+          handleLogout();
+          return;
+        }
+
+        setError('Danisman panel verileri su an alinamiyor.');
+      } finally {
+        if (silent) {
+          setRefreshing(false);
+        } else {
+          setLoading(false);
+        }
+      }
+
+      return;
+    }
 
     const [profileResult, recommendationResult] = await Promise.allSettled([
       api.get('/student/me'),
@@ -131,8 +175,9 @@ function App() {
       setLoading(false);
     }
   };
+  const isAdvisor = userRoles.includes('Advisor');
+  const firstName = profile?.fullName?.split(' ')[0] || (isAdvisor ? 'Danışman' : 'Öğrenci');
 
-  const firstName = profile?.fullName?.split(' ')[0] || 'Öğrenci';
   const initials =
     profile?.fullName
       ?.split(' ')
@@ -154,8 +199,8 @@ function App() {
       : 0;
     const averageScore = totalProjects
       ? Math.round(
-          recommendations.reduce((sum, item) => sum + (item.matchScore || 0), 0) / totalProjects
-        )
+        recommendations.reduce((sum, item) => sum + (item.matchScore || 0), 0) / totalProjects
+      )
       : 0;
     const uniqueMissingSkills = new Set(
       recommendations.flatMap((item) => item.missingTechnologies || [])
@@ -184,22 +229,34 @@ function App() {
   }
 
   if (!isLoggedIn) {
-    return <Login onLoginSuccess={() => setIsLoggedIn(true)} />;
+    return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  if (isAdvisor) {
+    return (
+      <AdvisorDashboardPage
+        currentView={currentView}
+        initials={initials}
+        onLogout={handleLogout}
+        onViewChange={setCurrentView}
+        profile={profile}
+      />
+    );
   }
 
   if (currentView === 'profile') {
     return (
-        <ProfilePage
+      <ProfilePage
         cgpa={cgpa}
         currentView={currentView}
         error={error}
         initials={initials}
-          isHonorStudent={isHonorStudent}
-          onLogout={handleLogout}
-          onRefresh={() => loadProfileOnly(true)}
-          onViewChange={setCurrentView}
-          profile={profile}
-          refreshing={refreshing}
+        isHonorStudent={isHonorStudent}
+        onLogout={handleLogout}
+        onRefresh={() => loadProfileOnly(true)}
+        onViewChange={setCurrentView}
+        profile={profile}
+        refreshing={refreshing}
         summaryText={summaryText}
         totalECTS={totalECTS}
       />

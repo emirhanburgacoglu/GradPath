@@ -1082,6 +1082,12 @@ a {
   backdrop-filter: blur(8px);
 }
 
+.login-card-compact {
+  min-height: auto;
+  justify-content: flex-start;
+  gap: 20px;
+}
+
 .login-modal-overlay {
   position: fixed;
   inset: 0;
@@ -1136,6 +1142,10 @@ a {
   display: grid;
   min-height: 100%;
   animation: loginCardStageIn 240ms ease;
+}
+
+.login-card-compact .login-card-stage {
+  min-height: auto;
 }
 
 .login-card-body {
@@ -1220,6 +1230,20 @@ a {
   align-content: start;
 }
 
+.login-form-shell-compact {
+  min-height: auto;
+}
+
+.login-role-grid {
+  display: grid;
+  gap: 12px;
+}
+
+.login-role-grid .btn-primary {
+  min-height: 48px;
+  font-size: 0.98rem;
+}
+
 .field-group {
   display: grid;
   gap: 8px;
@@ -1267,6 +1291,10 @@ a {
   color: var(--text-faint);
   font-size: 0.8rem;
   line-height: 1.55;
+}
+
+.login-card-compact .demo-note {
+  margin-top: 8px;
 }
 
 .demo-note strong {
@@ -1444,9 +1472,18 @@ a {
     width: 100%;
     padding: 16px;
     border-radius: 18px;
-    background: rgba(255, 255, 255, 0.96);
-    border: 1px solid rgba(148, 163, 184, 0.16);
-    box-shadow: 0 16px 32px rgba(15, 23, 42, 0.08);
+    background:
+      linear-gradient(180deg, rgba(43, 78, 168, 0.98), rgba(26, 57, 133, 0.98));
+    border: 1px solid rgba(173, 198, 255, 0.24);
+    box-shadow: 0 18px 36px rgba(9, 20, 52, 0.26);
+  }
+
+  .app-topbar-mobile-panel-guest {
+    padding: 16px;
+    background:
+      linear-gradient(180deg, rgba(43, 78, 168, 0.98), rgba(26, 57, 133, 0.98));
+    border: 1px solid rgba(173, 198, 255, 0.24);
+    box-shadow: 0 18px 36px rgba(9, 20, 52, 0.26);
   }
 
   .app-topbar-mobile-panel.open {
@@ -1464,6 +1501,92 @@ a {
   .app-topbar-nav-mobile .app-nav-pill {
     width: 100%;
     justify-content: center;
+    color: rgba(237, 243, 255, 0.82);
+  }
+
+  .app-topbar-nav-mobile .app-nav-pill:hover,
+  .app-topbar-nav-mobile .app-nav-pill.active {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+  }
+
+  .app-topbar-mobile-panel-guest .app-topbar-actions-mobile {
+    display: block;
+    width: 100%;
+  }
+
+  .app-topbar-mobile-panel-guest .app-topbar-nav-mobile .app-nav-pill {
+    color: rgba(237, 243, 255, 0.82);
+  }
+
+  .app-topbar-mobile-panel-guest .app-topbar-nav-mobile .app-nav-pill:hover,
+  .app-topbar-mobile-panel-guest .app-topbar-nav-mobile .app-nav-pill.active {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 14px;
+  }
+
+  .app-topbar-mobile-panel .app-topbar-status {
+    color: rgba(237, 243, 255, 0.88);
+  }
+
+  .app-topbar-mobile-panel .app-topbar-profile {
+    background: rgba(255, 255, 255, 0.9);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    box-shadow: none;
+  }
+
+  .app-topbar-mobile-panel .app-topbar-profile-copy strong {
+    color: #10264f;
+  }
+
+  .app-topbar-mobile-panel .app-topbar-profile-copy span {
+    color: #5f718c;
+  }
+
+  .app-topbar-mobile-panel .topbar-profile-button-mobile,
+  .app-topbar-mobile-panel .topbar-logout-button-mobile {
+    width: 100%;
+    justify-content: center;
+    background: rgba(255, 255, 255, 0.96);
+    border-color: rgba(255, 255, 255, 0.16);
+    color: var(--brand-2);
+    box-shadow: none;
+  }
+
+  .app-topbar-mobile-panel .topbar-profile-button-mobile:hover,
+  .app-topbar-mobile-panel .topbar-logout-button-mobile:hover {
+    background: #ffffff;
+  }
+
+  .app-topbar-guest-auth-mobile {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: 8px;
+    width: 100%;
+    margin-top: 4px;
+    padding: 8px;
+    border-radius: 18px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    box-shadow: none;
+  }
+
+  .app-topbar-guest-auth-mobile .app-topbar-guest-auth-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    min-width: 0;
+    padding: 0 12px;
+    color: rgba(237, 243, 255, 0.82);
+  }
+
+  .app-topbar-guest-auth-mobile .app-topbar-guest-auth-button.active {
+    background: rgba(255, 255, 255, 0.98);
+    color: var(--brand);
   }
 
   .main-content {
@@ -7796,5 +7919,410 @@ a {
   .poster-chip-row span {
     min-height: 34px;
     font-size: 0.78rem;
+  }
+}
+
+/* Global mobile hardening */
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+}
+
+@media (max-width: 720px) {
+  html,
+  body,
+  #root,
+  .app-layout,
+  .main-content {
+    overflow-x: hidden;
+  }
+
+  .main-content > *,
+  .card,
+  .project-card,
+  .post-card,
+  .student-directory-card,
+  .profile-block,
+  .profile-summary-card,
+  .profile-identity-card,
+  .profile-note-card,
+  .selection-modal,
+  .selection-modal-section,
+  .post-card-detail-panel,
+  .app-footer-panel,
+  .overview-hero-card,
+  .posts-hero-copy,
+  .posts-hero-panel,
+  .poster-hero-copy,
+  .poster-hero-panel,
+  .post-form-stage,
+  .post-composer-side-card {
+    min-width: 0;
+  }
+
+  .card,
+  .project-card,
+  .post-card,
+  .student-directory-card,
+  .profile-block,
+  .profile-summary-card,
+  .profile-identity-card,
+  .profile-note-card,
+  .selection-modal-section,
+  .post-card-detail-panel,
+  .app-footer-panel,
+  .overview-hero-card,
+  .posts-hero-copy,
+  .posts-hero-panel,
+  .poster-hero-copy,
+  .poster-hero-panel,
+  .post-form-stage,
+  .post-composer-side-card {
+    padding: 18px;
+    border-radius: 18px;
+  }
+
+  .dashboard-header,
+  .dashboard-actions,
+  .dashboard-filter-panel-top,
+  .dashboard-profile-hint,
+  .section-header,
+  .profile-card-header,
+  .profile-panel-top,
+  .profile-form-actions,
+  .profile-composer-header,
+  .student-directory-card-top,
+  .student-directory-card-aside,
+  .student-directory-card-metrics,
+  .student-directory-filter-primary,
+  .student-directory-filter-actions,
+  .post-card-top,
+  .post-card-toolbar,
+  .post-card-actions,
+  .post-card-owner-actions,
+  .post-picker-card-head,
+  .post-selector-head,
+  .post-composer-footer,
+  .post-composer-footer-actions,
+  .posts-hero-actions,
+  .applicant-public-profile-top,
+  .selection-modal-header,
+  .selection-modal-toolbar,
+  .selection-modal-section-head,
+  .selection-modal-footer,
+  .application-summary-grid,
+  .documents-panel-head,
+  .profile-coverage-card,
+  .overview-hero-main,
+  .overview-hero-status-grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    justify-items: stretch;
+  }
+
+  .dashboard-header,
+  .student-directory-page .dashboard-header,
+  .profile-page .dashboard-header {
+    gap: 14px;
+    margin-bottom: 18px;
+  }
+
+  .dashboard-actions .ghost-button,
+  .dashboard-filter-clear,
+  .profile-submit-button,
+  .selection-modal-confirm,
+  .post-primary-action,
+  .posts-hero-primary,
+  .posts-hero-actions .ghost-button,
+  .student-directory-filter-actions .profile-submit-button,
+  .student-directory-filter-actions .profile-inline-button,
+  .post-stepper-next,
+  .topbar-profile-button-mobile,
+  .topbar-logout-button-mobile {
+    width: 100%;
+    min-width: 0;
+    justify-content: center;
+  }
+
+  .dashboard-title,
+  .student-directory-page .dashboard-title,
+  .profile-page .dashboard-title,
+  .posts-hero-title,
+  .poster-hero-copy h1 {
+    font-size: clamp(1.9rem, 8vw, 2.8rem);
+    line-height: 1.02;
+  }
+
+  .dashboard-subtitle,
+  .student-directory-page .dashboard-subtitle,
+  .profile-page .dashboard-subtitle,
+  .dashboard-hero p,
+  .posts-hero-text,
+  .project-card-heading p,
+  .post-card-copy p,
+  .student-directory-card-summary,
+  .overview-hero-summary p {
+    font-size: 0.95rem;
+    line-height: 1.65;
+    max-width: none;
+  }
+
+  .dashboard-hero,
+  .dashboard-filter-panel,
+  .dashboard-profile-hint,
+  .posts-hero-copy,
+  .posts-hero-panel,
+  .poster-hero-copy,
+  .poster-hero-panel {
+    padding: 20px;
+  }
+
+  .dashboard-hero h2,
+  .posts-hero-copy h3,
+  .project-card-heading h3,
+  .post-card-copy h3,
+  .selection-modal-header h2,
+  .overview-hero-summary strong {
+    font-size: 1.25rem;
+    line-height: 1.18;
+    max-width: none;
+  }
+
+  .dashboard-hero-meta,
+  .post-card-stats,
+  .post-overview-grid,
+  .student-directory-overview-grid,
+  .student-directory-stats-grid,
+  .posts-stats-grid,
+  .posts-hero-stats,
+  .dashboard-filter-grid,
+  .dashboard-filter-grid-compact,
+  .profile-panel-meta-grid,
+  .profile-grid,
+  .profile-overview-grid,
+  .profile-keyfacts,
+  .hero-chip-row,
+  .stats-grid,
+  .post-picker-grid,
+  .post-card-grid,
+  .post-card-detail-grid,
+  .student-directory-filter-grid,
+  .student-directory-detail-grid,
+  .applicant-public-profile-grid,
+  .applicant-public-profile-metrics,
+  .profile-form-grid,
+  .profile-skill-form-grid,
+  .post-composer-layout,
+  .post-composer-overview,
+  .post-stepper,
+  .profile-tabs,
+  .profile-tabs-shell,
+  .profile-tab-detailed,
+  .selection-preset-grid,
+  .selection-group-stack {
+    grid-template-columns: 1fr;
+  }
+
+  .project-list,
+  .profile-list,
+  .post-option-stack,
+  .post-composer-side-list,
+  .post-composer-tip-list,
+  .selection-option-list {
+    gap: 12px;
+  }
+
+  .project-card-top,
+  .project-card-tags-shell,
+  .project-meta-row,
+  .project-skill-grid,
+  .post-card-meta-row {
+    display: grid;
+    grid-template-columns: 1fr;
+    align-items: stretch;
+    justify-items: stretch;
+  }
+
+  .project-score-box,
+  .post-card-side {
+    width: 100%;
+    min-width: 0;
+    justify-items: start;
+  }
+
+  .project-tags,
+  .post-picker-tags {
+    gap: 8px;
+  }
+
+  .projects-pagination,
+  .projects-pagination-controls {
+    display: grid;
+    grid-template-columns: 1fr;
+    justify-items: stretch;
+    gap: 10px;
+  }
+
+  .projects-pagination-pages {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .projects-pagination-button,
+  .projects-page-chip {
+    min-width: 0;
+  }
+
+  .profile-tabs-shell .profile-tab,
+  .profile-tabs-shell .profile-tab-detailed,
+  .profile-tab {
+    min-height: auto;
+    padding: 14px 16px;
+  }
+
+  .selection-modal-overlay,
+  .login-modal-overlay {
+    padding: 10px;
+  }
+
+  .selection-modal,
+  .login-card {
+    width: 100%;
+    max-height: calc(100vh - 20px);
+    overflow: auto;
+    border-radius: 18px;
+  }
+
+  .selection-modal-close,
+  .login-modal-close {
+    width: 40px;
+    height: 40px;
+  }
+
+  .selection-modal-header,
+  .selection-modal-toolbar,
+  .selection-modal-section-head,
+  .selection-modal-footer {
+    gap: 10px;
+  }
+
+  .post-composer-hero-copy h3,
+  .posts-hero-copy h3,
+  .post-form-section-head strong,
+  .student-directory-card-copy strong,
+  .profile-panel-name,
+  .section-title {
+    font-size: 1.05rem;
+  }
+
+  .student-directory-avatar,
+  .profile-avatar,
+  .profile-identity-card .profile-avatar {
+    width: 48px;
+    height: 48px;
+  }
+
+  .app-footer-panel {
+    padding: 18px;
+  }
+}
+
+@media (max-width: 560px) {
+  .main-content,
+  .login-main-content,
+  .student-directory-page,
+  .profile-page {
+    width: min(calc(100% - 20px), 1460px);
+  }
+
+  .app-topbar-shell {
+    width: calc(100% - 20px);
+    padding: 10px 0;
+  }
+
+  .app-topbar-brand {
+    gap: 10px;
+  }
+
+  .app-topbar-brand-mark {
+    width: 30px;
+    height: 30px;
+  }
+
+  .app-topbar-brand-copy strong {
+    font-size: 1.05rem;
+  }
+
+  .card,
+  .project-card,
+  .post-card,
+  .student-directory-card,
+  .profile-block,
+  .profile-summary-card,
+  .profile-identity-card,
+  .profile-note-card,
+  .selection-modal,
+  .selection-modal-section,
+  .post-card-detail-panel,
+  .app-footer-panel,
+  .dashboard-hero,
+  .dashboard-filter-panel,
+  .dashboard-profile-hint,
+  .posts-hero-copy,
+  .posts-hero-panel,
+  .poster-hero-copy,
+  .poster-hero-panel,
+  .post-form-stage,
+  .post-composer-side-card,
+  .login-card {
+    padding: 14px;
+    border-radius: 16px;
+  }
+
+  .dashboard-title,
+  .student-directory-page .dashboard-title,
+  .profile-page .dashboard-title,
+  .posts-hero-title,
+  .poster-hero-copy h1 {
+    font-size: clamp(1.65rem, 9vw, 2.25rem);
+  }
+
+  .dashboard-hero h2,
+  .project-card-heading h3,
+  .post-card-copy h3,
+  .selection-modal-header h2 {
+    font-size: 1.12rem;
+  }
+
+  .app-topbar-mobile-panel,
+  .app-topbar-mobile-panel-guest {
+    padding: 12px;
+    border-radius: 16px;
+  }
+
+  .app-topbar-guest-auth-mobile {
+    padding: 6px;
+    border-radius: 14px;
+  }
+
+  .app-topbar-guest-auth-mobile .app-topbar-guest-auth-button {
+    min-height: 38px;
+    padding: 0 10px;
+    font-size: 0.88rem;
+  }
+
+  .input-field,
+  .btn-primary {
+    min-height: 50px;
+  }
+
+  .ghost-button,
+  .icon-button {
+    min-height: 42px;
   }
 }
