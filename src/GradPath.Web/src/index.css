@@ -122,7 +122,7 @@ a {
   width: calc(100% - 120px);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: auto minmax(360px, 500px) auto;
+  grid-template-columns: auto minmax(420px, 620px) auto;
   align-items: center;
   gap: 18px;
   padding: 16px 0;
@@ -186,11 +186,11 @@ a {
 .app-topbar-nav-desktop {
   min-width: 0;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   align-items: center;
   gap: 8px;
   width: 100%;
-  max-width: 500px;
+  max-width: 620px;
   margin: 0 auto;
 }
 
@@ -8325,4 +8325,211 @@ canvas {
   .icon-button {
     min-height: 42px;
   }
+}
+.project-card-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 18px;
+}
+
+.advisor-request-summary-card {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(38, 83, 186, 0.14);
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.advisor-request-summary-card strong,
+.advisor-request-note-box strong {
+  display: block;
+  color: #16336f;
+  font-size: 0.92rem;
+}
+
+.advisor-request-summary-card span,
+.advisor-request-note-box p {
+  color: #51627f;
+  font-size: 0.94rem;
+}
+
+.advisor-request-summary-card.pending {
+  border-color: rgba(212, 159, 22, 0.26);
+  background: rgba(255, 248, 225, 0.9);
+}
+
+.advisor-request-summary-card.approved {
+  border-color: rgba(36, 148, 95, 0.22);
+  background: rgba(236, 252, 243, 0.92);
+}
+
+.advisor-request-summary-card.rejected {
+  border-color: rgba(198, 67, 67, 0.18);
+  background: rgba(255, 242, 242, 0.92);
+}
+
+.advisor-request-modal {
+  max-width: 760px;
+}
+
+.advisor-option-list {
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.advisor-note-input {
+  width: 100%;
+  min-height: 108px;
+  padding: 14px 16px;
+  border-radius: 18px;
+  border: 1px solid rgba(38, 83, 186, 0.14);
+  background: rgba(255, 255, 255, 0.9);
+  color: #17305f;
+  resize: vertical;
+  font: inherit;
+}
+
+.advisor-note-input:focus {
+  outline: none;
+  border-color: rgba(38, 83, 186, 0.35);
+  box-shadow: 0 0 0 3px rgba(82, 123, 214, 0.12);
+}
+
+.advisor-request-inline-status {
+  margin-top: 12px;
+  color: #51627f;
+  font-size: 0.92rem;
+}
+
+.advisor-request-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.advisor-request-card {
+  display: grid;
+  gap: 16px;
+  padding: 24px;
+  border-radius: 24px;
+  border: 1px solid rgba(38, 83, 186, 0.12);
+  background: rgba(255, 255, 255, 0.88);
+  box-shadow: 0 18px 40px rgba(28, 58, 122, 0.08);
+}
+
+.advisor-request-card-top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.advisor-request-card-top h3 {
+  margin: 8px 0 6px;
+  color: #122a57;
+  font-size: 1.18rem;
+}
+
+.advisor-request-card-top p {
+  margin: 0;
+  color: #5c6b85;
+}
+
+.advisor-request-note-box {
+  padding: 14px 16px;
+  border-radius: 18px;
+  background: rgba(229, 238, 255, 0.62);
+}
+
+.advisor-request-note-box.subtle {
+  background: rgba(245, 248, 255, 0.82);
+}
+
+.advisor-request-note-box p {
+  margin: 8px 0 0;
+}
+
+.advisor-request-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+@media (max-width: 900px) {
+  .advisor-request-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.workflow-hero-card {
+  display: grid;
+  gap: 22px;
+  padding: 28px;
+  border-radius: 28px;
+}
+
+.workflow-hero-copy h1 {
+  margin: 10px 0 12px;
+  color: #132a58;
+  font-size: clamp(2rem, 3vw, 2.8rem);
+  line-height: 1.05;
+}
+
+.workflow-hero-copy p {
+  margin: 0;
+  max-width: 720px;
+  color: #5a6984;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.workflow-step-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.workflow-step-chip {
+  padding: 10px 16px;
+  border-radius: 999px;
+  border: 1px solid rgba(38, 83, 186, 0.14);
+  background: rgba(245, 248, 255, 0.86);
+  color: #35528a;
+  font-size: 0.93rem;
+  font-weight: 700;
+}
+
+.workflow-step-chip.active {
+  background: linear-gradient(135deg, #2850b4, #4772db);
+  border-color: transparent;
+  color: #fff;
+  box-shadow: 0 14px 30px rgba(40, 80, 180, 0.2);
+}
+
+.workflow-status-card {
+  display: grid;
+  gap: 16px;
+}
+
+.workflow-status-card.subtle {
+  background: rgba(245, 248, 255, 0.82);
+}
+
+.workflow-status-content {
+  display: grid;
+  gap: 8px;
+}
+
+.workflow-status-content strong {
+  color: #16336f;
+  font-size: 1.05rem;
+}
+
+.workflow-status-content span,
+.workflow-status-content p,
+.workflow-status-content small {
+  color: #586985;
+  line-height: 1.6;
 }

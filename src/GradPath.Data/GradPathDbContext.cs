@@ -20,6 +20,7 @@ public class GradPathDbContext : IdentityDbContext<AppUser, AppRole, Guid>
     public DbSet<Technology> Technologies { get; set; } = null!;
     public DbSet<StudentProfile> StudentProfiles { get; set; } = null!;
     public DbSet<AdvisorProfile> AdvisorProfiles { get; set; } = null!;
+    public DbSet<AdvisorRequest> AdvisorRequests { get; set; } = null!;
     public DbSet<Recommendation> Recommendations { get; set; } = null!;
     public DbSet<TeamMatch> TeamMatches { get; set; } = null!;
 
@@ -85,6 +86,34 @@ public class GradPathDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             .WithOne(user => user.AdvisorProfile)
             .HasForeignKey<AdvisorProfile>(ap => ap.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<AdvisorRequest>()
+            .HasOne(request => request.StudentUser)
+            .WithMany(user => user.StudentAdvisorRequests)
+            .HasForeignKey(request => request.StudentUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<AdvisorRequest>()
+            .HasOne(request => request.AdvisorUser)
+            .WithMany(user => user.AdvisorIncomingRequests)
+            .HasForeignKey(request => request.AdvisorUserId)
+            .OnDelete(DeleteBehavior.Restrict);
+
+        builder.Entity<AdvisorRequest>()
+            .HasOne(request => request.Project)
+            .WithMany(project => project.AdvisorRequests)
+            .HasForeignKey(request => request.ProjectId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        builder.Entity<AdvisorRequest>()
+            .HasIndex(request => request.StudentUserId);
+
+        builder.Entity<AdvisorRequest>()
+            .HasIndex(request => request.AdvisorUserId);
+
+        builder.Entity<AdvisorRequest>()
+            .HasIndex(request => new { request.StudentUserId, request.ProjectId, request.AdvisorUserId })
+            .IsUnique();
 
         builder.Entity<StudentDomainSignal>()
             .HasOne(ds => ds.User)

@@ -46,4 +46,74 @@ public class AdvisorService : IAdvisorService
             LastSyncedAt = advisor.AdvisorProfile.LastSyncedAt
         };
     }
+
+    public async Task<List<AdvisorLookupDto>> GetAvailableAdvisorsForProjectAsync(Guid studentUserId, int projectId)
+    {
+        var studentDepartmentId = await _context.Users
+            .AsNoTracking()
+            .Where(user => user.Id == studentUserId)
+            .Select(user => user.DepartmentId)
+            .FirstOrDefaultAsync();
+
+        var projectDepartmentIds = await _context.ProjectDepartments
+            .AsNoTracking()
+            .Where(link => link.ProjectId == projectId)
+            .Select(link => link.DepartmentId)
+            .Distinct()
+            .ToListAsync();
+
+        var approvedCounts = await _context.AdvisorRequests
+            .AsNoTracking()
+            .Where(request => request.Status == "Approved")
+            .GroupBy(request => request.AdvisorUserId)
+            .Select(group => new
+            {
+                AdvisorUserId = group.Key,
+                Count = group.Count()
+            })
+            .ToDictionaryAsync(item => item.AdvisorUserId, item => item.Count);
+
+        var baseQuery = _context.Users
+            .AsNoTracking()
+            .Include(user => user.Department)
+            .Include(user => user.AdvisorProfile)
+            .Where(user => user.AdvisorProfile != null && user.AdvisorProfile.IsAcceptingRequests);
+
+        if (projectDepartmentIds.Count > 0)
+        {
+            baseQuery = baseQuery.Where(user => user.DepartmentId.HasValue && projectDepartmentIds.Contains(user.DepartmentId.Value));
+        }
+        else if (studentDepartmentId.HasValue)
+        {
+            baseQuery = baseQuery.Where(user => user.DepartmentId == studentDepartmentId.Value);
+        }
+
+        var advisors = await baseQuery
+            .OrderBy(user => user.FullName)
+            .ToListAsync();
+
+        return advisors
+            .Select(user =>
+            {
+                var approvedStudentCount = approvedCounts.TryGetValue(user.Id, out var count) ? count : 0;
+                var hasCapacity = approvedStudentCount < (user.AdvisorProfile?.MaxConcurrentStudents ?? 0);
+
+                return new AdvisorLookupDto
+                {
+                    UserId = user.Id,
+                    FullName = user.FullName,
+                    AcademicTitle = user.AdvisorProfile?.AcademicTitle ?? string.Empty,
+                    DepartmentName = user.Department?.Name,
+                    FacultyName = user.Department?.FacultyName,
+                    ExpertiseAreas = user.AdvisorProfile?.ExpertiseAreas ?? string.Empty,
+                    OfficeLocation = user.AdvisorProfile?.OfficeLocation,
+                    MaxConcurrentStudents = user.AdvisorProfile?.MaxConcurrentStudents ?? 0,
+                    ApprovedStudentCount = approvedStudentCount,
+                    IsAcceptingRequests = user.AdvisorProfile?.IsAcceptingRequests ?? false,
+                    HasCapacity = hasCapacity
+                };
+            })
+            .Where(advisor => advisor.HasCapacity)
+            .ToList();
+    }
 }

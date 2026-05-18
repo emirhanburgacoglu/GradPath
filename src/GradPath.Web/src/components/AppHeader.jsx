@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, LogOut, Menu, User, X } from 'lucide-react';
 
-const navItems = [
+const defaultNavItems = [
   { id: 'dashboard', label: 'Anasayfa' },
+  { id: 'advisor-selection', label: 'Danismanlik' },
   { id: 'profile', label: 'Profil' },
   { id: 'students', label: 'Öğrenciler' },
   { id: 'posts', label: 'İlanlar' },
@@ -17,6 +18,9 @@ function AppHeader({
   isAuthenticated = true,
   authMode = 'login',
   onAuthModeChange,
+  navItems = defaultNavItems,
+  profileActionLabel = 'Profile git',
+  profileActionViewId = 'profile',
 }) {
   const isLoginAuthMode = authMode?.startsWith('login');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -141,14 +145,14 @@ function AppHeader({
 
                 <div className="app-topbar-profile-dropdown" role="menu" aria-label="Profil menüsü">
                   <button
-                    type="button"
-                    className="app-topbar-profile-action"
-                    role="menuitem"
-                    onClick={() => handleViewSelect('profile')}
-                  >
-                    <User size={16} />
-                    Profile git
-                  </button>
+                  type="button"
+                  className="app-topbar-profile-action"
+                  role="menuitem"
+                  onClick={() => handleViewSelect(profileActionViewId)}
+                >
+                  <User size={16} />
+                  {profileActionLabel}
+                </button>
 
                   <button
                     type="button"
@@ -209,10 +213,10 @@ function AppHeader({
                 <button
                   type="button"
                   className="ghost-button topbar-logout-button topbar-profile-button-mobile"
-                  onClick={() => handleViewSelect('profile')}
+                  onClick={() => handleViewSelect(profileActionViewId)}
                 >
                   <User size={16} />
-                  Profile git
+                  {profileActionLabel}
                 </button>
 
                 <button

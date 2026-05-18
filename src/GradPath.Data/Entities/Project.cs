@@ -18,6 +18,7 @@ public class Project
     public ICollection<ProjectDepartment> ProjectDepartments { get; set; } = new List<ProjectDepartment>();
     public ICollection<ProjectTechnology> ProjectTechnologies { get; set; } = new List<ProjectTechnology>();
     public ICollection<Recommendation> Recommendations { get; set; } = new List<Recommendation>();
+    public ICollection<AdvisorRequest> AdvisorRequests { get; set; } = new List<AdvisorRequest>();
     public ICollection<TeamMatch> TeamMatches { get; set; } = new List<TeamMatch>();
 
     // Metadata

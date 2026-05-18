@@ -67,6 +67,54 @@ namespace GradPath.Data.Migrations
                     b.ToTable("AdvisorProfiles");
                 });
 
+            modelBuilder.Entity("GradPath.Data.Entities.AdvisorRequest", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("AdvisorNote")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("AdvisorUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime>("CreatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("ProjectId")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime?>("RespondedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<string>("Status")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<string>("StudentNote")
+                        .HasColumnType("text");
+
+                    b.Property<Guid>("StudentUserId")
+                        .HasColumnType("uuid");
+
+                    b.Property<DateTime?>("UpdatedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("AdvisorUserId");
+
+                    b.HasIndex("ProjectId");
+
+                    b.HasIndex("StudentUserId");
+
+                    b.HasIndex("StudentUserId", "ProjectId", "AdvisorUserId")
+                        .IsUnique();
+
+                    b.ToTable("AdvisorRequests");
+                });
+
             modelBuilder.Entity("GradPath.Data.Entities.AppRole", b =>
                 {
                     b.Property<Guid>("Id")
@@ -883,6 +931,33 @@ namespace GradPath.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("GradPath.Data.Entities.AdvisorRequest", b =>
+                {
+                    b.HasOne("GradPath.Data.Entities.AppUser", "AdvisorUser")
+                        .WithMany("AdvisorIncomingRequests")
+                        .HasForeignKey("AdvisorUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("GradPath.Data.Entities.Project", "Project")
+                        .WithMany("AdvisorRequests")
+                        .HasForeignKey("ProjectId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.HasOne("GradPath.Data.Entities.AppUser", "StudentUser")
+                        .WithMany("StudentAdvisorRequests")
+                        .HasForeignKey("StudentUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("AdvisorUser");
+
+                    b.Navigation("Project");
+
+                    b.Navigation("StudentUser");
+                });
+
             modelBuilder.Entity("GradPath.Data.Entities.AppUser", b =>
                 {
                     b.HasOne("GradPath.Data.Entities.Department", "Department")
@@ -1208,6 +1283,8 @@ namespace GradPath.Data.Migrations
 
             modelBuilder.Entity("GradPath.Data.Entities.AppUser", b =>
                 {
+                    b.Navigation("AdvisorIncomingRequests");
+
                     b.Navigation("AdvisorProfile");
 
                     b.Navigation("InitiatedMatches");
@@ -1215,6 +1292,8 @@ namespace GradPath.Data.Migrations
                     b.Navigation("ReceivedMatches");
 
                     b.Navigation("Recommendations");
+
+                    b.Navigation("StudentAdvisorRequests");
 
                     b.Navigation("StudentProfile");
 
@@ -1230,6 +1309,8 @@ namespace GradPath.Data.Migrations
 
             modelBuilder.Entity("GradPath.Data.Entities.Project", b =>
                 {
+                    b.Navigation("AdvisorRequests");
+
                     b.Navigation("ProjectDepartments");
 
                     b.Navigation("ProjectTechnologies");

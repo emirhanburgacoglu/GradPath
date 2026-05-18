@@ -33,6 +33,7 @@ var connectionString = builder.Configuration.GetConnectionString("DefaultConnect
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IProjectService, ProjectService>();
 builder.Services.AddScoped<IAdvisorService, AdvisorService>();
+builder.Services.AddScoped<IAdvisorRequestService, AdvisorRequestService>();
 builder.Services.AddScoped<IStudentService, StudentService>();
 builder.Services.AddScoped<IStudentProjectPostService, GradPath.Business.Services.StudentProjectPostService>();
 

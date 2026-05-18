@@ -1,11 +1,18 @@
-const footerNavItems = [
+const defaultFooterNavItems = [
   { id: 'dashboard', label: 'Anasayfa' },
+  { id: 'advisor-selection', label: 'Danismanlik' },
   { id: 'profile', label: 'Profil' },
   { id: 'students', label: 'Ogrenciler' },
   { id: 'posts', label: 'Ilanlar' },
 ];
 
-function AppFooter({ currentView, onViewChange }) {
+function AppFooter({
+  currentView,
+  onViewChange,
+  navItems = defaultFooterNavItems,
+  note = 'Ogrenci profilleri, proje ilanlari ve eslesme akislarini ayni panelde duzenli ve izlenebilir hale getirir.',
+  metaText = 'Akademik proje yonetimi icin ortak calisma alani',
+}) {
   const year = new Date().getFullYear();
 
   return (
@@ -23,7 +30,7 @@ function AppFooter({ currentView, onViewChange }) {
             </div>
 
             <nav className="app-footer-nav" aria-label="Alt gezinme">
-              {footerNavItems.map((item) => (
+              {navItems.map((item) => (
                 <button
                   key={item.id}
                   type="button"
@@ -38,12 +45,11 @@ function AppFooter({ currentView, onViewChange }) {
 
           <div className="app-footer-bottom">
             <p className="app-footer-note">
-              Ogrenci profilleri, proje ilanlari ve eslesme akislarini ayni panelde duzenli ve
-              izlenebilir hale getirir.
+              {note}
             </p>
 
             <div className="app-footer-meta">
-              <span>Akademik proje yonetimi icin ortak calisma alani</span>
+              <span>{metaText}</span>
               <small>© {year} GradPath. Tum haklari saklidir.</small>
             </div>
           </div>

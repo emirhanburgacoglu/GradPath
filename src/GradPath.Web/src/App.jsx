@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Login from './Login';
 import AdvisorDashboardPage from './pages/AdvisorDashboardPage';
+import AdvisorSelectionPage from './pages/AdvisorSelectionPage';
 import DashboardPage from './pages/DashboardPage';
 import PosterWorkflowPage from './pages/PosterWorkflowPage';
 import ProfilePage from './pages/ProfilePage';
@@ -33,6 +34,24 @@ function resolveCvSummary(profile) {
   }
 }
 
+function resolveApiMessage(error, fallbackMessage) {
+  const payload = error?.response?.data;
+
+  if (typeof payload === 'string' && payload.trim()) {
+    return payload;
+  }
+
+  if (payload?.message) {
+    return payload.message;
+  }
+
+  if (payload?.Message) {
+    return payload.Message;
+  }
+
+  return fallbackMessage;
+}
+
 function App() {
   const isPosterWorkflowMode =
     typeof window !== 'undefined' &&
@@ -47,16 +66,18 @@ function App() {
     }
   });
   const [recommendations, setRecommendations] = useState([]);
+  const [advisorRequests, setAdvisorRequests] = useState([]);
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
+  const isAdvisor = userRoles?.includes('Advisor') === true;
 
   useEffect(() => {
     if (isLoggedIn) {
       loadDashboard();
     }
-  }, [isLoggedIn]);
+  }, [isLoggedIn, isAdvisor]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
@@ -65,6 +86,7 @@ function App() {
     setUserRoles([]);
     setCurrentView('dashboard');
     setRecommendations([]);
+    setAdvisorRequests([]);
     setProfile(null);
     setError('');
   };
@@ -119,11 +141,16 @@ function App() {
     setError('');
     if (isAdvisor) {
       try {
-        const profileResult = await api.get('/advisors/me');
+        const [profileResult, requestResult] = await Promise.all([
+          api.get('/advisors/me'),
+          api.get('/advisor-requests/incoming'),
+        ]);
         setProfile(profileResult.data);
         setRecommendations([]);
+        setAdvisorRequests(requestResult.data || []);
       } catch (profileError) {
         setProfile(null);
+        setAdvisorRequests([]);
 
         if (profileError?.response?.status === 401) {
           handleLogout();
@@ -142,9 +169,10 @@ function App() {
       return;
     }
 
-    const [profileResult, recommendationResult] = await Promise.allSettled([
+    const [profileResult, recommendationResult, advisorRequestResult] = await Promise.allSettled([
       api.get('/student/me'),
       api.get('/Matching/recommendations'),
+      api.get('/advisor-requests/mine'),
     ]);
 
     if (profileResult.status === 'fulfilled') {
@@ -165,6 +193,12 @@ function App() {
       setError('Öneriler yüklenemedi. Profilini güncelledikten sonra tekrar deneyebilirsin.');
     }
 
+    if (advisorRequestResult.status === 'fulfilled') {
+      setAdvisorRequests(advisorRequestResult.value.data || []);
+    } else {
+      setAdvisorRequests([]);
+    }
+
     if (profileResult.status === 'rejected' && recommendationResult.status === 'rejected') {
       setError('Dashboard verileri şu an alınamıyor.');
     }
@@ -175,7 +209,42 @@ function App() {
       setLoading(false);
     }
   };
-  const isAdvisor = userRoles.includes('Advisor');
+
+  const handleCreateAdvisorRequest = async (payload) => {
+    try {
+      const response = await api.post('/advisor-requests', payload);
+      await loadDashboard(true);
+
+      return {
+        succeeded: true,
+        message: typeof response.data === 'string' ? response.data : 'Danismanlik talebi gonderildi.',
+      };
+    } catch (requestError) {
+      return {
+        succeeded: false,
+        message: resolveApiMessage(requestError, 'Danismanlik talebi gonderilemedi.'),
+      };
+    }
+  };
+
+  const handleAdvisorRequestDecision = async (requestId, action, note) => {
+    try {
+      const response = await api.post(`/advisor-requests/${requestId}/${action}`, {
+        note,
+      });
+      await loadDashboard(true);
+
+      return {
+        succeeded: true,
+        message: typeof response.data === 'string' ? response.data : 'Talep guncellendi.',
+      };
+    } catch (decisionError) {
+      return {
+        succeeded: false,
+        message: resolveApiMessage(decisionError, 'Talep guncellenemedi.'),
+      };
+    }
+  };
   const firstName = profile?.fullName?.split(' ')[0] || (isAdvisor ? 'Danışman' : 'Öğrenci');
 
   const initials =
@@ -236,10 +305,15 @@ function App() {
     return (
       <AdvisorDashboardPage
         currentView={currentView}
+        error={error}
         initials={initials}
+        loading={loading || refreshing}
         onLogout={handleLogout}
+        onRefresh={loadDashboard}
+        onRequestDecision={handleAdvisorRequestDecision}
         onViewChange={setCurrentView}
         profile={profile}
+        requests={advisorRequests}
       />
     );
   }
@@ -287,8 +361,28 @@ function App() {
     );
   }
 
+  if (currentView === 'advisor-selection') {
+    return (
+      <AdvisorSelectionPage
+        advisorRequests={advisorRequests}
+        currentView={currentView}
+        error={error}
+        initials={initials}
+        loading={loading}
+        onCreateAdvisorRequest={handleCreateAdvisorRequest}
+        onLogout={handleLogout}
+        onRefresh={() => loadDashboard(true)}
+        onViewChange={setCurrentView}
+        profile={profile}
+        recommendations={recommendations}
+        refreshing={refreshing}
+      />
+    );
+  }
+
   return (
     <DashboardPage
+      advisorRequests={advisorRequests}
       cgpa={cgpa}
       currentView={currentView}
       error={error}
@@ -296,6 +390,7 @@ function App() {
       initials={initials}
       isHonorStudent={isHonorStudent}
       loading={loading}
+      onCreateAdvisorRequest={handleCreateAdvisorRequest}
       onLogout={handleLogout}
       onRefresh={() => loadDashboard(true)}
       onViewChange={setCurrentView}

@@ -423,23 +423,6 @@ const Login = ({ onLoginSuccess }) => {
           </div>
         </div>
 
-        <div className="demo-note">
-          {authMode === 'login-role' ? (
-            <>
-              <strong>Giris secimi:</strong> Once rolunu sec, sonra sana uygun giris formuyla devam et.
-            </>
-          ) : authMode === 'login-student' ? (
-            <>
-              <strong>Demo hesap:</strong> Form test kullanici bilgileriyle dolu geliyor. Istersen
-              dogrudan giris yapip yeni kurumsal arayuzu tum sayfalarda inceleyebilirsin.
-            </>
-          ) : (
-            <>
-              <strong>Kayit notu:</strong> Hesap olusturuldugunda sana otomatik bir ogrenci profili
-              acilir. Danisman hesaplari ise ayrica kurum tarafindan tanimlanir.
-            </>
-          )}
-        </div>
       </div>
     </div>
   );

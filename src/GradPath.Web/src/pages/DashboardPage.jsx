@@ -7,12 +7,14 @@ import HeroSection from '../components/HeroSection';
 import RecommendationsSection from '../components/RecommendationsSection';
 
 function DashboardPage({
+  advisorRequests,
   cgpa,
   currentView,
   error,
   firstName,
   initials,
   loading,
+  onCreateAdvisorRequest,
   onLogout,
   onRefresh,
   onViewChange,
@@ -23,7 +25,6 @@ function DashboardPage({
   todayLabel,
   totalECTS,
 }) {
-  const recommendationsPerPage = 6;
   const [filters, setFilters] = useState({
     department: 'all',
     category: 'all',
@@ -54,6 +55,24 @@ function DashboardPage({
     [departmentScopedRecommendations]
   );
 
+  const advisorRequestLookup = useMemo(() => {
+    return advisorRequests.reduce((lookup, request) => {
+      const current = lookup[request.projectId];
+
+      if (!current) {
+        lookup[request.projectId] = request;
+        return lookup;
+      }
+
+      lookup[request.projectId] =
+        new Date(request.createdAt).getTime() > new Date(current.createdAt).getTime()
+          ? request
+          : current;
+
+      return lookup;
+    }, {});
+  }, [advisorRequests]);
+
   useEffect(() => {
     if (filters.category !== 'all' && !categoryOptions.includes(filters.category)) {
       setFilters((current) => ({
@@ -66,15 +85,12 @@ function DashboardPage({
   const filteredRecommendations = useMemo(() => {
     return departmentScopedRecommendations.filter((item) => {
       const matchesCategory = filters.category === 'all' || item.category === filters.category;
-
       return matchesCategory;
     });
   }, [departmentScopedRecommendations, filters.category]);
 
-  const totalPages = Math.max(
-    1,
-    Math.ceil(filteredRecommendations.length / recommendationsPerPage)
-  );
+  const recommendationsPerPage = 6;
+  const totalPages = Math.max(1, Math.ceil(filteredRecommendations.length / recommendationsPerPage));
 
   const pagedRecommendations = useMemo(() => {
     const startIndex = (currentPage - 1) * recommendationsPerPage;
@@ -91,35 +107,8 @@ function DashboardPage({
     }
   }, [currentPage, totalPages]);
 
-  const filteredStats = useMemo(() => {
-    const totalProjects = filteredRecommendations.length;
-    const topScore = totalProjects
-      ? Math.round(Math.max(...filteredRecommendations.map((item) => item.matchScore || 0)))
-      : 0;
-    const averageScore = totalProjects
-      ? Math.round(
-          filteredRecommendations.reduce((sum, item) => sum + (item.matchScore || 0), 0) /
-            totalProjects
-        )
-      : 0;
-    const categoryCount = new Set(
-      filteredRecommendations.map((item) => item.category).filter(Boolean)
-    ).size;
-
-    return {
-      totalProjects,
-      topScore,
-      averageScore,
-      categoryCount,
-    };
-  }, [filteredRecommendations]);
-
   const activeFilterCount = useMemo(
-    () =>
-      [
-        filters.department !== 'all',
-        filters.category !== 'all',
-      ].filter(Boolean).length,
+    () => [filters.department !== 'all', filters.category !== 'all'].filter(Boolean).length,
     [filters]
   );
 
@@ -149,9 +138,7 @@ function DashboardPage({
       const projectsSection = document.querySelector('.projects-section');
 
       if (projectsSection) {
-        const sectionTop =
-          projectsSection.getBoundingClientRect().top + window.scrollY - 24;
-
+        const sectionTop = projectsSection.getBoundingClientRect().top + window.scrollY - 24;
         window.scrollTo({
           top: Math.max(sectionTop, 0),
           behavior: 'smooth',
@@ -203,8 +190,10 @@ function DashboardPage({
 
         <RecommendationsSection
           activeFilterCount={activeFilterCount}
+          advisorRequestLookup={advisorRequestLookup}
           currentPage={currentPage}
           loading={loading}
+          onCreateAdvisorRequest={onCreateAdvisorRequest}
           onClearFilters={clearFilters}
           onPageChange={handlePageChange}
           recommendations={pagedRecommendations}
