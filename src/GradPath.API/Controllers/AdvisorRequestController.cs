@@ -50,6 +50,18 @@ public class AdvisorRequestController : ControllerBase
         return Ok(result.Message);
     }
 
+    [HttpPost("{id}/cancel")]
+    [Authorize(Roles = "Student")]
+    public async Task<IActionResult> Cancel(Guid id)
+    {
+        if (!TryGetCurrentUserId(out var userId)) return Unauthorized();
+
+        var result = await _advisorRequestService.CancelAsync(userId, id);
+        if (!result.Succeeded) return BadRequest(result.Message);
+
+        return Ok(result.Message);
+    }
+
     [HttpPost("{id}/approve")]
     [Authorize(Roles = "Advisor")]
     public async Task<IActionResult> Approve(Guid id, AdvisorRequestDecisionDto dto)

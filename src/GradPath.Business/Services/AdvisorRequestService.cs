@@ -10,6 +10,7 @@ public class AdvisorRequestService : IAdvisorRequestService
     private const string PendingStatus = "Pending";
     private const string ApprovedStatus = "Approved";
     private const string RejectedStatus = "Rejected";
+    private const string CancelledStatus = "Cancelled";
 
     private readonly GradPathDbContext _context;
 
@@ -31,7 +32,7 @@ public class AdvisorRequestService : IAdvisorRequestService
     public async Task<List<AdvisorRequestResponseDto>> GetIncomingRequestsAsync(Guid advisorUserId)
     {
         var requests = await GetAdvisorRequestQuery()
-            .Where(request => request.AdvisorUserId == advisorUserId)
+            .Where(request => request.AdvisorUserId == advisorUserId && request.Status != CancelledStatus)
             .OrderBy(request => request.Status != PendingStatus)
             .ThenByDescending(request => request.CreatedAt)
             .ToListAsync();
@@ -74,13 +75,23 @@ public class AdvisorRequestService : IAdvisorRequestService
 
         var existingApprovedRequest = await _context.AdvisorRequests
             .AsNoTracking()
-            .Where(request => request.StudentUserId == studentUserId && request.Status == ApprovedStatus)
-            .Select(request => request.Project.Title)
-            .FirstOrDefaultAsync();
+            .Include(request => request.Project)
+            .Include(request => request.AdvisorUser)
+            .FirstOrDefaultAsync(request =>
+                request.StudentUserId == studentUserId &&
+                (request.Status == PendingStatus || request.Status == ApprovedStatus));
 
-        if (!string.IsNullOrWhiteSpace(existingApprovedRequest))
+        if (existingApprovedRequest != null)
         {
-            return Failure("Onaylanmis bir danisman secimin zaten var.");
+            var projectTitle = existingApprovedRequest.Project?.Title ?? "Secili proje";
+            var advisorName = existingApprovedRequest.AdvisorUser?.FullName ?? "secili danisman";
+
+            if (existingApprovedRequest.Status == ApprovedStatus)
+            {
+                return Failure($"Zaten onaylanmis bir danismanlik surecin var: {projectTitle} / {advisorName}.");
+            }
+
+            return Failure($"Zaten bekleyen bir danismanlik talebin var: {projectTitle} / {advisorName}. Yeni bir secim yapmadan once mevcut talebi iptal etmeli ya da sonucunu beklemelisin.");
         }
 
         var existingPendingForProject = await _context.AdvisorRequests
@@ -136,6 +147,44 @@ public class AdvisorRequestService : IAdvisorRequestService
 
         await _context.SaveChangesAsync();
         return Success("Danismanlik talebi basariyla gonderildi.");
+    }
+
+    public async Task<AdvisorRequestActionResultDto> CancelAsync(Guid studentUserId, Guid requestId)
+    {
+        var request = await _context.AdvisorRequests
+            .FirstOrDefaultAsync(item => item.Id == requestId && item.StudentUserId == studentUserId);
+
+        if (request == null)
+        {
+            return Failure("Iptal edilecek talep bulunamadi.");
+        }
+
+        if (request.Status == ApprovedStatus)
+        {
+            return Failure("Onaylanmis bir talep iptal edilemez.");
+        }
+
+        if (request.Status == RejectedStatus)
+        {
+            return Failure("Reddedilmis talep zaten kapandi.");
+        }
+
+        if (request.Status == CancelledStatus)
+        {
+            return Failure("Bu talep zaten iptal edildi.");
+        }
+
+        if (request.Status != PendingStatus)
+        {
+            return Failure("Sadece beklemede olan talepler iptal edilebilir.");
+        }
+
+        request.Status = CancelledStatus;
+        request.UpdatedAt = DateTime.UtcNow;
+        request.RespondedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return Success("Danismanlik talebi iptal edildi.");
     }
 
     public async Task<AdvisorRequestActionResultDto> ApproveAsync(Guid advisorUserId, Guid requestId, string? advisorNote)

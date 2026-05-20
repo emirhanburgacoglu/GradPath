@@ -3,8 +3,10 @@ using GradPath.Business.DTOs.Student;
 using GradPath.Business.Exceptions;
 using GradPath.Business.Services;
 using GradPath.Data;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 
 namespace GradPath.API.Controllers;
 
@@ -42,6 +44,27 @@ public class AuthController : ControllerBase
         {
             var result = await _authService.LoginAsync(request);
             return Ok(result);
+        }
+        catch (AuthFlowException ex)
+        {
+            return StatusCode(ex.StatusCode, new { message = ex.Message });
+        }
+    }
+
+    [Authorize]
+    [HttpPost("change-password")]
+    public async Task<IActionResult> ChangePassword([FromBody] ChangePasswordRequestDto request)
+    {
+        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (string.IsNullOrWhiteSpace(userIdString) || !Guid.TryParse(userIdString, out var userId))
+        {
+            return Unauthorized(new { message = "Kullanici kimligi dogrulanamadi." });
+        }
+
+        try
+        {
+            await _authService.ChangePasswordAsync(userId, request);
+            return Ok(new { message = "Sifre basariyla guncellendi." });
         }
         catch (AuthFlowException ex)
         {

@@ -84,6 +84,22 @@ public static class DbSeeder
     {
         var department = await context.Departments.FirstAsync();
 
+        if (!await context.Users.AnyAsync(u => u.Email == "admin@test.com"))
+        {
+            var admin = new AppUser
+            {
+                UserName = "admin@test.com",
+                Email = "admin@test.com",
+                EmailConfirmed = true,
+                FullName = "Sistem Yoneticisi",
+                MustChangePassword = false,
+                HasCompletedInitialPasswordSetup = true
+            };
+
+            await userManager.CreateAsync(admin, "Admin123!");
+            await userManager.AddToRoleAsync(admin, "Admin");
+        }
+
         if (!await context.Users.AnyAsync(u => u.UserName == "ayse_uzman"))
         {
             var ayse = new AppUser
@@ -92,7 +108,9 @@ public static class DbSeeder
                 Email = "ayse@test.com",
                 EmailConfirmed = true,
                 FullName = "Ayse Uzman",
-                DepartmentId = department.Id
+                DepartmentId = department.Id,
+                MustChangePassword = false,
+                HasCompletedInitialPasswordSetup = true
             };
 
             await userManager.CreateAsync(ayse, "Ayse123!");
@@ -141,7 +159,9 @@ public static class DbSeeder
                 Email = "mehmet.hoca@test.com",
                 EmailConfirmed = true,
                 FullName = "Dr. Mehmet Kaya",
-                DepartmentId = department.Id
+                DepartmentId = department.Id,
+                MustChangePassword = false,
+                HasCompletedInitialPasswordSetup = true
             };
 
             await userManager.CreateAsync(advisor, "Advisor123!");

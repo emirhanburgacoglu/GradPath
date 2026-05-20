@@ -493,3 +493,10 @@ src/GradPath.API/wwwroot/uploads/
 
 # Local build outputs
 build-artifacts/
+
+
+.temp/
+
+# Logs
+logs
+*.log   

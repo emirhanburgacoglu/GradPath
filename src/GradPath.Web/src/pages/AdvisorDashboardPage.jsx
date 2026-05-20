@@ -1,8 +1,22 @@
 import { useMemo, useState } from 'react';
-import AppHeader from '../components/AppHeader';
 import AppFooter from '../components/AppFooter';
+import AppHeader from '../components/AppHeader';
 
-const advisorNavItems = [{ id: 'dashboard', label: 'Panel' }];
+const advisorNavItems = [
+  { id: 'dashboard', label: 'Talepler' },
+];
+
+function formatDate(value) {
+  if (!value) {
+    return 'Tarih bilgisi yok';
+  }
+
+  return new Intl.DateTimeFormat('tr-TR', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  }).format(new Date(value));
+}
 
 function AdvisorDashboardPage({
   currentView,
@@ -16,40 +30,102 @@ function AdvisorDashboardPage({
   profile,
   requests,
 }) {
-  const [decisionNotes, setDecisionNotes] = useState({});
-  const [actionState, setActionState] = useState({});
+  const [noteByRequestId, setNoteByRequestId] = useState({});
+  const [activeAction, setActiveAction] = useState('');
+  const [activeTab, setActiveTab] = useState('Pending');
+  const [expandedRequestId, setExpandedRequestId] = useState(null);
+  const [message, setMessage] = useState('');
 
-  const requestStats = useMemo(() => {
-    const pendingCount = requests.filter((request) => request.status === 'Pending').length;
-    const approvedCount = requests.filter((request) => request.status === 'Approved').length;
-    const rejectedCount = requests.filter((request) => request.status === 'Rejected').length;
+  const pendingRequests = useMemo(
+    () => requests.filter((item) => item.status === 'Pending'),
+    [requests]
+  );
+  const approvedRequests = useMemo(
+    () => requests.filter((item) => item.status === 'Approved'),
+    [requests]
+  );
+  const rejectedRequests = useMemo(
+    () => requests.filter((item) => item.status === 'Rejected'),
+    [requests]
+  );
+  const visibleRequests = useMemo(() => {
+    if (activeTab === 'Approved') {
+      return approvedRequests;
+    }
 
-    return {
-      pendingCount,
-      approvedCount,
-      rejectedCount,
-    };
-  }, [requests]);
+    if (activeTab === 'Rejected') {
+      return rejectedRequests;
+    }
 
-  const handleDecision = async (requestId, action) => {
-    setActionState((current) => ({
+    return pendingRequests;
+  }, [activeTab, approvedRequests, pendingRequests, rejectedRequests]);
+  const handleNoteChange = (requestId, value) => {
+    setNoteByRequestId((current) => ({
       ...current,
-      [requestId]: action,
+      [requestId]: value,
     }));
+  };
 
-    const result = await onRequestDecision?.(requestId, action, decisionNotes[requestId] || '');
+  const resolveAdvisorNote = (request) => {
+    if (Object.prototype.hasOwnProperty.call(noteByRequestId, request.id)) {
+      return noteByRequestId[request.id];
+    }
 
-    setActionState((current) => ({
-      ...current,
-      [requestId]: '',
-    }));
+    return request.advisorNote || '';
+  };
 
-    if (result?.succeeded) {
-      window.alert(result.message);
+  const handleDecision = async (request, action) => {
+    setActiveAction(`${request.id}:${action}`);
+    setMessage('');
+
+    const result = await onRequestDecision?.(
+      request.id,
+      action,
+      resolveAdvisorNote(request)
+    );
+
+    setActiveAction('');
+
+    if (!result?.succeeded) {
+      setMessage(result?.message || 'Talep guncellenemedi.');
       return;
     }
 
-    window.alert(result?.message || 'Islem tamamlanamadi.');
+    setMessage(
+      action === 'approve'
+        ? 'Talep onaylandi.'
+        : 'Talep reddedildi.'
+    );
+
+    setNoteByRequestId((current) => {
+      const next = { ...current };
+      delete next[request.id];
+      return next;
+    });
+
+    await onRefresh?.(true);
+  };
+
+  const toggleRequest = (requestId) => {
+    setExpandedRequestId((current) => (current === requestId ? null : requestId));
+  };
+
+  const tabTitleMap = {
+    Pending: 'Onay bekleyen ogrenciler',
+    Approved: 'Onaylanan talepler',
+    Rejected: 'Reddedilen talepler',
+  };
+
+  const tabDateLabelMap = {
+    Pending: 'Talep tarihi',
+    Approved: 'Onay tarihi',
+    Rejected: 'Red tarihi',
+  };
+
+  const tabEmptyMessageMap = {
+    Pending: 'Bekleyen talep yok.',
+    Approved: 'Henuz onaylanan talep yok.',
+    Rejected: 'Henuz reddedilen talep yok.',
   };
 
   return (
@@ -61,172 +137,222 @@ function AdvisorDashboardPage({
         onLogout={onLogout}
         onViewChange={onViewChange}
         profile={profile}
-        profileActionLabel="Panele git"
+        profileActionLabel="Talepler"
         profileActionViewId="dashboard"
       />
 
       <main className="main-content">
         {error ? <div className="dashboard-alert">{error}</div> : null}
+        {message ? <div className="dashboard-alert">{message}</div> : null}
 
-        <section className="card dashboard-hero dashboard-hero-projects">
-          <div className="hero-badge">Danisman Paneli</div>
-          <h2>{profile?.fullName || 'Danisman paneli'}</h2>
-          <p>
-            Gelen proje taleplerini, ogrenci eslesmelerini ve kontenjan durumunu bu panel
-            uzerinden yonetebilirsin.
-          </p>
+        <section className="card workflow-hero-card advisor-admin-hero">
+          <div className="workflow-hero-copy">
+            <div className="hero-badge">Danisman Paneli</div>
+            <h1>{profile?.fullName || 'Danisman paneli'}</h1>
+            <p>
+              Gelen talepleri alt alta incele, ogrenci notunu oku ve kararini
+              ayni ekran uzerinden ver.
+            </p>
+          </div>
 
-          <div className="dashboard-hero-meta">
-            <div className="dashboard-hero-meta-item">
+          <div className="advisor-admin-stats">
+            <button
+              type="button"
+              className={`advisor-admin-stat advisor-admin-stat-button ${activeTab === 'Pending' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('Pending');
+                setExpandedRequestId(null);
+              }}
+            >
               <span>Bekleyen</span>
-              <strong>{requestStats.pendingCount}</strong>
-            </div>
-            <div className="dashboard-hero-meta-item">
+              <strong>{pendingRequests.length}</strong>
+            </button>
+            <button
+              type="button"
+              className={`advisor-admin-stat advisor-admin-stat-button ${activeTab === 'Approved' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('Approved');
+                setExpandedRequestId(null);
+              }}
+            >
               <span>Onaylanan</span>
-              <strong>{requestStats.approvedCount}</strong>
-            </div>
-            <div className="dashboard-hero-meta-item">
+              <strong>{approvedRequests.length}</strong>
+            </button>
+            <button
+              type="button"
+              className={`advisor-admin-stat advisor-admin-stat-button ${activeTab === 'Rejected' ? 'active' : ''}`}
+              onClick={() => {
+                setActiveTab('Rejected');
+                setExpandedRequestId(null);
+              }}
+            >
+              <span>Reddedilen</span>
+              <strong>{rejectedRequests.length}</strong>
+            </button>
+            <div className="advisor-admin-stat">
               <span>Kontenjan</span>
               <strong>{profile?.maxConcurrentStudents ?? '-'}</strong>
             </div>
           </div>
         </section>
 
-        <section className="hero-grid">
-          <div className="card dashboard-filter-panel">
-            <div className="dashboard-filter-panel-top">
-              <div className="dashboard-filter-title">Profil ozeti</div>
-              <button type="button" className="ghost-button" onClick={() => onRefresh?.(true)} disabled={loading}>
-                {loading ? 'Yukleniyor' : 'Yenile'}
+        <section className="advisor-admin-main">
+          <section className="card workflow-status-card">
+            <div className="section-header">
+              <div>
+                <div className="dashboard-date">
+                  {activeTab === 'Pending'
+                    ? 'Bekleyen talepler'
+                    : activeTab === 'Approved'
+                      ? 'Onaylanan talepler'
+                      : 'Reddedilen talepler'}
+                </div>
+                <h2 className="section-title">{tabTitleMap[activeTab]}</h2>
+              </div>
+
+              <button
+                type="button"
+                className="ghost-button"
+                onClick={() => onRefresh?.(true)}
+                disabled={loading}
+              >
+                {loading ? 'Yukleniyor...' : 'Yenile'}
               </button>
             </div>
 
-            <div className="project-meta-row">
-              <span className="project-meta-chip">{profile?.email || 'E-posta bekleniyor'}</span>
-              <span className="project-meta-chip subtle">{profile?.officeLocation || 'Ofis bilgisi bekleniyor'}</span>
-            </div>
+            {loading ? (
+              <div className="card loading-card">Talepler yukleniyor...</div>
+            ) : visibleRequests.length ? (
+              <div className="advisor-admin-queue">
+                {visibleRequests.map((request) => {
+                  const approveKey = `${request.id}:approve`;
+                  const rejectKey = `${request.id}:reject`;
+                  const isExpanded = expandedRequestId === request.id;
+                  const statusClass =
+                    request.status === 'Approved'
+                      ? 'approved'
+                      : request.status === 'Rejected'
+                        ? 'rejected'
+                        : 'pending';
+                  const statusLabel =
+                    request.status === 'Approved'
+                      ? 'Onaylandi'
+                      : request.status === 'Rejected'
+                        ? 'Reddedildi'
+                        : 'Beklemede';
+                  const actionDate =
+                    request.status === 'Pending'
+                      ? request.createdAt
+                      : request.respondedAt || request.updatedAt || request.createdAt;
 
-            <p className="dashboard-subtitle" style={{ marginTop: 12 }}>
-              {profile?.shortBio?.trim()
-                ? profile.shortBio
-                : 'Danisman profil aciklamasi henuz bulunmuyor. Bu alan okul sitesi senkronizasyonuyla zenginlesecek.'}
-            </p>
-          </div>
+                  return (
+                    <article key={request.id} className="advisor-admin-request">
+                      <div className="advisor-admin-request-summary">
+                        <div className="advisor-admin-request-summary-main">
+                          <div className="advisor-admin-request-summary-cell">
+                            <span>Ogrenci</span>
+                            <strong>{request.studentFullName}</strong>
+                          </div>
+                          <div className="advisor-admin-request-summary-cell">
+                            <span>Proje</span>
+                            <strong>{request.projectTitle}</strong>
+                          </div>
+                          <div className="advisor-admin-request-summary-cell">
+                            <span>{tabDateLabelMap[request.status] || 'Talep tarihi'}</span>
+                            <strong>{formatDate(actionDate)}</strong>
+                          </div>
+                        </div>
 
-          <div className="card dashboard-profile-hint">
-            <div className="dashboard-profile-hint-copy">
-              <span>Uzmanlik alanlari</span>
-              <strong>{profile?.expertiseAreas || 'Uzmanlik bilgisi bekleniyor'}</strong>
-            </div>
-          </div>
-        </section>
-
-        <section className="projects-section">
-          <div className="section-header">
-            <div>
-              <h2 className="section-title">Gelen danismanlik talepleri</h2>
-            </div>
-
-            <div className="section-summary-pill">{requests.length} toplam talep</div>
-          </div>
-
-          {requests.length ? (
-            <div className="advisor-request-grid">
-              {requests.map((request) => {
-                const actionInProgress = actionState[request.id];
-                const isPending = request.status === 'Pending';
-
-                return (
-                  <article key={request.id} className={`advisor-request-card ${request.status.toLowerCase()}`}>
-                    <div className="advisor-request-card-top">
-                      <div>
-                        <div className="project-card-kicker">Proje talebi</div>
-                        <h3>{request.projectTitle}</h3>
-                        <p>
-                          {request.studentFullName}
-                          {request.studentDepartmentName ? ` · ${request.studentDepartmentName}` : ''}
-                        </p>
-                      </div>
-
-                      <div className="project-meta-chip subtle">Durum: {request.status}</div>
-                    </div>
-
-                    <div className="project-meta-row">
-                      <span className="project-meta-chip">{request.projectCategory || 'Genel kategori'}</span>
-                      <span className="project-meta-chip subtle">
-                        {request.createdAt ? new Date(request.createdAt).toLocaleDateString('tr-TR') : 'Tarih yok'}
-                      </span>
-                    </div>
-
-                    {request.studentNote ? (
-                      <div className="advisor-request-note-box">
-                        <strong>Ogrenci notu</strong>
-                        <p>{request.studentNote}</p>
-                      </div>
-                    ) : null}
-
-                    {request.advisorNote ? (
-                      <div className="advisor-request-note-box subtle">
-                        <strong>Danisman notu</strong>
-                        <p>{request.advisorNote}</p>
-                      </div>
-                    ) : null}
-
-                    {isPending ? (
-                      <>
-                        <textarea
-                          className="advisor-note-input"
-                          placeholder="Istersen ogrenciye kisa bir not ekleyebilirsin."
-                          rows={3}
-                          value={decisionNotes[request.id] || ''}
-                          onChange={(event) =>
-                            setDecisionNotes((current) => ({
-                              ...current,
-                              [request.id]: event.target.value,
-                            }))
-                          }
-                        />
-
-                        <div className="advisor-request-actions">
+                        <div className="advisor-admin-request-summary-side">
+                          <span className={`advisor-admin-status ${statusClass}`}>{statusLabel}</span>
                           <button
                             type="button"
-                            className="ghost-button"
-                            onClick={() => handleDecision(request.id, 'reject')}
-                            disabled={actionInProgress === 'approve' || actionInProgress === 'reject'}
+                            className={`advisor-admin-toggle ${isExpanded ? 'open' : ''}`}
+                            onClick={() => toggleRequest(request.id)}
+                            aria-expanded={isExpanded}
+                            aria-label={isExpanded ? 'Talep detayini kapat' : 'Talep detayini ac'}
                           >
-                            {actionInProgress === 'reject' ? 'Reddediliyor' : 'Reddet'}
-                          </button>
-                          <button
-                            type="button"
-                            className="btn-primary"
-                            onClick={() => handleDecision(request.id, 'approve')}
-                            disabled={actionInProgress === 'approve' || actionInProgress === 'reject'}
-                          >
-                            {actionInProgress === 'approve' ? 'Onaylaniyor' : 'Onayla'}
+                            {isExpanded ? '-' : '+'}
                           </button>
                         </div>
-                      </>
-                    ) : null}
-                  </article>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="empty-state empty-state-rich">
-              <strong>Henuz gelen danismanlik talebi yok.</strong>
-              <p>Ogrenciler proje secip sana talep gonderdiginde bu alanda listelenecek.</p>
-            </div>
-          )}
+                      </div>
+
+                      {isExpanded ? (
+                        <div className="advisor-admin-request-details">
+                          <div className="advisor-admin-meta">
+                            <span>
+                              <strong>Bolum:</strong>{' '}
+                              {request.studentDepartmentName || 'Bolum bilgisi yok'}
+                            </span>
+                          </div>
+
+                          <div className="advisor-admin-note-box">
+                            <strong>Ogrenci aciklamasi</strong>
+                            <p>{request.studentNote || 'Ogrenci bu talep icin not birakmadi.'}</p>
+                          </div>
+
+                          {request.status === 'Pending' ? (
+                            <>
+                              <label className="advisor-admin-input-block">
+                                <span>Danisman notu</span>
+                                <textarea
+                                  className="advisor-admin-textarea"
+                                  rows={4}
+                                  placeholder="Onay veya red kararin icin kisa bir aciklama yazabilirsin."
+                                  value={resolveAdvisorNote(request)}
+                                  onChange={(event) =>
+                                    handleNoteChange(request.id, event.target.value)
+                                  }
+                                />
+                              </label>
+
+                              <div className="advisor-admin-actions">
+                                <button
+                                  type="button"
+                                  className="ghost-button"
+                                  onClick={() => handleDecision(request, 'reject')}
+                                  disabled={activeAction === approveKey || activeAction === rejectKey}
+                                >
+                                  {activeAction === rejectKey ? 'Reddediliyor...' : 'Reddet'}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="btn-primary"
+                                  onClick={() => handleDecision(request, 'approve')}
+                                  disabled={activeAction === approveKey || activeAction === rejectKey}
+                                >
+                                  {activeAction === approveKey ? 'Onaylaniyor...' : 'Onayla'}
+                                </button>
+                              </div>
+                            </>
+                          ) : request.advisorNote ? (
+                            <div className="advisor-admin-note-box">
+                              <strong>Danisman notu</strong>
+                              <p>{request.advisorNote}</p>
+                            </div>
+                          ) : null}
+                        </div>
+                      ) : null}
+                    </article>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="empty-state empty-state-rich">
+                <strong>{tabEmptyMessageMap[activeTab]}</strong>
+                <p>
+                  {activeTab === 'Pending'
+                    ? 'Yeni talepler geldiginde burada alt alta listelenecek.'
+                    : 'Bu durumdaki talepler olustukca bu listede gorulecek.'}
+                </p>
+              </div>
+            )}
+          </section>
+
         </section>
       </main>
 
-      <AppFooter
-        currentView={currentView}
-        navItems={advisorNavItems}
-        note="Danisman hocalar icin proje taleplerini, ogrenci eslesmelerini ve kontenjan akislarini tek panelde takip etmeyi hedefler."
-        metaText="Danismanlik sureci icin yonetim paneli"
-        onViewChange={onViewChange}
-      />
+      <AppFooter currentView={currentView} onViewChange={onViewChange} />
     </div>
   );
 }

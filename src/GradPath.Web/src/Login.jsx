@@ -63,6 +63,18 @@ function getApiErrorMessage(error, fallbackMessage) {
   return responseData?.message || responseData?.title || fallbackMessage;
 }
 
+function resolveRequestedRole(authMode) {
+  if (authMode === 'login-advisor') {
+    return 'Advisor';
+  }
+
+  if (authMode === 'login-student') {
+    return 'Student';
+  }
+
+  return null;
+}
+
 const Login = ({ onLoginSuccess }) => {
   const [authMode, setAuthMode] = useState(null);
   const [loginForm, setLoginForm] = useState(defaultLoginForm);
@@ -182,10 +194,15 @@ const Login = ({ onLoginSuccess }) => {
     setInfoMessage('');
 
     try {
-      const response = await api.post('/auth/login', loginForm);
+      const requestedRole = resolveRequestedRole(authMode);
+      const response = await api.post('/auth/login', {
+        ...loginForm,
+        requestedRole,
+      });
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('roles', JSON.stringify(response.data.roles || []));
-      onLoginSuccess();
+      localStorage.setItem('requiresPasswordChange', response.data.requiresPasswordChange ? 'true' : 'false');
+      onLoginSuccess(response.data);
     } catch (requestError) {
       setError(getApiErrorMessage(requestError, 'Giris basarisiz. E-posta veya sifreyi tekrar kontrol et.'));
     } finally {
@@ -209,7 +226,8 @@ const Login = ({ onLoginSuccess }) => {
 
       localStorage.setItem('token', response.data.token);
       localStorage.setItem('roles', JSON.stringify(response.data.roles || []));
-      onLoginSuccess();
+      localStorage.setItem('requiresPasswordChange', response.data.requiresPasswordChange ? 'true' : 'false');
+      onLoginSuccess(response.data);
     } catch (requestError) {
       setError(getApiErrorMessage(requestError, 'Kayit olusturulamadi. Bilgileri kontrol edip tekrar dene.'));
     } finally {

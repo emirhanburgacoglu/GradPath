@@ -2,12 +2,13 @@ import ProjectCard from '../ProjectCard';
 
 function RecommendationsSection({
   activeFilterCount,
+  activeAdvisorRequest,
   advisorRequestLookup,
   currentPage,
   loading,
-  onCreateAdvisorRequest,
   onClearFilters,
   onPageChange,
+  onSelectProject,
   recommendations,
   totalPages,
   totalResults,
@@ -36,9 +37,10 @@ function RecommendationsSection({
           <div className="project-list">
             {recommendations.map((project, index) => (
               <ProjectCard
+                activeAdvisorRequest={activeAdvisorRequest}
                 key={`${project.projectId}-${index}`}
                 advisorRequest={advisorRequestLookup?.[project.projectId] || null}
-                onCreateAdvisorRequest={onCreateAdvisorRequest}
+                onSelectProject={onSelectProject}
                 project={project}
               />
             ))}

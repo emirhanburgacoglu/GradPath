@@ -3,6 +3,7 @@ import Login from './Login';
 import AdvisorDashboardPage from './pages/AdvisorDashboardPage';
 import AdvisorSelectionPage from './pages/AdvisorSelectionPage';
 import DashboardPage from './pages/DashboardPage';
+import PasswordSetupPage from './pages/PasswordSetupPage';
 import PosterWorkflowPage from './pages/PosterWorkflowPage';
 import ProfilePage from './pages/ProfilePage';
 import StudentDirectoryPage from './pages/StudentDirectoryPage';
@@ -58,6 +59,9 @@ function App() {
     new URLSearchParams(window.location.search).get('poster') === 'workflow';
   const [isLoggedIn, setIsLoggedIn] = useState(!!localStorage.getItem('token'));
   const [currentView, setCurrentView] = useState('dashboard');
+  const [selectedAdvisorProjectId, setSelectedAdvisorProjectId] = useState(
+    () => localStorage.getItem('selectedAdvisorProjectId') || ''
+  );
   const [userRoles, setUserRoles] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem('roles') || '[]');
@@ -68,22 +72,29 @@ function App() {
   const [recommendations, setRecommendations] = useState([]);
   const [advisorRequests, setAdvisorRequests] = useState([]);
   const [profile, setProfile] = useState(null);
+  const [requiresPasswordChange, setRequiresPasswordChange] = useState(
+    localStorage.getItem('requiresPasswordChange') === 'true'
+  );
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState('');
   const isAdvisor = userRoles?.includes('Advisor') === true;
 
   useEffect(() => {
-    if (isLoggedIn) {
+    if (isLoggedIn && !requiresPasswordChange) {
       loadDashboard();
     }
-  }, [isLoggedIn, isAdvisor]);
+  }, [isLoggedIn, isAdvisor, requiresPasswordChange]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');
     localStorage.removeItem('roles');
+    localStorage.removeItem('requiresPasswordChange');
+    localStorage.removeItem('selectedAdvisorProjectId');
     setIsLoggedIn(false);
     setUserRoles([]);
+    setRequiresPasswordChange(false);
+    setSelectedAdvisorProjectId('');
     setCurrentView('dashboard');
     setRecommendations([]);
     setAdvisorRequests([]);
@@ -93,6 +104,7 @@ function App() {
 
   const handleLoginSuccess = () => {
     setIsLoggedIn(true);
+    setRequiresPasswordChange(localStorage.getItem('requiresPasswordChange') === 'true');
 
     try {
       setUserRoles(JSON.parse(localStorage.getItem('roles') || '[]'));
@@ -213,9 +225,12 @@ function App() {
   const handleCreateAdvisorRequest = async (payload) => {
     try {
       const response = await api.post('/advisor-requests', payload);
+      setSelectedAdvisorProjectId(payload.projectId);
+      localStorage.setItem('selectedAdvisorProjectId', payload.projectId);
       await loadDashboard(true);
 
       return {
+
         succeeded: true,
         message: typeof response.data === 'string' ? response.data : 'Danismanlik talebi gonderildi.',
       };
@@ -223,6 +238,23 @@ function App() {
       return {
         succeeded: false,
         message: resolveApiMessage(requestError, 'Danismanlik talebi gonderilemedi.'),
+      };
+    }
+  };
+
+  const handleCancelAdvisorRequest = async (requestId) => {
+    try {
+      const response = await api.post(`/advisor-requests/${requestId}/cancel`, {});
+      await loadDashboard(true);
+
+      return {
+        succeeded: true,
+        message: typeof response.data === 'string' ? response.data : 'Danismanlik talebi iptal edildi.',
+      };
+    } catch (cancelError) {
+      return {
+        succeeded: false,
+        message: resolveApiMessage(cancelError, 'Danismanlik talebi iptal edilemedi.'),
       };
     }
   };
@@ -244,6 +276,36 @@ function App() {
         message: resolveApiMessage(decisionError, 'Talep guncellenemedi.'),
       };
     }
+  };
+
+  const handleSelectProjectForAdvisor = (projectId) => {
+    const activeStudentRequest = advisorRequests.find(
+      (item) => item.status === 'Pending' || item.status === 'Approved'
+    );
+
+    if (
+      activeStudentRequest &&
+      projectId &&
+      activeStudentRequest.projectId !== projectId
+    ) {
+      setSelectedAdvisorProjectId(activeStudentRequest.projectId);
+      localStorage.setItem('selectedAdvisorProjectId', String(activeStudentRequest.projectId));
+      setError('Ayni anda sadece tek aktif danismanlik sureci yurutebilirsin. Mevcut surecin acildi.');
+      setCurrentView('advisor-selection');
+      return;
+    }
+
+    setError('');
+
+    if (projectId) {
+      setSelectedAdvisorProjectId(projectId);
+      localStorage.setItem('selectedAdvisorProjectId', projectId);
+    } else {
+      setSelectedAdvisorProjectId('');
+      localStorage.removeItem('selectedAdvisorProjectId');
+    }
+
+    setCurrentView('advisor-selection');
   };
   const firstName = profile?.fullName?.split(' ')[0] || (isAdvisor ? 'Danışman' : 'Öğrenci');
 
@@ -286,6 +348,9 @@ function App() {
   const cgpa = profile?.cgpa;
   const totalECTS = profile?.totalECTS;
   const isHonorStudent = profile?.isHonorStudent || Number(cgpa) >= 3;
+  const activeAdvisorRequest = advisorRequests.find(
+    (item) => item.status === 'Pending' || item.status === 'Approved'
+  ) || null;
 
   const rawCvSummary = resolveCvSummary(profile);
   const summaryText =
@@ -299,6 +364,20 @@ function App() {
 
   if (!isLoggedIn) {
     return <Login onLoginSuccess={handleLoginSuccess} />;
+  }
+
+  if (requiresPasswordChange) {
+    return (
+      <PasswordSetupPage
+        onLogout={handleLogout}
+        onSuccess={() => {
+          setRequiresPasswordChange(false);
+          localStorage.setItem('requiresPasswordChange', 'false');
+          loadDashboard();
+        }}
+        profile={profile}
+      />
+    );
   }
 
   if (isAdvisor) {
@@ -369,19 +448,23 @@ function App() {
         error={error}
         initials={initials}
         loading={loading}
+        onCancelAdvisorRequest={handleCancelAdvisorRequest}
         onCreateAdvisorRequest={handleCreateAdvisorRequest}
         onLogout={handleLogout}
         onRefresh={() => loadDashboard(true)}
+        onSelectProject={handleSelectProjectForAdvisor}
         onViewChange={setCurrentView}
         profile={profile}
         recommendations={recommendations}
         refreshing={refreshing}
+        selectedProjectId={selectedAdvisorProjectId}
       />
     );
   }
 
   return (
     <DashboardPage
+      activeAdvisorRequest={activeAdvisorRequest}
       advisorRequests={advisorRequests}
       cgpa={cgpa}
       currentView={currentView}
@@ -390,9 +473,9 @@ function App() {
       initials={initials}
       isHonorStudent={isHonorStudent}
       loading={loading}
-      onCreateAdvisorRequest={handleCreateAdvisorRequest}
       onLogout={handleLogout}
       onRefresh={() => loadDashboard(true)}
+      onSelectProjectForAdvisor={handleSelectProjectForAdvisor}
       onViewChange={setCurrentView}
       profile={profile}
       recommendations={recommendations}

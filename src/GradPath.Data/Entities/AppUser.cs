@@ -11,6 +11,8 @@ public class AppUser : IdentityUser<Guid>
     // Temel Bilgiler
     public string FullName { get; set; } = string.Empty;
     public int? DepartmentId { get; set; }
+    public bool MustChangePassword { get; set; }
+    public bool HasCompletedInitialPasswordSetup { get; set; }
 
     // Navigation Properties (İlişkiler)
     public Department? Department { get; set; }

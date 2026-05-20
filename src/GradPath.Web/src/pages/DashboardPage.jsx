@@ -7,6 +7,7 @@ import HeroSection from '../components/HeroSection';
 import RecommendationsSection from '../components/RecommendationsSection';
 
 function DashboardPage({
+  activeAdvisorRequest,
   advisorRequests,
   cgpa,
   currentView,
@@ -14,9 +15,9 @@ function DashboardPage({
   firstName,
   initials,
   loading,
-  onCreateAdvisorRequest,
   onLogout,
   onRefresh,
+  onSelectProjectForAdvisor,
   onViewChange,
   profile,
   recommendations,
@@ -190,12 +191,13 @@ function DashboardPage({
 
         <RecommendationsSection
           activeFilterCount={activeFilterCount}
+          activeAdvisorRequest={activeAdvisorRequest}
           advisorRequestLookup={advisorRequestLookup}
           currentPage={currentPage}
           loading={loading}
-          onCreateAdvisorRequest={onCreateAdvisorRequest}
           onClearFilters={clearFilters}
           onPageChange={handlePageChange}
+          onSelectProject={onSelectProjectForAdvisor}
           recommendations={pagedRecommendations}
           totalPages={totalPages}
           totalResults={filteredRecommendations.length}

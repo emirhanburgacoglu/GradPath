@@ -3,6 +3,7 @@ using GradPath.Data;
 using GradPath.Data.Entities;
 using Microsoft.AspNetCore.Identity; // <-- Bu satırı ekle
 using Microsoft.OpenApi.Models;
+using GradPath.Business.DTOs.Advisor;
 using GradPath.Business.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -42,9 +43,11 @@ builder.Services.AddScoped<IFileUploadService, FileUploadService>();
 
 builder.Services.AddScoped<ITeamService, TeamService>();
 builder.Services.AddScoped<IPdfService, PdfService>();
+builder.Services.Configure<AvesisAdvisorSyncSettings>(builder.Configuration.GetSection("AvesisAdvisorSync"));
 
 // Yapay zeka servisinin internete (Groq API) çıkabilmesi için HttpClient ile kaydediyoruz
 builder.Services.AddHttpClient<IGroqApiService, GroqApiService>();
+builder.Services.AddHttpClient<IAvesisAdvisorSyncService, AvesisAdvisorSyncService>();
 
 // Groq API Ayarlarını (ApiKey vs.) appsettings'ten oku ve sisteme tanıt
 builder.Services.Configure<GradPath.Business.DTOs.AI.GroqApiSettings>(builder.Configuration.GetSection("GroqApiSettings"));

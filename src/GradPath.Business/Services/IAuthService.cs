@@ -20,4 +20,6 @@ public interface IAuthService
     // <param name="request">Giriş bilgileri (Email, Şifre)</param>
     // <returns>JWT token ve kullanıcı bilgisi</returns>
     Task<AuthResponseDto> LoginAsync(LoginRequestDto request);
+
+    Task ChangePasswordAsync(Guid userId, ChangePasswordRequestDto request);
 }

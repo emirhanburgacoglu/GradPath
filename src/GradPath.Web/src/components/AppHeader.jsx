@@ -4,9 +4,9 @@ import { ChevronDown, LogOut, Menu, User, X } from 'lucide-react';
 const defaultNavItems = [
   { id: 'dashboard', label: 'Anasayfa' },
   { id: 'advisor-selection', label: 'Danismanlik' },
-  { id: 'profile', label: 'Profil' },
   { id: 'students', label: 'Öğrenciler' },
   { id: 'posts', label: 'İlanlar' },
+  { id: 'profile', label: 'Profil' },
 ];
 
 function AppHeader({
@@ -145,14 +145,14 @@ function AppHeader({
 
                 <div className="app-topbar-profile-dropdown" role="menu" aria-label="Profil menüsü">
                   <button
-                  type="button"
-                  className="app-topbar-profile-action"
-                  role="menuitem"
-                  onClick={() => handleViewSelect(profileActionViewId)}
-                >
-                  <User size={16} />
-                  {profileActionLabel}
-                </button>
+                    type="button"
+                    className="app-topbar-profile-action"
+                    role="menuitem"
+                    onClick={() => handleViewSelect(profileActionViewId)}
+                  >
+                    <User size={16} />
+                    {profileActionLabel}
+                  </button>
 
                   <button
                     type="button"
