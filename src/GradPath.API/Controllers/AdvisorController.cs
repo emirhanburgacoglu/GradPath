@@ -1,3 +1,4 @@
+using GradPath.Business.DTOs.Advisor;
 using GradPath.Business.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -29,6 +30,27 @@ public class AdvisorController : ControllerBase
         }
 
         var profile = await _advisorService.GetProfileByUserIdAsync(userId);
+
+        if (profile == null)
+        {
+            return NotFound(new { message = "Danisman profili bulunamadi." });
+        }
+
+        return Ok(profile);
+    }
+
+    [HttpPut("me")]
+    [Authorize(Roles = "Advisor")]
+    public async Task<IActionResult> UpdateMyProfile(AdvisorProfileUpdateDto dto)
+    {
+        var userIdString = User.FindFirstValue(ClaimTypes.NameIdentifier);
+
+        if (string.IsNullOrWhiteSpace(userIdString) || !Guid.TryParse(userIdString, out var userId))
+        {
+            return Unauthorized(new { message = "Kullanici kimligi dogrulanamadi." });
+        }
+
+        var profile = await _advisorService.UpdateProfileAsync(userId, dto);
 
         if (profile == null)
         {

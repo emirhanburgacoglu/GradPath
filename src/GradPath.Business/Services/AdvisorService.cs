@@ -47,6 +47,33 @@ public class AdvisorService : IAdvisorService
         };
     }
 
+    public async Task<AdvisorProfileResponseDto?> UpdateProfileAsync(Guid userId, AdvisorProfileUpdateDto dto)
+    {
+        var advisor = await _context.Users
+            .Include(user => user.Department)
+            .Include(user => user.AdvisorProfile)
+            .FirstOrDefaultAsync(user => user.Id == userId && user.AdvisorProfile != null);
+
+        if (advisor == null || advisor.AdvisorProfile == null)
+        {
+            return null;
+        }
+
+        advisor.FullName = Clean(dto.FullName);
+        advisor.AdvisorProfile.AcademicTitle = Clean(dto.AcademicTitle);
+        advisor.AdvisorProfile.ExpertiseAreas = Clean(dto.ExpertiseAreas);
+        advisor.AdvisorProfile.OfficeLocation = CleanNullable(dto.OfficeLocation);
+        advisor.AdvisorProfile.ProfilePhotoUrl = CleanNullable(dto.ProfilePhotoUrl);
+        advisor.AdvisorProfile.ShortBio = CleanNullable(dto.ShortBio);
+        advisor.AdvisorProfile.MaxConcurrentStudents = dto.MaxConcurrentStudents;
+        advisor.AdvisorProfile.IsAcceptingRequests = dto.IsAcceptingRequests;
+        advisor.AdvisorProfile.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+
+        return await GetProfileByUserIdAsync(userId);
+    }
+
     public async Task<List<AdvisorLookupDto>> GetAvailableAdvisorsForProjectAsync(Guid studentUserId, int projectId)
     {
         var ownedProjectAdvisorId = await _context.Projects
@@ -144,5 +171,15 @@ public class AdvisorService : IAdvisorService
             })
             .Where(advisor => advisor.HasCapacity)
             .ToList();
+    }
+
+    private static string Clean(string? value)
+    {
+        return value?.Trim() ?? string.Empty;
+    }
+
+    private static string? CleanNullable(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? null : value.Trim();
     }
 }

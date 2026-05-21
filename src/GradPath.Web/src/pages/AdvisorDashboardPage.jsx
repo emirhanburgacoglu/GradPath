@@ -6,6 +6,7 @@ import api from '../api';
 const advisorNavItems = [
   { id: 'dashboard', label: 'Talepler' },
   { id: 'projects', label: 'Projeler' },
+  { id: 'profile', label: 'Profil' },
 ];
 
 const initialProjectForm = {
@@ -17,6 +18,19 @@ const initialProjectForm = {
   departmentIds: [],
   technologyIds: [],
 };
+
+function buildProfileForm(profile) {
+  return {
+    fullName: profile?.fullName || '',
+    academicTitle: profile?.academicTitle || '',
+    expertiseAreas: profile?.expertiseAreas || '',
+    officeLocation: profile?.officeLocation || '',
+    profilePhotoUrl: profile?.profilePhotoUrl || '',
+    shortBio: profile?.shortBio || '',
+    maxConcurrentStudents: profile?.maxConcurrentStudents ?? 5,
+    isAcceptingRequests: profile?.isAcceptingRequests ?? true,
+  };
+}
 
 function formatDate(value) {
   if (!value) {
@@ -53,6 +67,8 @@ function AdvisorDashboardPage({
   const [loadingProjects, setLoadingProjects] = useState(false);
   const [creatingProject, setCreatingProject] = useState(false);
   const [selectedTechnologyCategory, setSelectedTechnologyCategory] = useState('');
+  const [profileForm, setProfileForm] = useState(() => buildProfileForm(profile));
+  const [savingProfile, setSavingProfile] = useState(false);
 
   const pendingRequests = useMemo(
     () => requests.filter((item) => item.status === 'Pending'),
@@ -124,13 +140,13 @@ function AdvisorDashboardPage({
     setActiveAction('');
 
     if (!result?.succeeded) {
-      setMessage(result?.message || 'Talep guncellenemedi.');
+      setMessage(result?.message || 'Talep güncellenemedi.');
       return;
     }
 
     setMessage(
       action === 'approve'
-        ? 'Talep onaylandi.'
+        ? 'Talep onaylandı.'
         : 'Talep reddedildi.'
     );
 
@@ -148,7 +164,7 @@ function AdvisorDashboardPage({
   };
 
   const tabTitleMap = {
-    Pending: 'Onay bekleyen ogrenciler',
+    Pending: 'Onay bekleyen öğrenciler',
     Approved: 'Onaylanan talepler',
     Rejected: 'Reddedilen talepler',
   };
@@ -161,8 +177,8 @@ function AdvisorDashboardPage({
 
   const tabEmptyMessageMap = {
     Pending: 'Bekleyen talep yok.',
-    Approved: 'Henuz onaylanan talep yok.',
-    Rejected: 'Henuz reddedilen talep yok.',
+    Approved: 'Henüz onaylanan talep yok.',
+    Rejected: 'Henüz reddedilen talep yok.',
   };
 
   const loadAdvisorProjects = async () => {
@@ -186,7 +202,7 @@ function AdvisorDashboardPage({
         .sort((left, right) => left.localeCompare(right, 'tr'))[0] || '';
       setSelectedTechnologyCategory((current) => current || firstCategory);
     } catch {
-      setMessage('Proje havuzu bilgileri su an yuklenemiyor.');
+      setMessage('Proje havuzu bilgileri şu an yüklenemiyor.');
     } finally {
       setLoadingProjects(false);
     }
@@ -198,8 +214,19 @@ function AdvisorDashboardPage({
     }
   }, [currentView]);
 
+  useEffect(() => {
+    setProfileForm(buildProfileForm(profile));
+  }, [profile]);
+
   const updateProjectForm = (field, value) => {
     setProjectForm((current) => ({
+      ...current,
+      [field]: value,
+    }));
+  };
+
+  const updateProfileForm = (field, value) => {
+    setProfileForm((current) => ({
       ...current,
       [field]: value,
     }));
@@ -223,12 +250,12 @@ function AdvisorDashboardPage({
     event.preventDefault();
 
     if (!projectForm.title.trim() || !projectForm.description.trim() || !projectForm.category.trim()) {
-      setMessage('Baslik, aciklama ve kategori alanlari zorunludur.');
+      setMessage('Başlık, açıklama ve kategori alanları zorunludur.');
       return;
     }
 
     if (!projectForm.technologyIds.length) {
-      setMessage('Projenin ogrencilere onerilebilmesi icin en az bir teknoloji secmelisin.');
+      setMessage('Projenin öğrencilere önerilebilmesi için en az bir teknoloji seçmelisin.');
       return;
     }
 
@@ -247,7 +274,7 @@ function AdvisorDashboardPage({
       });
 
       setProjectForm(initialProjectForm);
-      setMessage('Proje havuza eklendi. Ogrenciler eslesme listesinde gorebilir.');
+      setMessage('Proje havuza eklendi. Öğrenciler eşleşme listesinde görebilir.');
       await loadAdvisorProjects();
     } catch (createError) {
       const payload = createError?.response?.data;
@@ -255,6 +282,61 @@ function AdvisorDashboardPage({
     } finally {
       setCreatingProject(false);
     }
+  };
+
+  const handleSaveProfile = async (event) => {
+    event.preventDefault();
+
+    if (!profileForm.fullName.trim()) {
+      setMessage('Ad soyad alanı zorunludur.');
+      return;
+    }
+
+    setSavingProfile(true);
+    setMessage('');
+
+    try {
+      await api.put('/advisors/me', {
+        fullName: profileForm.fullName.trim(),
+        academicTitle: profileForm.academicTitle.trim(),
+        expertiseAreas: profileForm.expertiseAreas.trim(),
+        officeLocation: profileForm.officeLocation.trim() || null,
+        profilePhotoUrl: profileForm.profilePhotoUrl.trim() || null,
+        shortBio: profileForm.shortBio.trim() || null,
+        maxConcurrentStudents: Number(profileForm.maxConcurrentStudents),
+        isAcceptingRequests: Boolean(profileForm.isAcceptingRequests),
+      });
+
+      setMessage('Profil bilgileri güncellendi.');
+      await onRefresh?.(true);
+    } catch (profileError) {
+      const payload = profileError?.response?.data;
+      setMessage(typeof payload === 'string' ? payload : payload?.message || 'Profil güncellenemedi.');
+    } finally {
+      setSavingProfile(false);
+    }
+  };
+
+  const heroContent = {
+    dashboard: {
+      badge: 'Talepler',
+      title: profile?.fullName || 'Danışman paneli',
+      description: 'Gelen danışmanlık taleplerini incele, öğrenci notunu oku ve kararını aynı ekran üzerinden ver.',
+    },
+    projects: {
+      badge: 'Proje Havuzu',
+      title: 'Kendi proje ilanlarını yönet.',
+      description: 'Bitirme projesi havuzuna yeni proje ekle, öğrencilerin bu projeleri görüp sana talep göndermesini sağla.',
+    },
+    profile: {
+      badge: 'Profil',
+      title: 'Danışman profilini güncelle.',
+      description: 'Unvan, uzmanlık alanları, kontenjan ve talep kabul durumunu bu ekrandan düzenle.',
+    },
+  }[currentView] || {
+    badge: 'Danışman Paneli',
+    title: profile?.fullName || 'Danışman paneli',
+    description: 'Danışmanlık sürecini tek panel üzerinden yönet.',
   };
 
   return (
@@ -276,62 +358,224 @@ function AdvisorDashboardPage({
 
         <section className="card workflow-hero-card advisor-admin-hero">
           <div className="workflow-hero-copy">
-            <div className="hero-badge">Danisman Paneli</div>
-            <h1>{profile?.fullName || 'Danisman paneli'}</h1>
-            <p>
-              Gelen talepleri alt alta incele, ogrenci notunu oku ve kararini
-              ayni ekran uzerinden ver.
-            </p>
+            <div className="hero-badge">{heroContent.badge}</div>
+            <h1>{heroContent.title}</h1>
+            <p>{heroContent.description}</p>
           </div>
 
-          <div className="advisor-admin-stats">
-            <button
-              type="button"
-              className={`advisor-admin-stat advisor-admin-stat-button ${activeTab === 'Pending' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveTab('Pending');
-                setExpandedRequestId(null);
-              }}
-            >
-              <span>Bekleyen</span>
-              <strong>{pendingRequests.length}</strong>
-            </button>
-            <button
-              type="button"
-              className={`advisor-admin-stat advisor-admin-stat-button ${activeTab === 'Approved' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveTab('Approved');
-                setExpandedRequestId(null);
-              }}
-            >
-              <span>Onaylanan</span>
-              <strong>{approvedRequests.length}</strong>
-            </button>
-            <button
-              type="button"
-              className={`advisor-admin-stat advisor-admin-stat-button ${activeTab === 'Rejected' ? 'active' : ''}`}
-              onClick={() => {
-                setActiveTab('Rejected');
-                setExpandedRequestId(null);
-              }}
-            >
-              <span>Reddedilen</span>
-              <strong>{rejectedRequests.length}</strong>
-            </button>
-            <div className="advisor-admin-stat">
-              <span>Kontenjan</span>
-              <strong>{profile?.maxConcurrentStudents ?? '-'}</strong>
+          {currentView === 'dashboard' ? (
+            <div className="advisor-admin-stats">
+              <button
+                type="button"
+                className={`advisor-admin-stat advisor-admin-stat-button ${activeTab === 'Pending' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('Pending');
+                  setExpandedRequestId(null);
+                }}
+              >
+                <span>Bekleyen</span>
+                <strong>{pendingRequests.length}</strong>
+              </button>
+              <button
+                type="button"
+                className={`advisor-admin-stat advisor-admin-stat-button ${activeTab === 'Approved' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('Approved');
+                  setExpandedRequestId(null);
+                }}
+              >
+                <span>Onaylanan</span>
+                <strong>{approvedRequests.length}</strong>
+              </button>
+              <button
+                type="button"
+                className={`advisor-admin-stat advisor-admin-stat-button ${activeTab === 'Rejected' ? 'active' : ''}`}
+                onClick={() => {
+                  setActiveTab('Rejected');
+                  setExpandedRequestId(null);
+                }}
+              >
+                <span>Reddedilen</span>
+                <strong>{rejectedRequests.length}</strong>
+              </button>
+              <div className="advisor-admin-stat">
+                <span>Kontenjan</span>
+                <strong>{profile?.maxConcurrentStudents ?? '-'}</strong>
+              </div>
             </div>
-          </div>
+          ) : currentView === 'projects' ? (
+            <div className="advisor-admin-stats">
+              <div className="advisor-admin-stat">
+                <span>Havuzdaki proje</span>
+                <strong>{advisorProjects.length}</strong>
+              </div>
+              <div className="advisor-admin-stat">
+                <span>Seçili skill</span>
+                <strong>{projectForm.technologyIds.length}</strong>
+              </div>
+              <div className="advisor-admin-stat">
+                <span>Kategori</span>
+                <strong>{selectedTechnologyCategory || '-'}</strong>
+              </div>
+              <div className="advisor-admin-stat">
+                <span>Durum</span>
+                <strong>Aktif</strong>
+              </div>
+            </div>
+          ) : (
+            <div className="advisor-admin-stats">
+              <div className="advisor-admin-stat">
+                <span>Kontenjan</span>
+                <strong>{profile?.maxConcurrentStudents ?? '-'}</strong>
+              </div>
+              <div className="advisor-admin-stat">
+                <span>Talep durumu</span>
+                <strong>{profile?.isAcceptingRequests ? 'Açık' : 'Kapalı'}</strong>
+              </div>
+              <div className="advisor-admin-stat">
+                <span>Bölüm</span>
+                <strong>{profile?.departmentCode || '-'}</strong>
+              </div>
+              <div className="advisor-admin-stat">
+                <span>Kaynak</span>
+                <strong>{profile?.sourceUrl ? 'Avesis' : 'Manuel'}</strong>
+              </div>
+            </div>
+          )}
         </section>
 
-        {currentView === 'projects' ? (
+        {currentView === 'profile' ? (
+          <section className="advisor-admin-main">
+            <section className="card workflow-status-card">
+              <div className="section-header">
+                <div>
+                  <div className="dashboard-date">Danışman profili</div>
+                  <h2 className="section-title">Profil bilgilerini düzenle</h2>
+                </div>
+
+                <button
+                  type="button"
+                  className="ghost-button"
+                  onClick={() => setProfileForm(buildProfileForm(profile))}
+                  disabled={savingProfile}
+                >
+                  Sıfırla
+                </button>
+              </div>
+
+              <form className="advisor-project-form" onSubmit={handleSaveProfile}>
+                <div className="advisor-project-form-grid">
+                  <label className="advisor-admin-input-block">
+                    <span>Ad soyad</span>
+                    <input
+                      className="form-input"
+                      value={profileForm.fullName}
+                      onChange={(event) => updateProfileForm('fullName', event.target.value)}
+                    />
+                  </label>
+
+                  <label className="advisor-admin-input-block">
+                    <span>Akademik unvan</span>
+                    <input
+                      className="form-input"
+                      value={profileForm.academicTitle}
+                      onChange={(event) => updateProfileForm('academicTitle', event.target.value)}
+                      placeholder="Dr. Öğr. Üyesi, Doç. Dr..."
+                    />
+                  </label>
+
+                  <label className="advisor-admin-input-block">
+                    <span>Kontenjan</span>
+                    <input
+                      className="form-input"
+                      type="number"
+                      min="1"
+                      max="20"
+                      value={profileForm.maxConcurrentStudents}
+                      onChange={(event) => updateProfileForm('maxConcurrentStudents', event.target.value)}
+                    />
+                  </label>
+                </div>
+
+                <label className="advisor-admin-input-block">
+                  <span>Uzmanlık alanları</span>
+                  <input
+                    className="form-input"
+                    value={profileForm.expertiseAreas}
+                    onChange={(event) => updateProfileForm('expertiseAreas', event.target.value)}
+                    placeholder="Yapay zeka, görüntü işleme, veri madenciliği..."
+                  />
+                </label>
+
+                <div className="advisor-project-form-grid">
+                  <label className="advisor-admin-input-block">
+                    <span>Ofis bilgisi</span>
+                    <input
+                      className="form-input"
+                      value={profileForm.officeLocation}
+                      onChange={(event) => updateProfileForm('officeLocation', event.target.value)}
+                    />
+                  </label>
+
+                  <label className="advisor-admin-input-block">
+                    <span>Profil fotoğrafı URL</span>
+                    <input
+                      className="form-input"
+                      value={profileForm.profilePhotoUrl}
+                      onChange={(event) => updateProfileForm('profilePhotoUrl', event.target.value)}
+                    />
+                  </label>
+
+                  <label className="advisor-admin-input-block advisor-profile-switch">
+                    <span>Talep kabul durumu</span>
+                    <button
+                      type="button"
+                      className={`advisor-toggle-switch ${profileForm.isAcceptingRequests ? 'active' : ''}`}
+                      aria-pressed={profileForm.isAcceptingRequests}
+                      onClick={() =>
+                        updateProfileForm('isAcceptingRequests', !profileForm.isAcceptingRequests)
+                      }
+                    >
+                      <span className="advisor-toggle-switch-track">
+                        <span className="advisor-toggle-switch-knob" />
+                      </span>
+                      <strong>
+                        {profileForm.isAcceptingRequests ? 'Talep kabul ediyor' : 'Talep kabul etmiyor'}
+                      </strong>
+                    </button>
+                  </label>
+                </div>
+
+                <label className="advisor-admin-input-block">
+                  <span>Kısa biyografi</span>
+                  <textarea
+                    className="advisor-admin-textarea"
+                    rows={5}
+                    value={profileForm.shortBio}
+                    onChange={(event) => updateProfileForm('shortBio', event.target.value)}
+                    placeholder="Öğrencilerin seni ve çalışma alanlarını hızlıca tanıması için kısa bir metin yaz."
+                  />
+                </label>
+
+                <div className="advisor-admin-actions">
+                  <button
+                    type="submit"
+                    className="btn-primary"
+                    disabled={savingProfile}
+                  >
+                    {savingProfile ? 'Kaydediliyor...' : 'Profili kaydet'}
+                  </button>
+                </div>
+              </form>
+            </section>
+          </section>
+        ) : currentView === 'projects' ? (
           <section className="advisor-admin-main">
             <section className="card workflow-status-card">
               <div className="section-header">
                 <div>
                   <div className="dashboard-date">Proje havuzu</div>
-                  <h2 className="section-title">Kendi proje ilanini ac</h2>
+                  <h2 className="section-title">Kendi proje ilanını aç</h2>
                 </div>
 
                 <button
@@ -340,29 +584,29 @@ function AdvisorDashboardPage({
                   onClick={loadAdvisorProjects}
                   disabled={loadingProjects}
                 >
-                  {loadingProjects ? 'Yukleniyor...' : 'Yenile'}
+                  {loadingProjects ? 'Yükleniyor...' : 'Yenile'}
                 </button>
               </div>
 
               <form className="advisor-project-form" onSubmit={handleCreateProject}>
                 <label className="advisor-admin-input-block">
-                  <span>Proje basligi</span>
+                  <span>Proje başlığı</span>
                   <input
                     className="form-input"
                     value={projectForm.title}
                     onChange={(event) => updateProjectForm('title', event.target.value)}
-                    placeholder="Orn. Yapay zeka destekli sera izleme sistemi"
+                    placeholder="Örn. Yapay zeka destekli sera izleme sistemi"
                   />
                 </label>
 
                 <label className="advisor-admin-input-block">
-                  <span>Proje aciklamasi</span>
+                  <span>Proje açıklaması</span>
                   <textarea
                     className="advisor-admin-textarea"
                     rows={4}
                     value={projectForm.description}
                     onChange={(event) => updateProjectForm('description', event.target.value)}
-                    placeholder="Ogrencinin projeyi anlayabilmesi icin kisa ve net bir aciklama yaz."
+                    placeholder="Öğrencinin projeyi anlayabilmesi için kısa ve net bir açıklama yaz."
                   />
                 </label>
 
@@ -386,12 +630,12 @@ function AdvisorDashboardPage({
                     >
                       <option value={1}>Uygun</option>
                       <option value={2}>Orta</option>
-                      <option value={3}>Zorlayici</option>
+                      <option value={3}>Zorlayıcı</option>
                     </select>
                   </label>
 
                   <label className="advisor-admin-input-block">
-                    <span>Tahmini sure</span>
+                    <span>Tahmini süre</span>
                     <input
                       className="form-input"
                       type="number"
@@ -405,8 +649,8 @@ function AdvisorDashboardPage({
 
                 <div className="advisor-project-option-block">
                   <div className="selection-modal-section-head">
-                    <strong>Bolumler</strong>
-                    <span>Secilmezse kendi bolumun kullanilir</span>
+                    <strong>Bölümler</strong>
+                    <span>Seçilmezse kendi bölümün kullanılır</span>
                   </div>
                   <div className="advisor-project-chip-list">
                     {projectOptions.departments.map((department) => (
@@ -425,12 +669,12 @@ function AdvisorDashboardPage({
                 <div className="advisor-project-option-block">
                   <div className="selection-modal-section-head">
                     <strong>Teknolojiler</strong>
-                    <span>En az bir tane sec</span>
+                    <span>En az bir tane seç</span>
                   </div>
 
                   <div className="advisor-project-select-grid">
                     <label className="advisor-admin-input-block">
-                      <span>Kategori sec</span>
+                      <span>Kategori seç</span>
                       <select
                         className="form-input"
                         value={selectedTechnologyCategory}
@@ -445,7 +689,7 @@ function AdvisorDashboardPage({
                     </label>
 
                     <label className="advisor-admin-input-block">
-                      <span>Skill sec</span>
+                      <span>Skill seç</span>
                       <select
                         className="form-input"
                         value=""
@@ -456,7 +700,7 @@ function AdvisorDashboardPage({
                           }
                         }}
                       >
-                        <option value="">Skill seciniz</option>
+                        <option value="">Skill seçiniz</option>
                         {visibleTechnologies.map((technology) => (
                           <option key={technology.id} value={technology.id}>
                             {projectForm.technologyIds.includes(technology.id) ? '✓ ' : ''}
@@ -482,7 +726,7 @@ function AdvisorDashboardPage({
                           </button>
                         ))
                     ) : (
-                      <span>Henuz skill secilmedi.</span>
+                      <span>Henüz skill seçilmedi.</span>
                     )}
                   </div>
                 </div>
@@ -509,7 +753,7 @@ function AdvisorDashboardPage({
               </div>
 
               {loadingProjects ? (
-                <div className="card loading-card">Projeler yukleniyor...</div>
+                <div className="card loading-card">Projeler yükleniyor...</div>
               ) : advisorProjects.length ? (
                 <div className="advisor-admin-queue">
                   {advisorProjects.map((project) => (
@@ -525,7 +769,7 @@ function AdvisorDashboardPage({
                             <strong>{project.category}</strong>
                           </div>
                           <div className="advisor-admin-request-summary-cell">
-                            <span>Sure</span>
+                            <span>Süre</span>
                             <strong>{project.estimatedWeeks} hafta</strong>
                           </div>
                         </div>
@@ -535,8 +779,8 @@ function AdvisorDashboardPage({
                 </div>
               ) : (
                 <div className="empty-state empty-state-rich">
-                  <strong>Henuz proje eklemedin.</strong>
-                  <p>Ilk projeni eklediginde ogrenci havuzunda eslesmeye acilacak.</p>
+                  <strong>Henüz proje eklemedin.</strong>
+                  <p>İlk projeni eklediğinde öğrenci havuzunda eşleşmeye açılacak.</p>
                 </div>
               )}
             </section>
@@ -562,12 +806,12 @@ function AdvisorDashboardPage({
                 onClick={() => onRefresh?.(true)}
                 disabled={loading}
               >
-                {loading ? 'Yukleniyor...' : 'Yenile'}
+                {loading ? 'Yükleniyor...' : 'Yenile'}
               </button>
             </div>
 
             {loading ? (
-              <div className="card loading-card">Talepler yukleniyor...</div>
+              <div className="card loading-card">Talepler yükleniyor...</div>
             ) : visibleRequests.length ? (
               <div className="advisor-admin-queue">
                 {visibleRequests.map((request) => {
@@ -582,7 +826,7 @@ function AdvisorDashboardPage({
                         : 'pending';
                   const statusLabel =
                     request.status === 'Approved'
-                      ? 'Onaylandi'
+                      ? 'Onaylandı'
                       : request.status === 'Rejected'
                         ? 'Reddedildi'
                         : 'Beklemede';
@@ -596,7 +840,7 @@ function AdvisorDashboardPage({
                       <div className="advisor-admin-request-summary">
                         <div className="advisor-admin-request-summary-main">
                           <div className="advisor-admin-request-summary-cell">
-                            <span>Ogrenci</span>
+                            <span>Öğrenci</span>
                             <strong>{request.studentFullName}</strong>
                           </div>
                           <div className="advisor-admin-request-summary-cell">
@@ -616,7 +860,7 @@ function AdvisorDashboardPage({
                             className={`advisor-admin-toggle ${isExpanded ? 'open' : ''}`}
                             onClick={() => toggleRequest(request.id)}
                             aria-expanded={isExpanded}
-                            aria-label={isExpanded ? 'Talep detayini kapat' : 'Talep detayini ac'}
+                            aria-label={isExpanded ? 'Talep detayını kapat' : 'Talep detayını aç'}
                           >
                             {isExpanded ? '-' : '+'}
                           </button>
@@ -627,24 +871,24 @@ function AdvisorDashboardPage({
                         <div className="advisor-admin-request-details">
                           <div className="advisor-admin-meta">
                             <span>
-                              <strong>Bolum:</strong>{' '}
-                              {request.studentDepartmentName || 'Bolum bilgisi yok'}
+                              <strong>Bölüm:</strong>{' '}
+                              {request.studentDepartmentName || 'Bölüm bilgisi yok'}
                             </span>
                           </div>
 
                           <div className="advisor-admin-note-box">
-                            <strong>Ogrenci aciklamasi</strong>
-                            <p>{request.studentNote || 'Ogrenci bu talep icin not birakmadi.'}</p>
+                            <strong>Öğrenci açıklaması</strong>
+                            <p>{request.studentNote || 'Öğrenci bu talep için not bırakmadı.'}</p>
                           </div>
 
                           {request.status === 'Pending' ? (
                             <>
                               <label className="advisor-admin-input-block">
-                                <span>Danisman notu</span>
+                                <span>Danışman notu</span>
                                 <textarea
                                   className="advisor-admin-textarea"
                                   rows={4}
-                                  placeholder="Onay veya red kararin icin kisa bir aciklama yazabilirsin."
+                                  placeholder="Onay veya red kararın için kısa bir açıklama yazabilirsin."
                                   value={resolveAdvisorNote(request)}
                                   onChange={(event) =>
                                     handleNoteChange(request.id, event.target.value)
@@ -667,13 +911,13 @@ function AdvisorDashboardPage({
                                   onClick={() => handleDecision(request, 'approve')}
                                   disabled={activeAction === approveKey || activeAction === rejectKey}
                                 >
-                                  {activeAction === approveKey ? 'Onaylaniyor...' : 'Onayla'}
+                                  {activeAction === approveKey ? 'Onaylanıyor...' : 'Onayla'}
                                 </button>
                               </div>
                             </>
                           ) : request.advisorNote ? (
                             <div className="advisor-admin-note-box">
-                              <strong>Danisman notu</strong>
+                              <strong>Danışman notu</strong>
                               <p>{request.advisorNote}</p>
                             </div>
                           ) : null}
@@ -688,8 +932,8 @@ function AdvisorDashboardPage({
                 <strong>{tabEmptyMessageMap[activeTab]}</strong>
                 <p>
                   {activeTab === 'Pending'
-                    ? 'Yeni talepler geldiginde burada alt alta listelenecek.'
-                    : 'Bu durumdaki talepler olustukca bu listede gorulecek.'}
+                    ? 'Yeni talepler geldiğinde burada alt alta listelenecek.'
+                    : 'Bu durumdaki talepler oluştukça bu listede görülecek.'}
                 </p>
               </div>
             )}
