@@ -53,6 +53,10 @@ function resolveApiMessage(error, fallbackMessage) {
   return fallbackMessage;
 }
 
+function isActiveAdvisorRequest(request) {
+  return request?.status === 'Pending' || request?.status === 'Approved';
+}
+
 function App() {
   const isPosterWorkflowMode =
     typeof window !== 'undefined' &&
@@ -206,7 +210,15 @@ function App() {
     }
 
     if (advisorRequestResult.status === 'fulfilled') {
-      setAdvisorRequests(advisorRequestResult.value.data || []);
+      const requestItems = advisorRequestResult.value.data || [];
+      const activeRequest = requestItems.find(isActiveAdvisorRequest);
+
+      setAdvisorRequests(requestItems);
+
+      if (activeRequest) {
+        setSelectedAdvisorProjectId(String(activeRequest.projectId));
+        localStorage.setItem('selectedAdvisorProjectId', String(activeRequest.projectId));
+      }
     } else {
       setAdvisorRequests([]);
     }
@@ -225,8 +237,8 @@ function App() {
   const handleCreateAdvisorRequest = async (payload) => {
     try {
       const response = await api.post('/advisor-requests', payload);
-      setSelectedAdvisorProjectId(payload.projectId);
-      localStorage.setItem('selectedAdvisorProjectId', payload.projectId);
+      setSelectedAdvisorProjectId(String(payload.projectId));
+      localStorage.setItem('selectedAdvisorProjectId', String(payload.projectId));
       await loadDashboard(true);
 
       return {
@@ -245,6 +257,10 @@ function App() {
   const handleCancelAdvisorRequest = async (requestId) => {
     try {
       const response = await api.post(`/advisor-requests/${requestId}/cancel`, {});
+      setSelectedAdvisorProjectId('');
+      localStorage.removeItem('selectedAdvisorProjectId');
+      setError('');
+      setCurrentView('dashboard');
       await loadDashboard(true);
 
       return {
@@ -279,18 +295,23 @@ function App() {
   };
 
   const handleSelectProjectForAdvisor = (projectId) => {
-    const activeStudentRequest = advisorRequests.find(
-      (item) => item.status === 'Pending' || item.status === 'Approved'
-    );
+    const activeStudentRequest = advisorRequests.find(isActiveAdvisorRequest);
+    const normalizedProjectId = projectId ? Number(projectId) : null;
 
-    if (
-      activeStudentRequest &&
-      projectId &&
-      activeStudentRequest.projectId !== projectId
-    ) {
-      setSelectedAdvisorProjectId(activeStudentRequest.projectId);
+    if (activeStudentRequest) {
+      setSelectedAdvisorProjectId(String(activeStudentRequest.projectId));
       localStorage.setItem('selectedAdvisorProjectId', String(activeStudentRequest.projectId));
-      setError('Ayni anda sadece tek aktif danismanlik sureci yurutebilirsin. Mevcut surecin acildi.');
+
+      if (normalizedProjectId && activeStudentRequest.projectId !== normalizedProjectId) {
+        setError(
+          activeStudentRequest.status === 'Approved'
+            ? 'Onaylanmis danismanlik surecin varken yeni proje secemezsin. Mevcut surecin acildi.'
+            : 'Bekleyen talebin sonuclanmadan yeni proje secemezsin. Istersen mevcut talebi iptal edip yeniden secim yapabilirsin.'
+        );
+      } else {
+        setError('');
+      }
+
       setCurrentView('advisor-selection');
       return;
     }
@@ -298,8 +319,8 @@ function App() {
     setError('');
 
     if (projectId) {
-      setSelectedAdvisorProjectId(projectId);
-      localStorage.setItem('selectedAdvisorProjectId', projectId);
+      setSelectedAdvisorProjectId(String(projectId));
+      localStorage.setItem('selectedAdvisorProjectId', String(projectId));
     } else {
       setSelectedAdvisorProjectId('');
       localStorage.removeItem('selectedAdvisorProjectId');
@@ -348,9 +369,7 @@ function App() {
   const cgpa = profile?.cgpa;
   const totalECTS = profile?.totalECTS;
   const isHonorStudent = profile?.isHonorStudent || Number(cgpa) >= 3;
-  const activeAdvisorRequest = advisorRequests.find(
-    (item) => item.status === 'Pending' || item.status === 'Approved'
-  ) || null;
+  const activeAdvisorRequest = advisorRequests.find(isActiveAdvisorRequest) || null;
 
   const rawCvSummary = resolveCvSummary(profile);
   const summaryText =
@@ -457,7 +476,7 @@ function App() {
         profile={profile}
         recommendations={recommendations}
         refreshing={refreshing}
-        selectedProjectId={selectedAdvisorProjectId}
+        selectedProjectId={activeAdvisorRequest ? String(activeAdvisorRequest.projectId) : selectedAdvisorProjectId}
       />
     );
   }

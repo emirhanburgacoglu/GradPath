@@ -6,7 +6,7 @@ const defaultNavItems = [
   { id: 'advisor-selection', label: 'Danismanlik' },
   { id: 'students', label: 'Öğrenciler' },
   { id: 'posts', label: 'İlanlar' },
-  { id: 'profile', label: 'Profil' },
+  { id: 'profile', label: 'Profil' }
 ];
 
 function AppHeader({

@@ -3,6 +3,10 @@ import AppFooter from '../components/AppFooter';
 import AppHeader from '../components/AppHeader';
 import api from '../api';
 
+function isActiveAdvisorRequest(request) {
+  return request?.status === 'Pending' || request?.status === 'Approved';
+}
+
 const requestLabelMap = {
   Pending: 'Beklemede',
   Approved: 'Onaylandı',
@@ -122,6 +126,11 @@ function AdvisorSelectionPage({
   const [message, setMessage] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  const selectedProjectNumericId = selectedProjectId ? Number(selectedProjectId) : null;
+
+  const activeRequest = useMemo(() => {
+    return advisorRequests.find(isActiveAdvisorRequest) || null;
+  }, [advisorRequests]);
 
   const latestRequest = useMemo(() => {
     if (!advisorRequests.length) {
@@ -134,36 +143,45 @@ function AdvisorSelectionPage({
   }, [advisorRequests]);
 
   const selectedProject = useMemo(() => {
-    if (!selectedProjectId) {
+    if (!selectedProjectNumericId) {
       return null;
     }
 
-    return recommendations.find((item) => item.projectId === selectedProjectId) || null;
-  }, [recommendations, selectedProjectId]);
+    return recommendations.find((item) => item.projectId === selectedProjectNumericId) || null;
+  }, [recommendations, selectedProjectNumericId]);
 
   const selectedProjectRequest = useMemo(() => {
-    if (!selectedProjectId) {
+    if (!selectedProjectNumericId) {
       return null;
     }
 
-    const matchingRequests = advisorRequests.filter((item) => item.projectId === selectedProjectId);
+    const matchingRequests = advisorRequests.filter((item) => item.projectId === selectedProjectNumericId);
     if (!matchingRequests.length) {
       return null;
+    }
+
+    const activeRequestForProject = matchingRequests.find(isActiveAdvisorRequest);
+
+    if (activeRequestForProject) {
+      return activeRequestForProject;
     }
 
     return [...matchingRequests].sort(
       (left, right) => new Date(right.createdAt).getTime() - new Date(left.createdAt).getTime()
     )[0];
-  }, [advisorRequests, selectedProjectId]);
+  }, [advisorRequests, selectedProjectNumericId]);
 
-  const currentRequest = selectedProjectRequest || latestRequest;
+  const currentRequest = activeRequest || selectedProjectRequest || latestRequest;
   const currentProject =
-    selectedProject ||
+    (activeRequest
+      ? recommendations.find((item) => item.projectId === activeRequest.projectId)
+      : selectedProject) ||
     recommendations.find((item) => item.projectId === currentRequest?.projectId) ||
     null;
 
   const canChooseAdvisor =
     Boolean(selectedProject) &&
+    !activeRequest &&
     (!selectedProjectRequest ||
       selectedProjectRequest.status === 'Rejected' ||
       selectedProjectRequest.status === 'Cancelled');
@@ -195,7 +213,7 @@ function AdvisorSelectionPage({
 
         const advisorItems = response.data || [];
         setAdvisors(advisorItems);
-        setSelectedAdvisorId((current) => current || advisorItems[0]?.userId || '');
+        setSelectedAdvisorId(advisorItems[0]?.userId || '');
       } catch {
         if (!ignore) {
           setMessage('Uygun danışmanlar şu an getirilemiyor.');
@@ -250,7 +268,6 @@ function AdvisorSelectionPage({
       return;
     }
 
-    const projectId = currentRequest.projectId;
     const confirmed = window.confirm('Bekleyen danışmanlık talebini iptal etmek istiyor musunuz?');
     if (!confirmed) {
       return;
@@ -268,9 +285,9 @@ function AdvisorSelectionPage({
       return;
     }
 
-    setMessage('Danışmanlık talebi iptal edildi. Aynı proje için yeniden danışman seçebilirsiniz.');
+    setMessage('Danışmanlık talebi iptal edildi. Yeni proje veya danışman seçebilirsin.');
     await onRefresh?.();
-    onSelectProject?.(projectId);
+    onViewChange?.('dashboard');
   };
 
   const statusMeta = getStatusMeta(currentRequest);

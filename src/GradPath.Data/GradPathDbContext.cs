@@ -115,6 +115,15 @@ public class GradPathDbContext : IdentityDbContext<AppUser, AppRole, Guid>
             .HasIndex(request => new { request.StudentUserId, request.ProjectId, request.AdvisorUserId })
             .IsUnique();
 
+        builder.Entity<Project>()
+            .HasOne(project => project.AdvisorUser)
+            .WithMany(user => user.OwnedProjects)
+            .HasForeignKey(project => project.AdvisorUserId)
+            .OnDelete(DeleteBehavior.SetNull);
+
+        builder.Entity<Project>()
+            .HasIndex(project => project.AdvisorUserId);
+
         builder.Entity<StudentDomainSignal>()
             .HasOne(ds => ds.User)
             .WithMany()

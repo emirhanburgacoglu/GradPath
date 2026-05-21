@@ -73,7 +73,7 @@ public class AdvisorRequestService : IAdvisorRequestService
             return Failure("Bu danismanin kontenjani dolu.");
         }
 
-        var existingApprovedRequest = await _context.AdvisorRequests
+        var existingActiveRequest = await _context.AdvisorRequests
             .AsNoTracking()
             .Include(request => request.Project)
             .Include(request => request.AdvisorUser)
@@ -81,17 +81,18 @@ public class AdvisorRequestService : IAdvisorRequestService
                 request.StudentUserId == studentUserId &&
                 (request.Status == PendingStatus || request.Status == ApprovedStatus));
 
-        if (existingApprovedRequest != null)
+        if (existingActiveRequest != null)
         {
-            var projectTitle = existingApprovedRequest.Project?.Title ?? "Secili proje";
-            var advisorName = existingApprovedRequest.AdvisorUser?.FullName ?? "secili danisman";
-
-            if (existingApprovedRequest.Status == ApprovedStatus)
+            if (existingActiveRequest.Status == ApprovedStatus)
             {
+                var projectTitle = existingActiveRequest.Project?.Title ?? "Secili proje";
+                var advisorName = existingActiveRequest.AdvisorUser?.FullName ?? "secili danisman";
                 return Failure($"Zaten onaylanmis bir danismanlik surecin var: {projectTitle} / {advisorName}.");
             }
 
-            return Failure($"Zaten bekleyen bir danismanlik talebin var: {projectTitle} / {advisorName}. Yeni bir secim yapmadan once mevcut talebi iptal etmeli ya da sonucunu beklemelisin.");
+            var pendingProjectTitle = existingActiveRequest.Project?.Title ?? "Secili proje";
+            var pendingAdvisorName = existingActiveRequest.AdvisorUser?.FullName ?? "secili danisman";
+            return Failure($"Zaten bekleyen bir danismanlik talebin var: {pendingProjectTitle} / {pendingAdvisorName}. Yeni bir talep gondermeden once mevcut talebi iptal etmeli ya da sonucunu beklemelisin.");
         }
 
         var existingPendingForProject = await _context.AdvisorRequests
@@ -270,6 +271,21 @@ public class AdvisorRequestService : IAdvisorRequestService
         request.AdvisorNote = NormalizeNote(advisorNote);
         request.RespondedAt = DateTime.UtcNow;
         request.UpdatedAt = DateTime.UtcNow;
+
+        var competingRequests = await _context.AdvisorRequests
+            .Where(item =>
+                item.StudentUserId == request.StudentUserId &&
+                item.Status == PendingStatus &&
+                item.Id != requestId)
+            .ToListAsync();
+
+        foreach (var competingRequest in competingRequests)
+        {
+            competingRequest.Status = RejectedStatus;
+            competingRequest.AdvisorNote = "Ogrencinin onceki bekleyen talebi kapatildi.";
+            competingRequest.RespondedAt = DateTime.UtcNow;
+            competingRequest.UpdatedAt = DateTime.UtcNow;
+        }
 
         await _context.SaveChangesAsync();
         return Success("Danismanlik talebi reddedildi.");

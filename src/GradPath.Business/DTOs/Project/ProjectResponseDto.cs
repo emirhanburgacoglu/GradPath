@@ -8,10 +8,12 @@ public class ProjectResponseDto
     public string Category { get; set; } = string.Empty;
     public int DifficultyLevel { get; set; }
     public int EstimatedWeeks { get; set; }
+    public Guid? AdvisorUserId { get; set; }
+    public string? AdvisorFullName { get; set; }
+    public string? AdvisorAcademicTitle { get; set; }
+    public bool IsAdvisorOwned => AdvisorUserId.HasValue;
     public DateTime CreatedAt { get; set; }
     public DateTime? UpdatedAt { get; set; }
-
-    // İlişkili isimleri dönmek web tarafı için daha kullanışlıdır
-    public List<string> DepartmentNames { get; set; } = new List<string>();
-    public List<string> TechnologyNames { get; set; } = new List<string>();
+    public List<string> DepartmentNames { get; set; } = new();
+    public List<string> TechnologyNames { get; set; } = new();
 }

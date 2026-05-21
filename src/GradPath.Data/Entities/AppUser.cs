@@ -3,8 +3,7 @@ using Microsoft.AspNetCore.Identity;
 namespace GradPath.Data.Entities;
 
 /// <summary>
-/// Sisteme giriş yapacak öğrencileri ve adminleri temsil eder.
-/// IdentityUser'dan türeyerek hazır giriş-çıkış altyapısını kullanır.
+/// Sisteme giris yapacak kullanicilari temsil eder.
 /// </summary>
 public class AppUser : IdentityUser<Guid>
 {
@@ -14,10 +13,11 @@ public class AppUser : IdentityUser<Guid>
     public bool MustChangePassword { get; set; }
     public bool HasCompletedInitialPasswordSetup { get; set; }
 
-    // Navigation Properties (İlişkiler)
+    // Navigation Properties
     public Department? Department { get; set; }
     public StudentProfile? StudentProfile { get; set; }
     public AdvisorProfile? AdvisorProfile { get; set; }
+    public ICollection<Project> OwnedProjects { get; set; } = new List<Project>();
     public ICollection<Recommendation> Recommendations { get; set; } = new List<Recommendation>();
     public ICollection<TeamMatch> InitiatedMatches { get; set; } = new List<TeamMatch>();
     public ICollection<TeamMatch> ReceivedMatches { get; set; } = new List<TeamMatch>();

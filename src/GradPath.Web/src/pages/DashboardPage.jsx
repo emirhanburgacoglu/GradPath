@@ -57,7 +57,9 @@ function DashboardPage({
   );
 
   const advisorRequestLookup = useMemo(() => {
-    return advisorRequests.reduce((lookup, request) => {
+    return advisorRequests
+      .filter((request) => request.status !== 'Cancelled')
+      .reduce((lookup, request) => {
       const current = lookup[request.projectId];
 
       if (!current) {

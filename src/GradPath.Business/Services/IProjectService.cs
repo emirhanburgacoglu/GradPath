@@ -13,6 +13,10 @@ public interface IProjectService
     // Yeni proje oluşturur
     Task<ProjectResponseDto> CreateAsync(ProjectCreateDto request);
 
+    Task<List<ProjectResponseDto>> GetByAdvisorAsync(Guid advisorUserId);
+
+    Task<ProjectResponseDto> CreateForAdvisorAsync(Guid advisorUserId, ProjectCreateDto request);
+
     // Mevcut projeyi günceller
     Task<bool> UpdateAsync(int id, ProjectCreateDto request);
 

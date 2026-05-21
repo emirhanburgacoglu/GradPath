@@ -9454,9 +9454,137 @@ canvas {
   white-space: nowrap;
 }
 
+.advisor-project-form {
+  display: grid;
+  gap: 16px;
+}
+
+.advisor-project-form-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.advisor-project-select-grid {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.8fr) minmax(260px, 1.2fr);
+  gap: 14px;
+}
+
+.form-input {
+  width: 100%;
+  border: 1px solid rgba(148, 163, 184, 0.34);
+  border-radius: 16px;
+  background: rgba(255, 255, 255, 0.9);
+  color: #132a58;
+  font: inherit;
+  font-weight: 700;
+  padding: 13px 14px;
+  outline: none;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.72);
+}
+
+.form-input:focus {
+  border-color: rgba(31, 60, 136, 0.48);
+  box-shadow: 0 0 0 4px rgba(31, 60, 136, 0.1);
+}
+
+.advisor-project-option-block {
+  display: grid;
+  gap: 10px;
+}
+
+.advisor-project-technology-groups {
+  display: grid;
+  gap: 12px;
+}
+
+.advisor-project-technology-group {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid rgba(31, 60, 136, 0.1);
+  border-radius: 20px;
+  background: rgba(248, 251, 255, 0.72);
+}
+
+.advisor-project-technology-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.advisor-project-technology-title strong {
+  color: #132a58;
+  font-size: 0.82rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.advisor-project-technology-title span {
+  border-radius: 999px;
+  background: rgba(31, 60, 136, 0.1);
+  color: #1f3c88;
+  font-size: 0.76rem;
+  font-weight: 900;
+  padding: 4px 8px;
+}
+
+.advisor-project-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  max-height: 220px;
+  overflow: auto;
+  padding: 4px;
+}
+
+.advisor-project-selected-skills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px;
+  border: 1px dashed rgba(31, 60, 136, 0.18);
+  border-radius: 18px;
+  background: rgba(248, 251, 255, 0.64);
+}
+
+.advisor-project-selected-skills span {
+  color: #6a7b93;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.advisor-project-chip {
+  border: 1px solid rgba(148, 163, 184, 0.28);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.76);
+  color: #132a58;
+  cursor: pointer;
+  font-weight: 800;
+  padding: 9px 12px;
+  transition: transform 0.18s ease, border-color 0.18s ease, background 0.18s ease;
+}
+
+.advisor-project-chip:hover {
+  transform: translateY(-1px);
+  border-color: rgba(31, 60, 136, 0.28);
+}
+
+.advisor-project-chip.active {
+  border-color: rgba(31, 60, 136, 0.3);
+  background: linear-gradient(135deg, #234697, #1f3c88);
+  color: #fff;
+  box-shadow: 0 12px 24px rgba(31, 60, 136, 0.18);
+}
+
 @media (max-width: 900px) {
   .advisor-admin-stats,
-  .advisor-admin-history-grid {
+  .advisor-admin-history-grid,
+  .advisor-project-form-grid,
+  .advisor-project-select-grid {
     grid-template-columns: 1fr;
   }
 

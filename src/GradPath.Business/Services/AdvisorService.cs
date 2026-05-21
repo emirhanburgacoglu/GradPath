@@ -49,6 +49,12 @@ public class AdvisorService : IAdvisorService
 
     public async Task<List<AdvisorLookupDto>> GetAvailableAdvisorsForProjectAsync(Guid studentUserId, int projectId)
     {
+        var ownedProjectAdvisorId = await _context.Projects
+            .AsNoTracking()
+            .Where(project => project.Id == projectId)
+            .Select(project => project.AdvisorUserId)
+            .FirstOrDefaultAsync();
+
         var studentDepartmentId = await _context.Users
             .AsNoTracking()
             .Where(user => user.Id == studentUserId)
@@ -73,26 +79,49 @@ public class AdvisorService : IAdvisorService
             })
             .ToDictionaryAsync(item => item.AdvisorUserId, item => item.Count);
 
-        var baseQuery = _context.Users
+        var advisors = await _context.Users
             .AsNoTracking()
             .Include(user => user.Department)
             .Include(user => user.AdvisorProfile)
-            .Where(user => user.AdvisorProfile != null && user.AdvisorProfile.IsAcceptingRequests);
-
-        if (projectDepartmentIds.Count > 0)
-        {
-            baseQuery = baseQuery.Where(user => user.DepartmentId.HasValue && projectDepartmentIds.Contains(user.DepartmentId.Value));
-        }
-        else if (studentDepartmentId.HasValue)
-        {
-            baseQuery = baseQuery.Where(user => user.DepartmentId == studentDepartmentId.Value);
-        }
-
-        var advisors = await baseQuery
+            .Where(user => user.AdvisorProfile != null && user.AdvisorProfile.IsAcceptingRequests)
             .OrderBy(user => user.FullName)
             .ToListAsync();
 
-        return advisors
+        if (ownedProjectAdvisorId.HasValue)
+        {
+            advisors = advisors
+                .Where(user => user.Id == ownedProjectAdvisorId.Value)
+                .ToList();
+        }
+
+        var filteredAdvisors = advisors;
+        var hasProjectDepartmentMatch = false;
+        if (projectDepartmentIds.Count > 0)
+        {
+            var projectDepartmentAdvisors = advisors
+                .Where(user => user.DepartmentId.HasValue && projectDepartmentIds.Contains(user.DepartmentId.Value))
+                .ToList();
+
+            if (projectDepartmentAdvisors.Count > 0)
+            {
+                filteredAdvisors = projectDepartmentAdvisors;
+                hasProjectDepartmentMatch = true;
+            }
+        }
+
+        if (!hasProjectDepartmentMatch && studentDepartmentId.HasValue)
+        {
+            var studentDepartmentAdvisors = advisors
+                .Where(user => user.DepartmentId == studentDepartmentId.Value)
+                .ToList();
+
+            if (studentDepartmentAdvisors.Count > 0)
+            {
+                filteredAdvisors = studentDepartmentAdvisors;
+            }
+        }
+
+        return filteredAdvisors
             .Select(user =>
             {
                 var approvedStudentCount = approvedCounts.TryGetValue(user.Id, out var count) ? count : 0;

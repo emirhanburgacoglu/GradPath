@@ -1,7 +1,7 @@
 namespace GradPath.Data.Entities;
 
 /// <summary>
-/// Sistemdeki proje şablonlarını temsil eden ana sınıf.
+/// Sistemdeki proje sablonlarini temsil eden ana sinif.
 /// </summary>
 public class Project
 {
@@ -10,11 +10,13 @@ public class Project
     // Proje Bilgileri
     public string Title { get; set; } = string.Empty;
     public string Description { get; set; } = string.Empty;
-    public string Category { get; set; } = string.Empty;      // "AI/ML", "Web", "IoT", "Embedded"
-    public int DifficultyLevel { get; set; }                   // 1=Kolay, 2=Orta, 3=Zor
-    public int EstimatedWeeks { get; set; }                    // Tahmini tamamlanma süresi
+    public string Category { get; set; } = string.Empty;
+    public int DifficultyLevel { get; set; }
+    public int EstimatedWeeks { get; set; }
+    public Guid? AdvisorUserId { get; set; }
 
     // Navigation Properties
+    public AppUser? AdvisorUser { get; set; }
     public ICollection<ProjectDepartment> ProjectDepartments { get; set; } = new List<ProjectDepartment>();
     public ICollection<ProjectTechnology> ProjectTechnologies { get; set; } = new List<ProjectTechnology>();
     public ICollection<Recommendation> Recommendations { get; set; } = new List<Recommendation>();
