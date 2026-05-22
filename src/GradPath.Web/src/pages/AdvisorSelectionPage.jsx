@@ -26,6 +26,19 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
+function buildAdvisorInitials(fullName) {
+  if (!fullName) {
+    return 'DP';
+  }
+
+  return fullName
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('');
+}
+
 function getStatusMeta(currentRequest) {
   if (!currentRequest) {
     return {
@@ -410,6 +423,20 @@ function AdvisorSelectionPage({
                         className={`selection-option-row ${isSelected ? 'selected' : ''}`}
                         onClick={() => setSelectedAdvisorId(advisor.userId)}
                       >
+                        <div className="selection-option-avatar-shell">
+                          {advisor.profilePhotoUrl ? (
+                            <img
+                              className="selection-option-avatar"
+                              src={advisor.profilePhotoUrl}
+                              alt={`${advisor.fullName} profil fotoğrafı`}
+                            />
+                          ) : (
+                            <div className="selection-option-avatar selection-option-avatar-fallback">
+                              {buildAdvisorInitials(advisor.fullName)}
+                            </div>
+                          )}
+                        </div>
+
                         <div className="selection-option-copy">
                           <strong>
                             {advisor.academicTitle ? `${advisor.academicTitle} ` : ''}

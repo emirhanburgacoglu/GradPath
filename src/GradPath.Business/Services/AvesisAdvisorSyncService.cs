@@ -1,5 +1,6 @@
 using System.Net;
 using System.Globalization;
+using System.Text.Json;
 using System.Text;
 using System.Text.RegularExpressions;
 using GradPath.Business.DTOs.Advisor;
@@ -58,12 +59,7 @@ public class AvesisAdvisorSyncService : IAvesisAdvisorSyncService
     public async Task<AvesisAdvisorSyncResponseDto> SyncComputerEngineeringAsync()
     {
         var response = new AvesisAdvisorSyncResponseDto();
-        var department = (await _context.Departments
-                .AsNoTracking()
-                .ToListAsync())
-            .FirstOrDefault(item =>
-                NormalizeText(item.Name) == "bilgisayar muhendisligi" ||
-                NormalizeText(item.Code) == "bm");
+        var department = await FindComputerEngineeringDepartmentAsync();
 
         if (department == null)
         {
@@ -78,11 +74,27 @@ public class AvesisAdvisorSyncService : IAvesisAdvisorSyncService
             return response;
         }
 
-        foreach (var url in _settings.ComputerEngineeringProfileUrls
-                     .Where(url => !string.IsNullOrWhiteSpace(url))
-                     .Distinct(StringComparer.OrdinalIgnoreCase))
+        var advisorSources = await GetComputerEngineeringAdvisorSourcesAsync();
+
+        if (advisorSources.Count == 0)
         {
-            var itemResult = await SyncSingleAdvisorAsync(url.Trim(), department.Id);
+            response.Items.Add(new AvesisAdvisorSyncItemResultDto
+            {
+                SourceUrl = _settings.ComputerEngineeringDirectoryUrl,
+                Succeeded = false,
+                Message = "Bilgisayar Muhendisligi icin Avesis profil linkleri bulunamadi."
+            });
+            response.Total = 1;
+            response.FailedCount = 1;
+            return response;
+        }
+
+        foreach (var advisorSource in advisorSources)
+        {
+            var itemResult = await SyncSingleAdvisorAsync(
+                advisorSource.ProfileUrl.Trim(),
+                department.Id,
+                advisorSource.ProfilePhotoUrl);
             response.Items.Add(itemResult);
         }
 
@@ -92,7 +104,90 @@ public class AvesisAdvisorSyncService : IAvesisAdvisorSyncService
         return response;
     }
 
-    private async Task<AvesisAdvisorSyncItemResultDto> SyncSingleAdvisorAsync(string sourceUrl, int departmentId)
+    public async Task<AvesisAdvisorResyncResponseDto> ResyncComputerEngineeringAsync()
+    {
+        var reset = await ResetComputerEngineeringAdvisorsAsync();
+        var sync = await SyncComputerEngineeringAsync();
+
+        return new AvesisAdvisorResyncResponseDto
+        {
+            Reset = reset,
+            Sync = sync
+        };
+    }
+
+    public async Task<AdvisorResetResponseDto> ResetComputerEngineeringAdvisorsAsync()
+    {
+        var response = new AdvisorResetResponseDto();
+        var department = await FindComputerEngineeringDepartmentAsync();
+
+        if (department == null)
+        {
+            return response;
+        }
+
+        var advisorUsersInRole = await _userManager.GetUsersInRoleAsync("Advisor");
+        var advisorRoleUserIds = advisorUsersInRole
+            .Select(user => user.Id)
+            .ToHashSet();
+
+        var advisors = await _context.Users
+            .Include(user => user.AdvisorProfile)
+            .Where(user =>
+                advisorRoleUserIds.Contains(user.Id) &&
+                user.DepartmentId == department.Id &&
+                user.AdvisorProfile != null)
+            .ToListAsync();
+
+        if (advisors.Count == 0)
+        {
+            return response;
+        }
+
+        var advisorIds = advisors
+            .Select(user => user.Id)
+            .ToHashSet();
+
+        var advisorRequests = await _context.AdvisorRequests
+            .Where(request => advisorIds.Contains(request.AdvisorUserId))
+            .ToListAsync();
+
+        var advisorProjects = await _context.Projects
+            .Where(project => project.AdvisorUserId.HasValue && advisorIds.Contains(project.AdvisorUserId.Value))
+            .ToListAsync();
+
+        foreach (var project in advisorProjects)
+        {
+            project.AdvisorUserId = null;
+            project.UpdatedAt = DateTime.UtcNow;
+        }
+
+        _context.AdvisorRequests.RemoveRange(advisorRequests);
+        await _context.SaveChangesAsync();
+
+        foreach (var advisor in advisors)
+        {
+            var email = advisor.Email ?? advisor.UserName ?? advisor.Id.ToString();
+            var deleteResult = await _userManager.DeleteAsync(advisor);
+
+            if (!deleteResult.Succeeded)
+            {
+                continue;
+            }
+
+            response.DeletedEmails.Add(email);
+        }
+
+        response.DeletedAdvisorCount = response.DeletedEmails.Count;
+        response.DeletedRequestCount = advisorRequests.Count;
+        response.DetachedProjectCount = advisorProjects.Count;
+        return response;
+    }
+
+    private async Task<AvesisAdvisorSyncItemResultDto> SyncSingleAdvisorAsync(
+        string sourceUrl,
+        int departmentId,
+        string? profilePhotoUrl)
     {
         try
         {
@@ -167,6 +262,7 @@ public class AvesisAdvisorSyncService : IAvesisAdvisorSyncService
             existingUser.AdvisorProfile.AcademicTitle = profile.AcademicTitle;
             existingUser.AdvisorProfile.ExpertiseAreas = profile.ExpertiseAreas;
             existingUser.AdvisorProfile.OfficeLocation = profile.OfficeLocation;
+            existingUser.AdvisorProfile.ProfilePhotoUrl = profilePhotoUrl;
             existingUser.AdvisorProfile.ShortBio = BuildShortBio(profile);
             existingUser.AdvisorProfile.MaxConcurrentStudents = _settings.DefaultMaxConcurrentStudents;
             existingUser.AdvisorProfile.IsAcceptingRequests = true;
@@ -192,6 +288,143 @@ public class AvesisAdvisorSyncService : IAvesisAdvisorSyncService
         {
             return Fail(sourceUrl, $"Senkronizasyon sirasinda hata olustu: {ex.Message}");
         }
+    }
+
+    private async Task<Department?> FindComputerEngineeringDepartmentAsync()
+    {
+        return (await _context.Departments
+                .AsNoTracking()
+                .ToListAsync())
+            .FirstOrDefault(item =>
+                NormalizeText(item.Name) == "bilgisayar muhendisligi" ||
+                NormalizeText(item.Code) == "bm");
+    }
+
+    private async Task<List<AdvisorSource>> GetComputerEngineeringAdvisorSourcesAsync()
+    {
+        var sourcesFromDirectoryPage = await GetAdvisorSourcesFromDirectoryPageAsync();
+        if (sourcesFromDirectoryPage.Count > 0)
+        {
+            return sourcesFromDirectoryPage;
+        }
+
+        var sourcesFromUnitResearcherList = await GetAdvisorSourcesFromUnitResearcherListAsync();
+        if (sourcesFromUnitResearcherList.Count > 0)
+        {
+            return sourcesFromUnitResearcherList;
+        }
+
+        return _settings.ComputerEngineeringProfileUrls
+            .Where(url => !string.IsNullOrWhiteSpace(url))
+            .Select(url => new AdvisorSource
+            {
+                ProfileUrl = url.Trim().TrimEnd('/')
+            })
+            .GroupBy(item => item.ProfileUrl, StringComparer.OrdinalIgnoreCase)
+            .Select(group => group.First())
+            .ToList();
+    }
+
+    private async Task<List<AdvisorSource>> GetAdvisorSourcesFromDirectoryPageAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_settings.ComputerEngineeringDirectoryUrl))
+        {
+            return new List<AdvisorSource>();
+        }
+
+        try
+        {
+            var html = await _httpClient.GetStringAsync(_settings.ComputerEngineeringDirectoryUrl);
+            var matches = Regex.Matches(
+                html,
+                @"<article[^>]*class\s*=\s*[""'][^""']*academic-card[^""']*[""'][^>]*>.*?<div[^>]*class\s*=\s*[""'][^""']*academic-photo[^""']*[""'][^>]*>.*?<img[^>]*src\s*=\s*[""'](?<image>[^""']+)[""'][^>]*>.*?<a[^>]*href\s*=\s*[""'](?<url>https://avesis\.mcbu\.edu\.tr/[^""'#?\s<>]+)[""']",
+                RegexOptions.IgnoreCase | RegexOptions.Singleline | RegexOptions.Compiled);
+
+            return matches
+                .Select(match => new AdvisorSource
+                {
+                    ProfileUrl = match.Groups["url"].Value.Trim().TrimEnd('/'),
+                    ProfilePhotoUrl = BuildAbsoluteUrl(_settings.ComputerEngineeringDirectoryUrl, match.Groups["image"].Value)
+                })
+                .Where(item => !string.IsNullOrWhiteSpace(item.ProfileUrl))
+                .GroupBy(item => item.ProfileUrl, StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .ToList();
+        }
+        catch
+        {
+            return new List<AdvisorSource>();
+        }
+    }
+
+    private async Task<List<AdvisorSource>> GetAdvisorSourcesFromUnitResearcherListAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_settings.BaseUrl) || _settings.ComputerEngineeringUnitId <= 0)
+        {
+            return new List<AdvisorSource>();
+        }
+
+        var baseUrl = _settings.BaseUrl.Trim().TrimEnd('/');
+        var requestUrl =
+            $"{baseUrl}/unitreport/getunitresearcherlist?unitId={_settings.ComputerEngineeringUnitId}&unitType=Department";
+
+        using var request = new HttpRequestMessage(HttpMethod.Get, requestUrl);
+        request.Headers.Add("X-Requested-With", "XMLHttpRequest");
+        request.Headers.Referrer = new Uri($"{baseUrl}/unitreport/reports?unitId={_settings.ComputerEngineeringUnitId}");
+
+        try
+        {
+            using var response = await _httpClient.SendAsync(request);
+            response.EnsureSuccessStatusCode();
+
+            var json = await response.Content.ReadAsStringAsync();
+            var researchers = JsonSerializer.Deserialize<List<AvesisUnitResearcherDto>>(
+                json,
+                new JsonSerializerOptions
+                {
+                    PropertyNameCaseInsensitive = true
+                });
+
+            if (researchers == null)
+            {
+                return new List<AdvisorSource>();
+            }
+
+            return researchers
+                .Where(item => !string.IsNullOrWhiteSpace(item.ProfilePageAlias))
+                .Select(item => new AdvisorSource
+                {
+                    ProfileUrl = $"{baseUrl}/{item.ProfilePageAlias.Trim().TrimStart('/').TrimEnd('/')}",
+                    ProfilePhotoUrl = item.Id > 0 ? $"{baseUrl}/user/image?id={item.Id}" : null
+                })
+                .GroupBy(item => item.ProfileUrl, StringComparer.OrdinalIgnoreCase)
+                .Select(group => group.First())
+                .ToList();
+        }
+        catch
+        {
+            return new List<AdvisorSource>();
+        }
+    }
+
+    private static string? BuildAbsoluteUrl(string pageUrl, string? rawUrl)
+    {
+        if (string.IsNullOrWhiteSpace(rawUrl))
+        {
+            return null;
+        }
+
+        if (Uri.TryCreate(rawUrl, UriKind.Absolute, out var absoluteUri))
+        {
+            return absoluteUri.ToString();
+        }
+
+        if (!Uri.TryCreate(pageUrl, UriKind.Absolute, out var pageUri))
+        {
+            return rawUrl;
+        }
+
+        return new Uri(pageUri, rawUrl).ToString();
     }
 
     private static ParsedAvesisProfile ParseProfile(string html, string sourceUrl)
@@ -445,5 +678,17 @@ public class AvesisAdvisorSyncService : IAvesisAdvisorSyncService
         public string Email { get; set; } = string.Empty;
         public string? OfficeLocation { get; set; }
         public string SourceUrl { get; set; } = string.Empty;
+    }
+
+    private sealed class AvesisUnitResearcherDto
+    {
+        public int Id { get; set; }
+        public string ProfilePageAlias { get; set; } = string.Empty;
+    }
+
+    private sealed class AdvisorSource
+    {
+        public string ProfileUrl { get; set; } = string.Empty;
+        public string? ProfilePhotoUrl { get; set; }
     }
 }

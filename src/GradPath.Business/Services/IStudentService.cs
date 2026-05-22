@@ -27,6 +27,7 @@ public interface IStudentService
 
     // Yüklenen CV dosya adını veritabanına kaydeder.
     Task<bool> UpdateCvFileNameAsync(Guid userId, string fileName);
+    Task<bool> UpdateProfilePhotoAsync(Guid userId, string profilePhotoUrl);
 
     // Yetenek Yönetimi (Skills)
     Task<List<StudentSkillDto>> GetSkillsAsync(Guid userId);

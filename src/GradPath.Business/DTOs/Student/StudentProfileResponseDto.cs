@@ -31,6 +31,7 @@ public class StudentProfileResponseDto
     public string? CvSummary { get; set; }
 
     public string? CvAnalysisJson { get; set; }
+    public string? ProfilePhotoUrl { get; set; }
 
 }
 

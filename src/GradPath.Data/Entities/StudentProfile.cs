@@ -19,6 +19,7 @@ public class StudentProfile
     // Dosya Bilgileri
     public string? CvFileName { get; set; }
     public DateTime? CvUploadedAt { get; set; }
+    public string? ProfilePhotoUrl { get; set; }
 
     // Navigation Properties
     public AppUser User { get; set; } = null!;

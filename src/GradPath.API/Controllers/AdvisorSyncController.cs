@@ -22,4 +22,18 @@ public class AdvisorSyncController : ControllerBase
         var result = await _avesisAdvisorSyncService.SyncComputerEngineeringAsync();
         return Ok(result);
     }
+
+    [HttpPost("avesis/computer-engineering/resync")]
+    public async Task<IActionResult> ResyncComputerEngineering()
+    {
+        var result = await _avesisAdvisorSyncService.ResyncComputerEngineeringAsync();
+        return Ok(result);
+    }
+
+    [HttpDelete("avesis/computer-engineering")]
+    public async Task<IActionResult> ResetComputerEngineeringAdvisors()
+    {
+        var result = await _avesisAdvisorSyncService.ResetComputerEngineeringAdvisorsAsync();
+        return Ok(result);
+    }
 }

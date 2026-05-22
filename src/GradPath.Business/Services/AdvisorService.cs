@@ -159,6 +159,7 @@ public class AdvisorService : IAdvisorService
                     UserId = user.Id,
                     FullName = user.FullName,
                     AcademicTitle = user.AdvisorProfile?.AcademicTitle ?? string.Empty,
+                    ProfilePhotoUrl = user.AdvisorProfile?.ProfilePhotoUrl,
                     DepartmentName = user.Department?.Name,
                     FacultyName = user.Department?.FacultyName,
                     ExpertiseAreas = user.AdvisorProfile?.ExpertiseAreas ?? string.Empty,

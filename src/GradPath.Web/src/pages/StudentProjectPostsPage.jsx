@@ -834,6 +834,23 @@ function StudentProjectPostsPage({
               ) : selectedApplicantProfile ? (
                 <>
                   <div className="applicant-public-profile-top">
+                    <div className="applicant-public-profile-avatar">
+                      {selectedApplicantProfile.profilePhotoUrl ? (
+                        <img
+                          src={selectedApplicantProfile.profilePhotoUrl}
+                          alt={selectedApplicantProfile.fullName || 'Öğrenci profil fotoğrafı'}
+                          className="applicant-public-profile-avatar-image"
+                        />
+                      ) : (
+                        (selectedApplicantProfile.fullName || '')
+                          .split(' ')
+                          .map((part) => part?.[0] || '')
+                          .join('')
+                          .slice(0, 2)
+                          .toUpperCase() || 'GP'
+                      )}
+                    </div>
+
                     <div className="applicant-public-profile-copy">
                       <strong>{selectedApplicantProfile.fullName}</strong>
                       <span>

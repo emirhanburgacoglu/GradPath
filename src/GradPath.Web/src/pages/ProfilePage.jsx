@@ -15,10 +15,13 @@ import {
   Upload,
   Wrench,
   X,
+  Activity,
+  FileText,
+  Cpu,
 } from 'lucide-react';
 import AppHeader from '../components/AppHeader';
 import AppFooter from '../components/AppFooter';
-import api from '../api';
+import api, { resolvePhotoUrl } from '../api';
 
 function safeParseAnalysis(profile) {
   if (!profile?.cvAnalysisJson) {
@@ -327,7 +330,9 @@ function ProfilePage({
 }) {
   const [activeTab, setActiveTab] = useState('overview');
   const [cvFile, setCvFile] = useState(null);
+  const [profilePhotoFile, setProfilePhotoFile] = useState(null);
   const [uploadingCv, setUploadingCv] = useState(false);
+  const [uploadingPhoto, setUploadingPhoto] = useState(false);
   const [uploadMessage, setUploadMessage] = useState('');
   const [actionMessage, setActionMessage] = useState('');
   const [actionError, setActionError] = useState('');
@@ -458,20 +463,23 @@ function ProfilePage({
     {
       id: 'overview',
       label: 'Genel Bakış',
-      description: 'Durum, eksikler ve sonraki adimlar',
+      description: 'Durum, eksikler ve sonraki adımlar',
       count: `${profileCoverageCount}/5`,
+      icon: <Activity size={20} />
     },
     {
       id: 'background',
       label: 'Profil Kayıtları',
       description: 'Eğitim, deneyim, proje ve alanlar',
       count: overviewEducation.length + overviewExperienceCount + overviewProjectCount + overviewDomainSignals.length,
+      icon: <FileText size={20} />
     },
     {
       id: 'skills',
       label: 'Yetkinlikler',
       description: 'Teknolojiler ve CV önerileri',
       count: displayedSkillCount,
+      icon: <Cpu size={20} />
     },
   ];
 
@@ -645,6 +653,39 @@ function ProfilePage({
       );
     } finally {
       setUploadingCv(false);
+    }
+  };
+
+  const handleProfilePhotoUpload = async () => {
+    const file = profilePhotoFile;
+
+    if (!file) {
+      setActionError('Önce cihazından bir profil fotoğrafı seç.');
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    setUploadingPhoto(true);
+    setUploadMessage('');
+    clearFeedback();
+
+    try {
+      await api.post('/student/upload-profile-photo', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
+      });
+
+      setProfilePhotoFile(null);
+      setActionMessage('Profil fotoğrafı güncellendi.');
+      await onRefresh();
+    } catch (uploadError) {
+      setActionError(
+        getErrorMessage(uploadError, 'Profil fotoğrafı yüklenemedi. JPG, PNG veya WEBP dosyası deneyebilirsin.')
+      );
+    } finally {
+      setUploadingPhoto(false);
     }
   };
 
@@ -1102,7 +1143,7 @@ function ProfilePage({
     }
   };
 
-  const renderDocumentsBlock = (sectionId) => (
+  const renderDocumentsBlockLegacy = (sectionId) => (
     <section id={sectionId} className="profile-grid profile-grid-single">
       <article className="card profile-block documents-stage-card">
         <div className="profile-card-header documents-stage-header">
@@ -1177,6 +1218,57 @@ function ProfilePage({
           <section className="documents-panel">
             <div className="documents-panel-head">
               <div className="profile-section-title">
+                <Pencil size={16} />
+                Profil Fotoğrafı
+              </div>
+            </div>
+
+            <div className="upload-panel upload-panel-photo">
+              <div className="upload-current-file">
+                <span>Aktif fotoğraf</span>
+                <strong className="upload-current-file-name">
+                  {profile?.profilePhotoUrl ? 'Profil fotoğrafı ayarlı' : 'Henüz fotoğraf yüklenmedi'}
+                </strong>
+              </div>
+
+              <div className="profile-photo-upload-preview">
+                {profile?.profilePhotoUrl ? (
+                  <img
+                    src={resolvePhotoUrl(profile.profilePhotoUrl)}
+                    alt={profile?.fullName || 'Öğrenci profil fotoğrafı'}
+                    className="profile-photo-upload-image"
+                  />
+                ) : (
+                  <div className="profile-photo-upload-fallback">{initials}</div>
+                )}
+              </div>
+
+              <label className="upload-picker">
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                  onChange={(event) => setProfilePhotoFile(event.target.files?.[0] || null)}
+                />
+                <span className="upload-picker-button">Fotoğraf seç</span>
+                <span className={`upload-picker-name ${profilePhotoFile ? 'selected' : ''}`}>
+                  {profilePhotoFile?.name || 'Henüz görsel seçilmedi'}
+                </span>
+              </label>
+
+              <button
+                type="button"
+                className="btn-primary upload-button"
+                onClick={handleProfilePhotoUpload}
+                disabled={uploadingPhoto}
+              >
+                {uploadingPhoto ? 'Fotoğraf yükleniyor...' : 'Fotoğrafı kaydet'}
+              </button>
+            </div>
+          </section>
+
+          <section className="documents-panel">
+            <div className="documents-panel-head">
+              <div className="profile-section-title">
                 <Upload size={16} />
                 CV Yükleme
               </div>
@@ -1219,6 +1311,377 @@ function ProfilePage({
     </section>
   );
 
+  const renderDocumentsBlock = (sectionId) => (
+    <section id={sectionId} className="profile-grid profile-grid-single">
+      <article className="card profile-block documents-stage-card">
+        <div className="profile-card-header documents-stage-header">
+          <div>
+            <div className="profile-section-title">
+              <Upload size={16} />
+              Belgeler ve Akademik Bilgiler
+            </div>
+          </div>
+        </div>
+
+        <div className="documents-shell">
+          <section className="documents-hero">
+            <div className="documents-hero-identity">
+              <div className="documents-hero-avatar">
+                {profile?.profilePhotoUrl ? (
+                  <img
+                    src={resolvePhotoUrl(profile.profilePhotoUrl)}
+                    alt={profile?.fullName || 'Öğrenci profil fotoğrafı'}
+                    className="documents-hero-avatar-image"
+                  />
+                ) : (
+                  <div className="documents-hero-avatar-fallback">{initials}</div>
+                )}
+              </div>
+
+            </div>
+
+            <div className="documents-status-grid">
+              <div className="documents-status-card">
+                <span>Akademik</span>
+                <strong>{hasCgpa || hasTotalECTS ? 'Hazır' : 'Eksik'}</strong>
+              </div>
+
+              <div className="documents-status-card">
+                <span>Fotoğraf</span>
+                <strong>{profile?.profilePhotoUrl ? 'Hazır' : 'Eksik'}</strong>
+              </div>
+
+              <div className="documents-status-card">
+                <span>CV</span>
+                <strong>{profile?.cvFileName ? 'Hazır' : 'Eksik'}</strong>
+              </div>
+            </div>
+          </section>
+
+          <div className="documents-workspace">
+            <section className="documents-main-panel">
+              <div className="documents-panel-head">
+                <div className="profile-section-title">
+                  <Award size={16} />
+                  Akademik Bilgiler
+                </div>
+              </div>
+
+              <form className="profile-form documents-form" onSubmit={submitAcademicProfile}>
+                <div className="profile-form-grid">
+                  <label className="profile-form-field">
+                    <span>CGPA</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="4"
+                      step="0.01"
+                      className="input-field"
+                      placeholder="Örnek: 3.26"
+                      value={academicForm.cgpa}
+                      onChange={(event) =>
+                        setAcademicForm((current) => ({ ...current, cgpa: event.target.value }))
+                      }
+                    />
+                  </label>
+
+                  <label className="profile-form-field">
+                    <span>Toplam AKTS</span>
+                    <input
+                      type="number"
+                      min="0"
+                      max="300"
+                      step="1"
+                      className="input-field"
+                      placeholder="Örnek: 189"
+                      value={academicForm.totalECTS}
+                      onChange={(event) =>
+                        setAcademicForm((current) => ({
+                          ...current,
+                          totalECTS: event.target.value,
+                        }))
+                      }
+                    />
+                  </label>
+                </div>
+
+                <div className="profile-form-actions">
+                  <button
+                    type="submit"
+                    className="btn-primary profile-submit-button documents-submit-button"
+                    disabled={savingSection === 'academic'}
+                  >
+                    <Save size={16} />
+                    {savingSection === 'academic' ? 'Kaydediliyor...' : 'Akademik bilgileri kaydet'}
+                  </button>
+                </div>
+              </form>
+            </section>
+
+            <section className="documents-side-panel">
+              <article className="documents-mini-panel">
+                <div className="documents-panel-head">
+                  <div className="profile-section-title">
+                    <Pencil size={16} />
+                    Profil Fotoğrafı
+                  </div>
+                </div>
+
+                <div className="upload-panel upload-panel-photo">
+                  <div className="profile-photo-upload-preview">
+                    {profile?.profilePhotoUrl ? (
+                      <img
+                        src={resolvePhotoUrl(profile.profilePhotoUrl)}
+                        alt={profile?.fullName || 'Öğrenci profil fotoğrafı'}
+                        className="profile-photo-upload-image"
+                      />
+                    ) : (
+                      <div className="profile-photo-upload-fallback">{initials}</div>
+                    )}
+                  </div>
+
+                  <label className="upload-picker">
+                    <input
+                      type="file"
+                      accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                      onChange={(event) => setProfilePhotoFile(event.target.files?.[0] || null)}
+                    />
+                    <span className="upload-picker-button">Fotoğraf seç</span>
+                    <span className={`upload-picker-name ${profilePhotoFile ? 'selected' : ''}`}>
+                      {profilePhotoFile?.name || 'Dosya seçilmedi'}
+                    </span>
+                  </label>
+
+                  <button
+                    type="button"
+                    className="btn-primary upload-button"
+                    onClick={handleProfilePhotoUpload}
+                    disabled={uploadingPhoto}
+                  >
+                    {uploadingPhoto ? 'Yükleniyor...' : 'Kaydet'}
+                  </button>
+                </div>
+              </article>
+
+              <article className="documents-mini-panel">
+                <div className="documents-panel-head">
+                  <div className="profile-section-title">
+                    <FileBadge2 size={16} />
+                    CV Yükleme
+                  </div>
+                </div>
+
+                <div className="upload-panel">
+                  <div className="upload-current-file">
+                    <span>Mevcut dosya</span>
+                    <strong className="upload-current-file-name">
+                      {profile?.cvFileName ? 'CV yüklendi' : 'CV yok'}
+                    </strong>
+                  </div>
+
+                  <label className="upload-picker">
+                    <input
+                      type="file"
+                      accept=".pdf"
+                      onChange={(event) => setCvFile(event.target.files?.[0] || null)}
+                    />
+                    <span className="upload-picker-button">Dosya seç</span>
+                    <span className={`upload-picker-name ${cvFile ? 'selected' : ''}`}>
+                      {cvFile?.name || 'Dosya seçilmedi'}
+                    </span>
+                  </label>
+
+                  <button
+                    type="button"
+                    className="btn-primary upload-button"
+                    onClick={handleUpload}
+                    disabled={uploadingCv}
+                  >
+                    {uploadingCv ? 'Yükleniyor...' : 'CV yükle'}
+                  </button>
+                </div>
+              </article>
+            </section>
+          </div>
+        </div>
+
+        {uploadMessage ? <div className="dashboard-alert upload-alert">{uploadMessage}</div> : null}
+      </article>
+    </section>
+  );
+
+  const renderDocumentsBlockRestored = (sectionId) => (
+    <section id={sectionId} className="profile-grid profile-grid-single">
+      <article className="card profile-block documents-stage-card">
+        <div className="profile-card-header documents-stage-header">
+          <div>
+            <div className="profile-section-title">
+              <Upload size={16} />
+              Belgeler ve Akademik Bilgiler
+            </div>
+          </div>
+        </div>
+
+        <div className="docs-cards-grid">
+          {/* CV Yükleme Kartı */}
+          <div className="docs-card">
+            <div className="docs-card-icon docs-card-icon-cv">
+              <FileBadge2 size={22} />
+            </div>
+            <div className="docs-card-header">
+              <h3 className="docs-card-title">CV Yükleme</h3>
+              <span className={`docs-card-badge ${hasCvFile ? 'docs-card-badge-ok' : 'docs-card-badge-missing'}`}>
+                {hasCvFile ? 'Yüklendi' : 'Eksik'}
+              </span>
+            </div>
+            <p className="docs-card-desc">
+              {hasCvFile
+                ? 'CV dosyan yüklü. Güncellemek istersen yeni bir dosya seçebilirsin.'
+                : 'Profilini tamamlamak için PDF formatında CV yükle.'}
+            </p>
+            <div className="docs-card-body">
+              <label className="docs-file-picker">
+                <input
+                  type="file"
+                  accept=".pdf"
+                  onChange={(event) => setCvFile(event.target.files?.[0] || null)}
+                />
+                <span className="docs-file-picker-btn">Dosya seç</span>
+                <span className={`docs-file-picker-name ${cvFile ? 'active' : ''}`}>
+                  {cvFile?.name || 'PDF dosyası seç'}
+                </span>
+              </label>
+            </div>
+            <button
+              type="button"
+              className="docs-card-action"
+              onClick={handleUpload}
+              disabled={uploadingCv}
+            >
+              <Upload size={15} />
+              {uploadingCv ? 'Yükleniyor...' : 'CV Yükle'}
+            </button>
+          </div>
+
+          {/* Profil Fotoğrafı Kartı */}
+          <div className="docs-card">
+            <div className="docs-card-icon docs-card-icon-photo">
+              <Pencil size={22} />
+            </div>
+            <div className="docs-card-header">
+              <h3 className="docs-card-title">Profil Fotoğrafı</h3>
+              <span className={`docs-card-badge ${profile?.profilePhotoUrl ? 'docs-card-badge-ok' : 'docs-card-badge-missing'}`}>
+                {profile?.profilePhotoUrl ? 'Ayarlı' : 'Eksik'}
+              </span>
+            </div>
+
+            <div className="docs-photo-preview">
+              {profile?.profilePhotoUrl ? (
+                <img
+                  src={resolvePhotoUrl(profile.profilePhotoUrl)}
+                  alt={profile?.fullName || 'Profil fotoğrafı'}
+                  className="docs-photo-img"
+                />
+              ) : (
+                <div className="docs-photo-fallback">{initials}</div>
+              )}
+            </div>
+
+            <div className="docs-card-body">
+              <label className="docs-file-picker">
+                <input
+                  type="file"
+                  accept=".jpg,.jpeg,.png,.webp,image/jpeg,image/png,image/webp"
+                  onChange={(event) => setProfilePhotoFile(event.target.files?.[0] || null)}
+                />
+                <span className="docs-file-picker-btn">Fotoğraf seç</span>
+                <span className={`docs-file-picker-name ${profilePhotoFile ? 'active' : ''}`}>
+                  {profilePhotoFile?.name || 'JPG, PNG veya WEBP'}
+                </span>
+              </label>
+            </div>
+            <button
+              type="button"
+              className="docs-card-action"
+              onClick={handleProfilePhotoUpload}
+              disabled={uploadingPhoto}
+            >
+              <Save size={15} />
+              {uploadingPhoto ? 'Yükleniyor...' : 'Kaydet'}
+            </button>
+          </div>
+
+          {/* Akademik Bilgiler Kartı */}
+          <div className="docs-card">
+            <div className="docs-card-icon docs-card-icon-academic">
+              <Award size={22} />
+            </div>
+            <div className="docs-card-header">
+              <h3 className="docs-card-title">Akademik Bilgiler</h3>
+              <span className={`docs-card-badge ${hasCgpa || hasTotalECTS ? 'docs-card-badge-ok' : 'docs-card-badge-missing'}`}>
+                {hasCgpa || hasTotalECTS ? 'Hazır' : 'Eksik'}
+              </span>
+            </div>
+            <p className="docs-card-desc">
+              {hasCgpa || hasTotalECTS
+                ? 'Akademik bilgilerin kayıtlı. Değişiklik yapmak istersen güncelleyebilirsin.'
+                : 'GPA ve AKTS bilgilerini girerek profilini güçlendir.'}
+            </p>
+
+            <form className="docs-academic-form" onSubmit={submitAcademicProfile}>
+              <div className="docs-academic-fields">
+                <label className="docs-field">
+                  <span className="docs-field-label">GPA</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="4"
+                    step="0.01"
+                    className="docs-field-input"
+                    placeholder="3.26"
+                    value={academicForm.cgpa}
+                    onChange={(event) =>
+                      setAcademicForm((current) => ({ ...current, cgpa: event.target.value }))
+                    }
+                  />
+                </label>
+                <label className="docs-field">
+                  <span className="docs-field-label">AKTS</span>
+                  <input
+                    type="number"
+                    min="0"
+                    max="300"
+                    step="1"
+                    className="docs-field-input"
+                    placeholder="189"
+                    value={academicForm.totalECTS}
+                    onChange={(event) =>
+                      setAcademicForm((current) => ({
+                        ...current,
+                        totalECTS: event.target.value,
+                      }))
+                    }
+                  />
+                </label>
+              </div>
+
+              <button
+                type="submit"
+                className="docs-card-action"
+                disabled={savingSection === 'academic'}
+              >
+                <Save size={15} />
+                {savingSection === 'academic' ? 'Kaydediliyor...' : 'Kaydet'}
+              </button>
+            </form>
+          </div>
+        </div>
+
+        {uploadMessage ? <div className="dashboard-alert upload-alert">{uploadMessage}</div> : null}
+      </article>
+    </section>
+  );
+
   const renderOverview = () => (
     <>
       <section className="profile-overview-grid">
@@ -1226,7 +1689,17 @@ function ProfilePage({
           <div className="overview-hero-main">
             <div className="overview-hero-identity">
               <div className="profile-panel-top">
-                <div className="profile-avatar">{initials}</div>
+                <div className="profile-avatar">
+                  {profile?.profilePhotoUrl ? (
+                    <img
+                      src={resolvePhotoUrl(profile.profilePhotoUrl)}
+                      alt={profile?.fullName || 'Öğrenci profil fotoğrafı'}
+                      className="profile-avatar-image"
+                    />
+                  ) : (
+                    initials
+                  )}
+                </div>
                 <div>
                   <div className="profile-panel-name">
                     {profile?.fullName || 'Profil hazırlanıyor'}
@@ -1301,7 +1774,7 @@ function ProfilePage({
         </article>
       </section>
 
-      {renderDocumentsBlock('overview-documents')}
+      {renderDocumentsBlockRestored('overview-documents')}
 
       <section className="profile-grid">
         <article className="card profile-block overview-summary-card">

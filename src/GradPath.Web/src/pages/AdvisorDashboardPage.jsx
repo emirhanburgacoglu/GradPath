@@ -44,6 +44,19 @@ function formatDate(value) {
   }).format(new Date(value));
 }
 
+function buildProfileInitials(fullName) {
+  if (!fullName) {
+    return 'DP';
+  }
+
+  return fullName
+    .trim()
+    .split(/\s+/)
+    .slice(0, 2)
+    .map((part) => part.charAt(0).toUpperCase())
+    .join('');
+}
+
 function AdvisorDashboardPage({
   currentView,
   error,
@@ -464,6 +477,29 @@ function AdvisorDashboardPage({
               </div>
 
               <form className="advisor-project-form" onSubmit={handleSaveProfile}>
+                <div className="advisor-profile-preview">
+                  {profileForm.profilePhotoUrl ? (
+                    <img
+                      className="advisor-profile-preview-photo"
+                      src={profileForm.profilePhotoUrl}
+                      alt={`${profileForm.fullName || 'Danışman'} profil fotoğrafı`}
+                    />
+                  ) : (
+                    <div className="advisor-profile-preview-photo advisor-profile-preview-fallback">
+                      {buildProfileInitials(profileForm.fullName)}
+                    </div>
+                  )}
+
+                  <div className="advisor-profile-preview-copy">
+                    <strong>
+                      {profileForm.academicTitle ? `${profileForm.academicTitle} ` : ''}
+                      {profileForm.fullName || 'Danışman profili'}
+                    </strong>
+                    <span>{profile?.departmentName || 'Bölüm bilgisi yok'}</span>
+                    {profileForm.expertiseAreas ? <small>{profileForm.expertiseAreas}</small> : null}
+                  </div>
+                </div>
+
                 <div className="advisor-project-form-grid">
                   <label className="advisor-admin-input-block">
                     <span>Ad soyad</span>

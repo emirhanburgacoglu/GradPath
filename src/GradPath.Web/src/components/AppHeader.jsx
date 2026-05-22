@@ -1,9 +1,10 @@
 import { useEffect, useRef, useState } from 'react';
 import { ChevronDown, LogOut, Menu, User, X } from 'lucide-react';
+import { resolvePhotoUrl } from '../api';
 
 const defaultNavItems = [
   { id: 'dashboard', label: 'Anasayfa' },
-  { id: 'advisor-selection', label: 'Danismanlik' },
+  { id: 'advisor-selection', label: 'Danışmanlık' },
   { id: 'students', label: 'Öğrenciler' },
   { id: 'posts', label: 'İlanlar' },
   { id: 'profile', label: 'Profil' }
@@ -61,6 +62,10 @@ function AppHeader({
   const handleViewSelect = (viewId) => {
     setIsMobileMenuOpen(false);
     setIsProfileMenuOpen(false);
+    if (!isAuthenticated) {
+      onAuthModeChange?.('login');
+      return;
+    }
     onViewChange?.(viewId);
   };
 
@@ -75,6 +80,17 @@ function AppHeader({
     setIsProfileMenuOpen(false);
     onAuthModeChange?.(mode);
   };
+
+  const avatarLabel = profile?.fullName || 'GradPath kullanicisi';
+  const avatarContent = profile?.profilePhotoUrl ? (
+    <img
+      className="app-topbar-avatar-image"
+      src={resolvePhotoUrl(profile.profilePhotoUrl)}
+      alt={`${avatarLabel} profil fotografi`}
+    />
+  ) : (
+    <span className="app-topbar-avatar-fallback">{initials}</span>
+  );
 
   const renderNavItems = () =>
     navItems.map((item) => (
@@ -93,10 +109,10 @@ function AppHeader({
       <div className="app-topbar-shell">
         <div className="app-topbar-main">
           <div className="app-topbar-brand">
-            <div className="app-topbar-brand-mark">GP</div>
+            <img src="/mcbu-logo.png" alt="MCBÜ Logo" className="app-topbar-brand-logo" />
             <div className="app-topbar-brand-copy">
-              <span>Project Intelligence Platform</span>
-              <strong>GradPath</strong>
+              <span>Mühendislik Fakültesi</span>
+              <strong>Proje Ekosistemi</strong>
             </div>
           </div>
 
@@ -135,7 +151,7 @@ function AppHeader({
                   aria-expanded={isProfileMenuOpen}
                   onClick={() => setIsProfileMenuOpen((current) => !current)}
                 >
-                  <div className="app-topbar-avatar">{initials}</div>
+                  <div className="app-topbar-avatar">{avatarContent}</div>
                   <div className="app-topbar-profile-copy">
                     <strong>{profile?.fullName || 'GradPath kullanıcısı'}</strong>
                     <span>{profile?.email || 'Panel kullanıcısı'}</span>
@@ -203,7 +219,7 @@ function AppHeader({
                 </div>
 
                 <div className="app-topbar-profile">
-                  <div className="app-topbar-avatar">{initials}</div>
+                  <div className="app-topbar-avatar">{avatarContent}</div>
                   <div className="app-topbar-profile-copy">
                     <strong>{profile?.fullName || 'GradPath kullanıcısı'}</strong>
                     <span>{profile?.email || 'Panel kullanıcısı'}</span>

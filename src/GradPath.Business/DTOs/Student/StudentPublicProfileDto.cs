@@ -10,6 +10,7 @@ public class StudentPublicProfileDto
     public decimal? CGPA { get; set; }
     public int? TotalECTS { get; set; }
     public bool IsHonorStudent { get; set; }
+    public string? ProfilePhotoUrl { get; set; }
     public string? CvSummary { get; set; }
     public List<StudentSkillDto> Skills { get; set; } = new();
     public List<StudentEducationCrudDto> Educations { get; set; } = new();

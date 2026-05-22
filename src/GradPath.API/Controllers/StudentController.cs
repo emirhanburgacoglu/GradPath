@@ -53,6 +53,49 @@ public class StudentController : ControllerBase
         return Ok(new { Message = "CV basariyla yuklendi ve AI tarafindan analiz edildi.", FileName = fileName });
     }
 
+    [HttpPost("upload-profile-photo")]
+    public async Task<IActionResult> UploadProfilePhoto(IFormFile file)
+    {
+        var userIdString = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+        if (userIdString == null) return Unauthorized();
+        if (file == null || file.Length == 0) return BadRequest("Gecerli bir profil fotografi secilmedi.");
+
+        var extension = Path.GetExtension(file.FileName)?.ToLowerInvariant();
+        var allowedExtensions = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            ".jpg",
+            ".jpeg",
+            ".png",
+            ".webp"
+        };
+
+        if (string.IsNullOrWhiteSpace(extension) || !allowedExtensions.Contains(extension))
+        {
+            return BadRequest("Profil fotografi icin sadece JPG, PNG veya WEBP dosyalari kabul edilir.");
+        }
+
+        if (string.IsNullOrWhiteSpace(file.ContentType) || !file.ContentType.StartsWith("image/", StringComparison.OrdinalIgnoreCase))
+        {
+            return BadRequest("Secilen dosya gecerli bir gorsel degil.");
+        }
+
+        var userId = Guid.Parse(userIdString);
+        var fileName = await _fileUploadService.UploadFileAsync(file, "profile-photos");
+        var profilePhotoUrl = $"/uploads/profile-photos/{Uri.EscapeDataString(fileName)}";
+
+        var photoSaved = await _studentService.UpdateProfilePhotoAsync(userId, profilePhotoUrl);
+        if (!photoSaved)
+        {
+            return StatusCode(StatusCodes.Status500InternalServerError, "Profil fotografi kaydedildi ama profil guncellenemedi.");
+        }
+
+        return Ok(new
+        {
+            Message = "Profil fotografi basariyla guncellendi.",
+            ProfilePhotoUrl = profilePhotoUrl
+        });
+    }
+
     [HttpGet("me")]
     public async Task<IActionResult> GetMyProfile()
     {

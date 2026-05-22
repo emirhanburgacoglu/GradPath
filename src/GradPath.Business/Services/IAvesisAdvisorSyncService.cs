@@ -5,4 +5,6 @@ namespace GradPath.Business.Services;
 public interface IAvesisAdvisorSyncService
 {
     Task<AvesisAdvisorSyncResponseDto> SyncComputerEngineeringAsync();
+    Task<AvesisAdvisorResyncResponseDto> ResyncComputerEngineeringAsync();
+    Task<AdvisorResetResponseDto> ResetComputerEngineeringAdvisorsAsync();
 }

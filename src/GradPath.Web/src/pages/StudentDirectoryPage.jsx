@@ -10,7 +10,7 @@ import {
 } from 'lucide-react';
 import AppHeader from '../components/AppHeader';
 import AppFooter from '../components/AppFooter';
-import api from '../api';
+import api, { resolvePhotoUrl } from '../api';
 
 function createEmptyFilters() {
   return {
@@ -342,6 +342,18 @@ function StudentDirectoryPage({
             <>
               <section className="selection-modal-section">
                 <div className="applicant-public-profile-top">
+                  <div className="applicant-public-profile-avatar">
+                    {selectedStudentProfile.profilePhotoUrl ? (
+                      <img
+                        src={resolvePhotoUrl(selectedStudentProfile.profilePhotoUrl)}
+                        alt={selectedStudentProfile.fullName || 'Öğrenci profil fotoğrafı'}
+                        className="applicant-public-profile-avatar-image"
+                      />
+                    ) : (
+                      getInitials(selectedStudentProfile.fullName)
+                    )}
+                  </div>
+
                   <div className="applicant-public-profile-copy">
                     <strong>{selectedStudentProfile.fullName}</strong>
                     <span>
@@ -515,20 +527,19 @@ function StudentDirectoryPage({
         profile={profile}
       />
 
+
       <main className="main-content student-directory-page">
-        <div className="dashboard-header">
-          <div>
-            <p className="dashboard-date">Öğrenci Dizini</p>
-            <h1 className="dashboard-title">Öğrenciler</h1>
-            <p className="dashboard-subtitle">
-              Benzer alanlarda çalışan öğrencileri filtrele, profillerini incele ve ekip kurma kararını daha bilinçli ver.
-            </p>
+        <section className="posts-page-header">
+          <div className="posts-page-header-copy">
+            <div style={{ textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 800, color: 'rgba(31, 60, 136, 0.5)', fontSize: '0.75rem', marginBottom: '8px' }}>Öğrenci Dizini</div>
+            <h1>Öğrenciler</h1>
+            <p>Benzer alanlarda çalışan öğrencileri filtrele, profillerini incele ve ekip kurma kararını daha bilinçli ver.</p>
           </div>
 
-          <div className="dashboard-actions">
+          <div className="posts-page-header-actions">
             <button
-              type="button"
               className="ghost-button"
+              type="button"
               onClick={() => loadDirectory(true)}
               disabled={refreshing}
             >
@@ -536,56 +547,65 @@ function StudentDirectoryPage({
               {refreshing ? 'Yenileniyor' : 'Listeyi Yenile'}
             </button>
           </div>
-        </div>
+        </section>
 
         {actionError ? <div className="dashboard-alert">{actionError}</div> : null}
 
-        <section className="student-directory-stats-grid">
-          <article className="card student-directory-stat-card">
-            <div className="student-directory-stat-top">
-              <span className="student-directory-stat-icon">
-                <Users size={16} />
-              </span>
-              <span className="student-directory-stat-title">Görünen Öğrenci</span>
-              <span className="student-directory-stat-chip">Toplam</span>
+        <section className="posts-tabbar">
+          <div className="posts-view-grid" style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}>
+            <div className="posts-view-card" style={{ padding: '16px 20px' }}>
+              <div className="posts-view-card-top" style={{ marginBottom: '4px' }}>
+                <span className="posts-view-icon">
+                  <Users size={15} />
+                </span>
+                <div className="posts-view-card-copy">
+                  <strong style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-soft)' }}>Görünen Öğrenci</strong>
+                </div>
+                <span className="posts-view-count" style={{ background: '#ffffff', fontSize: '0.65rem', minHeight: '24px', padding: '0 10px' }}>Toplam</span>
+              </div>
+              <strong style={{ display: 'block', fontSize: '1.4rem', color: '#0f2347' }}>{stats.totalStudents}</strong>
             </div>
-            <strong className="student-directory-stat-value">{stats.totalStudents}</strong>
-          </article>
 
-          <article className="card student-directory-stat-card">
-            <div className="student-directory-stat-top">
-              <span className="student-directory-stat-icon">
-                <Award size={16} />
-              </span>
-              <span className="student-directory-stat-title">Onur Öğrencisi</span>
-              <span className="student-directory-stat-chip">Seçili</span>
+            <div className="posts-view-card" style={{ padding: '16px 20px' }}>
+              <div className="posts-view-card-top" style={{ marginBottom: '4px' }}>
+                <span className="posts-view-icon">
+                  <Award size={15} />
+                </span>
+                <div className="posts-view-card-copy">
+                  <strong style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-soft)' }}>Onur Öğrencisi</strong>
+                </div>
+                <span className="posts-view-count" style={{ background: '#ffffff', fontSize: '0.65rem', minHeight: '24px', padding: '0 10px' }}>Seçili</span>
+              </div>
+              <strong style={{ display: 'block', fontSize: '1.4rem', color: '#0f2347' }}>{stats.honorStudents}</strong>
             </div>
-            <strong className="student-directory-stat-value">{stats.honorStudents}</strong>
-          </article>
 
-          <article className="card student-directory-stat-card">
-            <div className="student-directory-stat-top">
-              <span className="student-directory-stat-icon">
-                <Sparkles size={16} />
-              </span>
-              <span className="student-directory-stat-title">Ortalama GPA</span>
-              <span className="student-directory-stat-chip">Genel</span>
+            <div className="posts-view-card" style={{ padding: '16px 20px' }}>
+              <div className="posts-view-card-top" style={{ marginBottom: '4px' }}>
+                <span className="posts-view-icon">
+                  <Sparkles size={15} />
+                </span>
+                <div className="posts-view-card-copy">
+                  <strong style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-soft)' }}>Ortalama GPA</strong>
+                </div>
+                <span className="posts-view-count" style={{ background: '#ffffff', fontSize: '0.65rem', minHeight: '24px', padding: '0 10px' }}>Genel</span>
+              </div>
+              <strong style={{ display: 'block', fontSize: '1.4rem', color: '#0f2347' }}>{stats.averageCgpa}</strong>
             </div>
-            <strong className="student-directory-stat-value">{stats.averageCgpa}</strong>
-          </article>
 
-          <article className="card student-directory-stat-card">
-            <div className="student-directory-stat-top">
-              <span className="student-directory-stat-icon">
-                <SlidersHorizontal size={16} />
-              </span>
-              <span className="student-directory-stat-title">Alan Çeşitliliği</span>
-              <span className="student-directory-stat-chip">Odak</span>
+            <div className="posts-view-card" style={{ padding: '16px 20px' }}>
+              <div className="posts-view-card-top" style={{ marginBottom: '4px' }}>
+                <span className="posts-view-icon">
+                  <SlidersHorizontal size={15} />
+                </span>
+                <div className="posts-view-card-copy">
+                  <strong style={{ fontSize: '0.7rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--text-soft)' }}>Alan Çeşitliliği</strong>
+                </div>
+                <span className="posts-view-count" style={{ background: '#ffffff', fontSize: '0.65rem', minHeight: '24px', padding: '0 10px' }}>Odak</span>
+              </div>
+              <strong style={{ display: 'block', fontSize: '1.4rem', color: '#0f2347' }}>{stats.uniqueDomainSignals}</strong>
             </div>
-            <strong className="student-directory-stat-value">{stats.uniqueDomainSignals}</strong>
-          </article>
+          </div>
         </section>
-
         <section className="profile-grid profile-grid-single">
           <article className="card profile-block">
             <div className="profile-card-header">
@@ -719,7 +739,17 @@ function StudentDirectoryPage({
                 <article key={student.userId} className="card student-directory-card">
                   <div className="student-directory-card-top">
                     <div className="student-directory-card-identity">
-                      <div className="student-directory-avatar">{getInitials(student.fullName)}</div>
+                      <div className="student-directory-avatar">
+                        {student.profilePhotoUrl ? (
+                          <img
+                            src={resolvePhotoUrl(student.profilePhotoUrl)}
+                            alt={student.fullName || 'Öğrenci profil fotoğrafı'}
+                            className="student-directory-avatar-image"
+                          />
+                        ) : (
+                          getInitials(student.fullName)
+                        )}
+                      </div>
 
                       <div className="student-directory-card-copy">
                         <strong>{student.fullName}</strong>
@@ -740,87 +770,52 @@ function StudentDirectoryPage({
                           </span>
                         ) : null}
                       </div>
-
-                      <div className="student-directory-card-actions">
-                        <button
-                          type="button"
-                          className="ghost-button profile-inline-button"
-                          onClick={() => openStudentProfile(student.userId)}
-                          disabled={isProfileLoading}
-                        >
-                          <Sparkles size={15} />
-                          {isProfileLoading ? 'Profil yükleniyor...' : 'Profili incele'}
-                        </button>
-                      </div>
                     </div>
                   </div>
 
-                  <div className="student-directory-overview-grid">
-                    <div className="student-directory-overview-card">
-                      <span>Yetenek</span>
-                      <strong>{student.skillCount}</strong>
-                    </div>
-
-                    <div className="student-directory-overview-card">
-                      <span>Proje</span>
-                      <strong>{student.projectCount}</strong>
-                    </div>
-
-                    <div className="student-directory-overview-card">
-                      <span>Deneyim</span>
-                      <strong>{student.experienceCount}</strong>
-                    </div>
-
-                    <div className="student-directory-overview-card">
-                      <span>AKTS</span>
-                      <strong>{student.totalECTS ?? '-'}</strong>
-                    </div>
+                  <div className="student-directory-metrics-row">
+                    <span><strong>{student.skillCount}</strong> Yetenek</span>
+                    <span className="metric-dot">•</span>
+                    <span><strong>{student.projectCount}</strong> Proje</span>
+                    <span className="metric-dot">•</span>
+                    <span><strong>{student.experienceCount}</strong> Deneyim</span>
+                    <span className="metric-dot">•</span>
+                    <span><strong>{student.totalECTS ?? '-'}</strong> AKTS</span>
                   </div>
 
                   {student.cvSummary ? (
                     <p className="student-directory-card-summary">
-                      {getShortText(student.cvSummary, 190)}
+                      {getShortText(student.cvSummary, 140)}
                     </p>
-                  ) : (
-                    <p className="student-directory-card-summary student-directory-card-summary-muted">
-                      Bu öğrenci için henüz paylaşılan bir özet bulunmuyor.
-                    </p>
-                  )}
+                  ) : null}
 
-                  <div className="student-directory-detail-grid">
-                    <div className="post-card-section">
-                      <div className="post-card-section-title">Öne çıkan yetenekler</div>
-                      <div className="project-tags">
-                        {student.skills?.length ? (
-                          student.skills.map((skill) => (
-                            <span
-                              key={`${student.userId}-${skill.technologyId}-${skill.proficiencyLevel}`}
-                              className="tech-tag matched"
-                            >
-                              {skill.technologyName} - {getProficiencyLabel(skill.proficiencyLevel)}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="project-empty-tag">Kayıtlı yetenek yok</span>
-                        )}
-                      </div>
-                    </div>
-
-                    <div className="post-card-section">
-                      <div className="post-card-section-title">İlgi alanları</div>
-                      <div className="project-tags">
-                        {student.domainSignals?.length ? (
-                          student.domainSignals.map((signal) => (
-                            <span key={`${student.userId}-${signal}`} className="tech-tag">
-                              {signal}
-                            </span>
-                          ))
-                        ) : (
-                          <span className="project-empty-tag">Alan bilgisi yok</span>
-                        )}
-                      </div>
-                    </div>
+                  <div className="student-directory-card-skills">
+                    {student.skills?.length ? (
+                      student.skills.slice(0, 4).map((skill) => (
+                        <span key={`${student.userId}-${skill.technologyId}`} className="tech-tag matched">
+                          {skill.technologyName}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="project-empty-tag">Kayıtlı yetenek yok</span>
+                    )}
+                    {student.skills?.length > 4 && (
+                      <span className="tech-tag-more">+{student.skills.length - 4}</span>
+                    )}
                   </div>
+
+                  <div className="student-directory-card-footer">
+                    <button
+                      type="button"
+                      className="btn-primary student-directory-profile-btn"
+                      onClick={() => openStudentProfile(student.userId)}
+                      disabled={isProfileLoading}
+                    >
+                      <Sparkles size={16} />
+                      {isProfileLoading ? 'Profil yükleniyor...' : 'Profili İncele'}
+                    </button>
+                  </div>
+
                 </article>
               );
             })}

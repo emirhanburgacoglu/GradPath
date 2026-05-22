@@ -10,6 +10,7 @@ public class StudentDirectoryItemDto
     public decimal? CGPA { get; set; }
     public int? TotalECTS { get; set; }
     public bool IsHonorStudent { get; set; }
+    public string? ProfilePhotoUrl { get; set; }
     public string? CvSummary { get; set; }
     public int SkillCount { get; set; }
     public int ProjectCount { get; set; }

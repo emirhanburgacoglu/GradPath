@@ -16,30 +16,30 @@ const defaultRegisterForm = {
 };
 
 const loginFeaturePoints = [
-  'Ogrenci profili, proje secimi ve danismanlik surecini tek akista toplar.',
-  'Eslesme mantigini daha gorunur ve olculebilir hale getirir.',
-  'Bitirme projesi surecini tek panel uzerinden takip etmeni saglar.',
+  'Öğrenci profili, proje seçimi ve danışmanlık sürecini tek akışta toplar.',
+  'Eşleşme mantığını daha görünür ve ölçülebilir hale getirir.',
+  'Bitirme projesi sürecini tek panel üzerinden takip etmeni sağlar.',
 ];
 
 const loginPreviewCards = [
   {
-    title: 'Profil Yonetimi',
-    detail: 'Yetkinlik, belge ve akademik kayitlar duzenli sekilde ilerler.',
+    title: 'Profil Yönetimi',
+    detail: 'Yetkinlik, belge ve akademik kayıtlar düzenli şekilde ilerler.',
   },
   {
-    title: 'Proje Eslesmesi',
-    detail: 'Bitirme projeleri uyum mantigiyla siralanir ve degerlendirilir.',
+    title: 'Proje Eşleşmesi',
+    detail: 'Bitirme projeleri uyum mantığıyla sıralanır ve değerlendirilir.',
   },
   {
-    title: 'Danismanlik Akisi',
-    detail: 'Proje secimi ve danisman sureci tek panelde izlenir.',
+    title: 'Danışmanlık Akışı',
+    detail: 'Proje seçimi ve danışman süreci tek panelde izlenir.',
   },
 ];
 
 const loginWorkflowSteps = [
-  'Profilini olustur',
-  'Projeni sec',
-  'Danisman surecini takip et',
+  'Profilini oluştur',
+  'Projeni seç',
+  'Danışman sürecini takip et',
 ];
 
 const roleBasedLoginDefaults = {
@@ -141,25 +141,25 @@ const Login = ({ onLoginSuccess }) => {
   const currentHeading = useMemo(() => {
     if (authMode === 'register') {
       return {
-        title: 'Yeni ogrenci hesabi olustur.',
+        title: 'Yeni öğrenci hesabı oluştur.',
       };
     }
 
     if (authMode === 'login-role') {
       return {
-        title: 'Giris yapmak istedigin hesap turunu sec.',
+        title: 'Giriş yapmak istediğin hesap türünü seç.',
       };
     }
 
     if (authMode === 'login-advisor') {
       return {
-        title: 'Danisman hesabinla giris yap.',
+        title: 'Danışman hesabınla giriş yap.',
       };
     }
 
     if (authMode === 'login-student') {
       return {
-        title: 'Ogrenci hesabinla giris yap.',
+        title: 'Öğrenci hesabınla giriş yap.',
       };
     }
 
@@ -252,23 +252,23 @@ const Login = ({ onLoginSuccess }) => {
             <div className="login-pill">
               {authMode === 'register' ? <UserPlus size={15} /> : <Sparkles size={15} />}
               {authMode === 'register'
-                ? 'Yeni Ogrenci Hesabi'
+                ? 'Yeni Öğrenci Hesabı'
                 : authMode === 'login-role'
-                  ? 'Giris Secimi'
+                  ? 'Giriş Seçimi'
                   : authMode === 'login-advisor'
-                    ? 'Danisman Girisi'
-                    : 'Ogrenci Girisi'}
+                    ? 'Danışman Girişi'
+                    : 'Öğrenci Girişi'}
             </div>
 
             <h2>{currentHeading.title}</h2>
             <p>
               {authMode === 'register'
-                ? 'Universite e-posta bilginle yeni ogrenci hesabini olustur ve profiline dogrudan basla.'
+                ? 'Üniversite e-posta bilginle yeni öğrenci hesabını oluştur ve profiline doğrudan başla.'
                 : authMode === 'login-role'
-                  ? 'Acilan pencereden ogrenci veya danisman secimini yap. Sonraki adimda sana uygun giris formu gosterilecek.'
+                  ? 'Açılan pencereden öğrenci veya danışman seçimini yap. Sonraki adımda sana uygun giriş formu gösterilecek.'
                   : authMode === 'login-advisor'
-                    ? 'Danisman hesaplari kurum tarafindan tanimlanir. Mevcut bilgilerinizle giris yaparak panelinizi yonetebilirsiniz.'
-                    : 'Ogrenci hesabinizla giris yaparak proje ve danismanlik surecinizi kaldiginiz yerden yonetebilirsiniz.'}
+                    ? 'Danışman hesapları kurum tarafından tanımlanır. Mevcut bilgilerinizle giriş yaparak panelinizi yönetebilirsiniz.'
+                    : 'Öğrenci hesabınızla giriş yaparak proje ve danışmanlık sürecinizi kaldığınız yerden yönetebilirsiniz.'}
             </p>
           </div>
 
@@ -280,7 +280,7 @@ const Login = ({ onLoginSuccess }) => {
                   className="btn-primary"
                   onClick={() => openLoginForRole('student')}
                 >
-                  Ogrenci
+                  Öğrenci
                 </button>
 
                 <button
@@ -288,7 +288,7 @@ const Login = ({ onLoginSuccess }) => {
                   className="btn-primary"
                   onClick={() => openLoginForRole('advisor')}
                 >
-                  Danisman
+                  Danışman
                 </button>
               </div>
             ) : authMode === 'login-student' || authMode === 'login-advisor' ? (
@@ -301,7 +301,7 @@ const Login = ({ onLoginSuccess }) => {
                   className="ghost-button"
                   onClick={() => switchMode('login')}
                 >
-                  Geri don
+                  Geri dön
                 </button>
 
                 <div className="field-group">
@@ -318,11 +318,11 @@ const Login = ({ onLoginSuccess }) => {
                 </div>
 
                 <div className="field-group">
-                  <label className="field-label">Sifre</label>
+                  <label className="field-label">Şifre</label>
                   <input
                     type="password"
                     className="input-field"
-                    placeholder="Sifrenizi girin"
+                    placeholder="Şifrenizi girin"
                     value={loginForm.password}
                     onChange={(event) =>
                       setLoginForm((current) => ({ ...current, password: event.target.value }))
@@ -333,16 +333,16 @@ const Login = ({ onLoginSuccess }) => {
                 <div className="helper-row">
                   <span>
                     <ShieldCheck size={14} style={{ verticalAlign: 'text-bottom', marginRight: 6 }} />
-                    Guvenli oturum
+                    Güvenli oturum
                   </span>
                   <span>
                     <ChartSpline size={14} style={{ verticalAlign: 'text-bottom', marginRight: 6 }} />
-                    Canli panel verisi
+                    Canlı panel verisi
                   </span>
                 </div>
 
                 <button type="submit" className="btn-primary" disabled={submitting}>
-                  {submitting ? 'Giris yapiliyor...' : 'Giris Yap'}
+                  {submitting ? 'Giriş yapılıyor...' : 'Giriş Yap'}
                   <ArrowRight size={18} style={{ marginLeft: 8, verticalAlign: 'middle' }} />
                 </button>
               </form>
@@ -353,7 +353,7 @@ const Login = ({ onLoginSuccess }) => {
 
                 {!loadingDepartments && !departments.length ? (
                   <div className="error-banner">
-                    Kayit icin bolum listesi yuklenemedi. Lutfen daha sonra tekrar dene.
+                    Kayıt için bölüm listesi yüklenemedi. Lütfen daha sonra tekrar dene.
                   </div>
                 ) : null}
 
@@ -362,7 +362,7 @@ const Login = ({ onLoginSuccess }) => {
                   <input
                     type="text"
                     className="input-field"
-                    placeholder="Adinizi ve soyadinizi girin"
+                    placeholder="Adınızı ve soyadınızı girin"
                     value={registerForm.fullName}
                     onChange={(event) =>
                       setRegisterForm((current) => ({ ...current, fullName: event.target.value }))
@@ -384,7 +384,7 @@ const Login = ({ onLoginSuccess }) => {
                 </div>
 
                 <div className="field-group">
-                  <label className="field-label">Bolum</label>
+                  <label className="field-label">Bölüm</label>
                   <select
                     className="input-field"
                     value={registerForm.departmentId}
@@ -394,7 +394,7 @@ const Login = ({ onLoginSuccess }) => {
                     disabled={loadingDepartments || !departments.length}
                   >
                     <option value="">
-                      {loadingDepartments ? 'Bolumler yukleniyor...' : 'Bolum secin'}
+                      {loadingDepartments ? 'Bölümler yükleniyor...' : 'Bölüm seçin'}
                     </option>
                     {departments.map((department) => (
                       <option key={department.id} value={department.id}>
@@ -405,7 +405,7 @@ const Login = ({ onLoginSuccess }) => {
                 </div>
 
                 <div className="field-group">
-                  <label className="field-label">Sifre</label>
+                  <label className="field-label">Şifre</label>
                   <input
                     type="password"
                     className="input-field"
@@ -420,7 +420,7 @@ const Login = ({ onLoginSuccess }) => {
                 <div className="helper-row helper-row-register">
                   <span>
                     <ShieldCheck size={14} style={{ verticalAlign: 'text-bottom', marginRight: 6 }} />
-                    Kayit sonrasi oturum otomatik acilir
+                    Kayıt sonrası oturum otomatik açılır
                   </span>
                   <span>
                     <ChartSpline size={14} style={{ verticalAlign: 'text-bottom', marginRight: 6 }} />
@@ -433,7 +433,7 @@ const Login = ({ onLoginSuccess }) => {
                   className="btn-primary"
                   disabled={submitting || loadingDepartments || !departments.length}
                 >
-                  {submitting ? 'Hesap olusturuluyor...' : 'Kayit Ol'}
+                  {submitting ? 'Hesap oluşturuluyor...' : 'Kayıt Ol'}
                   <ArrowRight size={18} style={{ marginLeft: 8, verticalAlign: 'middle' }} />
                 </button>
               </form>
@@ -462,17 +462,17 @@ const Login = ({ onLoginSuccess }) => {
           <section className="login-hero">
             <div className="login-copy">
               <div className="login-brand">
-                <div className="login-brand-badge">GP</div>
+                <img src="/mcbu-logo.png" alt="MCBÜ Logo" className="login-brand-logo" />
                 <div className="login-brand-text">
-                  <span className="login-brand-kicker">Project Intelligence Platform</span>
-                  <span className="login-brand-name">GradPath</span>
+                  <span className="login-brand-kicker">Manisa Celal Bayar Üniversitesi</span>
+                  <span className="login-brand-name">Mühendislik Fakültesi</span>
                 </div>
               </div>
 
-              <h1>Akademik proje surecini tek merkezden yonetin.</h1>
+              <h1>Bitirme projeleri ve danışmanlık sürecini tek merkezden yönetin.</h1>
               <p>
-                GradPath; ogrenci profili, proje ilanlari ve uyum analizlerini tek panelde birlestirir.
-                Karar alma surecini daha izlenebilir, daha olculebilir ve daha profesyonel hale getirir.
+                MCBÜ Proje Ekosistemi; öğrenci profili, proje ilanları ve uyum analizlerini tek panelde birleştirir.
+                Karar alma sürecini daha izlenebilir, ölçülebilir ve şeffaf hale getirir.
               </p>
 
               <div className="login-feature-list">
@@ -488,10 +488,10 @@ const Login = ({ onLoginSuccess }) => {
             <div className="login-preview-panel">
               <div className="login-preview-header">
                 <div>
-                  <span className="login-preview-kicker">Calisma alani</span>
-                  <strong className="login-preview-title">Tek panel, net akis</strong>
+                  <span className="login-preview-kicker">Çalışma alanı</span>
+                  <strong className="login-preview-title">Tek panel, net akış</strong>
                 </div>
-                <span className="login-preview-badge">Kurumsal gorunum</span>
+                <span className="login-preview-badge">Kurumsal görünüm</span>
               </div>
 
               <div className="login-preview-grid">
@@ -513,8 +513,107 @@ const Login = ({ onLoginSuccess }) => {
               </div>
             </div>
           </section>
+
+          <div className="login-featured-projects">
+            <h3 className="featured-projects-title">Sistemde Öne Çıkan Proje Alanları</h3>
+            
+            <div className="featured-projects-marquee">
+              <div className="featured-projects-track">
+                {/* 2 sets of cards for seamless infinite scroll */}
+                {[1, 2].map((group) => (
+                  <div key={group} className="featured-projects-group">
+                    <div className="featured-project-card">
+                      <span className="project-category">Yapay Zeka</span>
+                      <strong>Otonom İHA Yörünge Planlama</strong>
+                      <p>Derin öğrenme algoritmaları ile dinamik engellerden kaçınan rota optimizasyonu.</p>
+                    </div>
+                    <div className="featured-project-card">
+                      <span className="project-category">Görüntü İşleme</span>
+                      <strong>Medikal Görüntülerden Hastalık Tespiti</strong>
+                      <p>Evrişimli sinir ağları kullanarak yüksek doğruluklu otonom medikal analiz.</p>
+                    </div>
+                    <div className="featured-project-card">
+                      <span className="project-category">Siber Güvenlik</span>
+                      <strong>Blokzincir Tabanlı Kimlik Yönetimi</strong>
+                      <p>Merkeziyetsiz ağlar üzerinde güvenli veri ve erişim kontrol mekanizması.</p>
+                    </div>
+                    <div className="featured-project-card">
+                      <span className="project-category">IoT & Sensörler</span>
+                      <strong>Akıllı Tarım Optimizasyonu</strong>
+                      <p>Gerçek zamanlı sensör verileriyle otomatik sulama ve gübreleme sistemi.</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+
+          <div className="login-stats-bar">
+            <div className="stat-item">
+              <strong>300+</strong>
+              <span>Kayıtlı Öğrenci</span>
+            </div>
+            <div className="stat-item">
+              <strong>85+</strong>
+              <span>Proje İlanı</span>
+            </div>
+            <div className="stat-item">
+              <strong>1.200+</strong>
+              <span>Yapay Zeka Önerisi</span>
+            </div>
+            <div className="stat-item">
+              <strong>40+</strong>
+              <span>Sistemdeki Danışman</span>
+            </div>
+          </div>
         </div>
       </main>
+
+      <footer className="login-footer">
+        <div className="login-footer-content">
+          <div className="footer-brand">
+            <img src="/mcbu-logo.png" alt="MCBÜ Logo" className="footer-logo" />
+            <div className="footer-brand-text">
+              <strong>Manisa Celal Bayar Üniversitesi</strong>
+              <span>Mühendislik Fakültesi - Bilgisayar Mühendisliği</span>
+            </div>
+            <p className="footer-description">
+              GradPath Proje Ekosistemi, bitirme projeleri ve danışmanlık süreçlerini yapay zeka destekli eşleştirme algoritmalarıyla tek bir merkezden yönetmenizi sağlayan yeni nesil bir akademik platformdur.
+            </p>
+          </div>
+          
+          <div className="footer-links-group">
+            <div className="footer-column">
+              <h4>Hızlı Bağlantılar</h4>
+              <ul>
+                <li><a href="#duyurular">Fakülte Duyuruları</a></li>
+                <li><a href="#takvim">Akademik Takvim</a></li>
+                <li><a href="#yonerge">Proje Yönergeleri</a></li>
+                <li><a href="#ogrenci">Öğrenci İşleri</a></li>
+              </ul>
+            </div>
+            
+            <div className="footer-column">
+              <h4>Destek & İletişim</h4>
+              <ul>
+                <li><a href="#sss">Sıkça Sorulan Sorular</a></li>
+                <li><a href="#kilavuz">Sistem Kullanım Kılavuzu</a></li>
+                <li><a href="#destek">Teknik Destek</a></li>
+                <li><a href="#iletisim">İletişim Formu</a></li>
+              </ul>
+            </div>
+          </div>
+        </div>
+        
+        <div className="login-footer-bottom">
+          <span>&copy; {new Date().getFullYear()} MCBÜ Bilgisayar Mühendisliği. Tüm hakları saklıdır.</span>
+          <div className="footer-bottom-links">
+            <a href="#gizlilik">Gizlilik Politikası</a>
+            <span className="footer-dot"></span>
+            <a href="#kosullar">Kullanım Koşulları</a>
+          </div>
+        </div>
+      </footer>
 
       {authMode ? (
         <div className="login-modal-overlay" onClick={closeAuthModal}>

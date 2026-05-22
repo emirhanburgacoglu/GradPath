@@ -68,7 +68,8 @@ public class StudentService : IStudentService
             IsHonorStudent = profile.IsHonorStudent,
             CvFileName = profile.CvFileName,
             CvSummary = cvSummary,
-            CvAnalysisJson = cvAnalysisJson
+            CvAnalysisJson = cvAnalysisJson,
+            ProfilePhotoUrl = profile.ProfilePhotoUrl
         };
     }
 
@@ -98,6 +99,7 @@ public class StudentService : IStudentService
             CGPA = profile?.CGPA,
             TotalECTS = profile?.TotalECTS,
             IsHonorStudent = profile?.IsHonorStudent ?? false,
+            ProfilePhotoUrl = profile?.ProfilePhotoUrl,
             CvSummary = ExtractCvSummary(profile?.ParsedCvData),
             Skills = await GetSkillsAsync(userId),
             Educations = await GetEducationsAsync(userId),
@@ -211,6 +213,7 @@ public class StudentService : IStudentService
                 CGPA = user.StudentProfile != null ? user.StudentProfile.CGPA : null,
                 TotalECTS = user.StudentProfile != null ? user.StudentProfile.TotalECTS : null,
                 IsHonorStudent = user.StudentProfile != null && user.StudentProfile.IsHonorStudent,
+                ProfilePhotoUrl = user.StudentProfile != null ? user.StudentProfile.ProfilePhotoUrl : null,
                 ParsedCvData = user.StudentProfile != null ? user.StudentProfile.ParsedCvData : null
             })
             .ToListAsync();
@@ -307,6 +310,7 @@ public class StudentService : IStudentService
                 CGPA = row.CGPA,
                 TotalECTS = row.TotalECTS,
                 IsHonorStudent = row.IsHonorStudent,
+                ProfilePhotoUrl = row.ProfilePhotoUrl,
                 CvSummary = ExtractCvSummary(row.ParsedCvData),
                 SkillCount = userSkills.Count,
                 ProjectCount = projectCountLookup.TryGetValue(row.Id, out var projectCount) ? projectCount : 0,
@@ -341,11 +345,7 @@ public class StudentService : IStudentService
 
     public async Task<bool> UpdateProfileAsync(Guid userId, StudentProfileUpdateDto request)
     {
-        var profile = await _context.StudentProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
-        if (profile == null)
-        {
-            return false;
-        }
+        var profile = await GetOrCreateStudentProfileAsync(userId);
 
         profile.CGPA = request.CGPA;
         profile.TotalECTS = request.TotalECTS;
@@ -358,13 +358,21 @@ public class StudentService : IStudentService
 
     public async Task<bool> UpdateCvFileNameAsync(Guid userId, string fileName)
     {
-        var profile = await _context.StudentProfiles.FirstOrDefaultAsync(p => p.UserId == userId);
-        if (profile == null)
-        {
-            return false;
-        }
+        var profile = await GetOrCreateStudentProfileAsync(userId);
 
         profile.CvFileName = fileName;
+        profile.CvUploadedAt = DateTime.UtcNow;
+        profile.UpdatedAt = DateTime.UtcNow;
+
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> UpdateProfilePhotoAsync(Guid userId, string profilePhotoUrl)
+    {
+        var profile = await GetOrCreateStudentProfileAsync(userId);
+
+        profile.ProfilePhotoUrl = profilePhotoUrl;
         profile.UpdatedAt = DateTime.UtcNow;
 
         await _context.SaveChangesAsync();
@@ -384,6 +392,7 @@ public class StudentService : IStudentService
             .ToListAsync();
 
         return rawSkills
+            .Where(skill => !string.IsNullOrWhiteSpace(skill.TechnologyName))
             .GroupBy(
                 skill => skill.TechnologyName.Trim().ToLowerInvariant(),
                 StringComparer.OrdinalIgnoreCase)
@@ -1269,24 +1278,24 @@ public class StudentService : IStudentService
         var fallbackAnalysis = CvAnalysisBuilder.Build(layoutDocument);
         var fallbackJson = JsonSerializer.Serialize(fallbackAnalysis);
 
-        var systemPrompt = @"Sen bir insan kaynaklarý veri çýkarma asistanýsýn. Görevin, verilen CV metnini analiz edip aþaðýdaki JSON þemasýna TITIZLIKLE uygun þekilde veri çýkarmaktýr. SADECE JSON formatýnda cevap ver, fazladan bir þey yazma. Eðer bir alan bulunamazsa boþ býrak: string için """", liste için [].
-JSON Þemasý:
+        var systemPrompt = @"Sen bir insan kaynaklarÄ± veri Ã§Ä±karma asistanÄ±sÄ±n. GÃ¶revin, verilen CV metnini analiz edip aÅŸaÄŸÄ±daki JSON ÅŸemasÄ±na TITIZLIKLE uygun ÅŸekilde veri Ã§Ä±karmaktÄ±r. SADECE JSON formatÄ±nda cevap ver, fazladan bir ÅŸey yazma. EÄŸer bir alan bulunamazsa boÅŸ bÄ±rak: string iÃ§in """", liste iÃ§in [].
+JSON ÅžemasÄ±:
 {
-  ""RawSummary"": ""Tüm CV'nin kýsaca özeti (1-2 paragraf)"",
-  ""NormalizedSummary"": ""Kariyer ve profil hakkýnda temiz, düzgün bir özet"",
+  ""RawSummary"": ""TÃ¼m CV'nin kÄ±saca Ã¶zeti (1-2 paragraf)"",
+  ""NormalizedSummary"": ""Kariyer ve profil hakkÄ±nda temiz, dÃ¼zgÃ¼n bir Ã¶zet"",
   ""SkillsByCategory"": [
-    { ""CategoryName"": ""Örn: Programming Languages"", ""Skills"": [""C#"", ""Java""] }
+    { ""CategoryName"": ""Ã–rn: Programming Languages"", ""Skills"": [""C#"", ""Java""] }
   ],
   ""Projects"": [
-    { ""Name"": ""Proje adý"", ""Description"": ""Açýklamasý"", ""Technologies"": [""Kullanýlan Teknolojiler""], ""Role"": ""Kiþinin Rolü"", ""Domain"": ""Alan (Örn: Web, AI)"", ""IsTeamProject"": true/false }
+    { ""Name"": ""Proje adÄ±"", ""Description"": ""AÃ§Ä±klamasÄ±"", ""Technologies"": [""KullanÄ±lan Teknolojiler""], ""Role"": ""KiÅŸinin RolÃ¼"", ""Domain"": ""Alan (Ã–rn: Web, AI)"", ""IsTeamProject"": true/false }
   ],
   ""Experiences"": [
-    { ""CompanyName"": ""Þirket"", ""Position"": ""Pozisyon"", ""StartDateText"": ""Baþlangýç"", ""EndDateText"": ""Bitiþ"", ""Description"": ""Açýklama"", ""Technologies"": [""Teknolojiler""] }
+    { ""CompanyName"": ""Åžirket"", ""Position"": ""Pozisyon"", ""StartDateText"": ""BaÅŸlangÄ±Ã§"", ""EndDateText"": ""BitiÅŸ"", ""Description"": ""AÃ§Ä±klama"", ""Technologies"": [""Teknolojiler""] }
   ],
   ""Education"": [
-    { ""SchoolName"": ""Üniversite/Okul"", ""Department"": ""Bölüm"", ""Degree"": ""Derece (Örn: Lisans)"", ""StartDateText"": ""Baþlangýç"", ""EndDateText"": ""Bitiþ"" }
+    { ""SchoolName"": ""Ãœniversite/Okul"", ""Department"": ""BÃ¶lÃ¼m"", ""Degree"": ""Derece (Ã–rn: Lisans)"", ""StartDateText"": ""BaÅŸlangÄ±Ã§"", ""EndDateText"": ""BitiÅŸ"" }
   ],
-  ""DomainSignals"": [""Yazýlýmcýnýn öne çýktýðý 1-2 teknik alan, örn: Backend, Frontend, Cloud""]
+  ""DomainSignals"": [""YazÄ±lÄ±mcÄ±nÄ±n Ã¶ne Ã§Ä±ktÄ±ÄŸÄ± 1-2 teknik alan, Ã¶rn: Backend, Frontend, Cloud""]
 }";
 
         var userPrompt = $"CV Metni:`n{normalizedText}";
@@ -1698,6 +1707,30 @@ JSON Þemasý:
         }
 
         return (analysis.DomainSignals?.Count ?? 0) > 0;
+    }
+
+    private async Task<StudentProfile> GetOrCreateStudentProfileAsync(Guid userId)
+    {
+        var profile = await _context.StudentProfiles.FirstOrDefaultAsync(item => item.UserId == userId);
+        if (profile != null)
+        {
+            return profile;
+        }
+
+        var user = await _context.Users.FindAsync(userId)
+            ?? throw new InvalidOperationException($"Student user '{userId}' could not be found.");
+
+        profile = new StudentProfile
+        {
+            UserId = userId,
+            User = user,
+            CreatedAt = DateTime.UtcNow
+        };
+
+        _context.StudentProfiles.Add(profile);
+        await _context.SaveChangesAsync();
+
+        return profile;
     }
 }
 
