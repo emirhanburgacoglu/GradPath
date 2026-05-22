@@ -1056,6 +1056,12 @@ function StudentProjectPostsPage({
                       </span>
                     </div>
 
+                    {application.status === 'Accepted' ? (
+                      <div className="application-contact-hint">
+                        Bu öğrenci ekipte. İletişim için yukarıdaki e-posta bilgisini kullanabilirsin.
+                      </div>
+                    ) : null}
+
                     <div className="application-card-actions">
                       <button
                         type="button"
@@ -1532,6 +1538,7 @@ function StudentProjectPostsPage({
           <div className="application-card-list">
             {filteredMyApplications.map((application) => {
               const applicationTone = getApplicationTone(application.status);
+              const isAccepted = application.status === 'Accepted';
               const isPending = application.status === 'Pending';
               const isRejectedOrWithdrawn =
                 application.status === 'Rejected' || application.status === 'Withdrawn';
@@ -1559,6 +1566,45 @@ function StudentProjectPostsPage({
                       İlan durumu: {application.postStatus}
                     </span>
                   </div>
+
+                  {isAccepted ? (
+                    <div className="application-match-panel">
+                      <div className="application-match-panel-copy">
+                        <span className="application-match-kicker">Takım eşleşmesi hazır</span>
+                        <strong>{application.ownerFullName || 'İlan sahibi'}</strong>
+                        <p>
+                          İlan sahibi seni ekibe kabul etti. İletişime geçip görev dağılımı ve
+                          sonraki adımları netleştirebilirsin.
+                        </p>
+                      </div>
+
+                      <div className="application-match-contact-list">
+                        {application.ownerDepartmentName ? (
+                          <span className="project-meta-chip subtle">
+                            <Building2 size={14} />
+                            {application.ownerDepartmentName}
+                          </span>
+                        ) : null}
+
+                        {application.ownerEmail ? (
+                          <span className="project-meta-chip">
+                            {application.ownerEmail}
+                          </span>
+                        ) : null}
+                      </div>
+
+                      {application.ownerEmail ? (
+                        <div className="application-card-actions application-card-contact-actions">
+                          <a
+                            className="ghost-button profile-inline-button"
+                            href={`mailto:${application.ownerEmail}`}
+                          >
+                            E-posta gönder
+                          </a>
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : null}
 
                   <div className="application-card-actions">
                     {isPending ? (

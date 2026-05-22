@@ -5,6 +5,9 @@ public class StudentProjectPostMyApplicationDto
     public Guid Id { get; set; }
     public Guid StudentProjectPostId { get; set; }
     public Guid OwnerUserId { get; set; }
+    public string OwnerFullName { get; set; } = string.Empty;
+    public string OwnerEmail { get; set; } = string.Empty;
+    public string OwnerDepartmentName { get; set; } = string.Empty;
 
     public string PostTitle { get; set; } = string.Empty;
     public string PostCategory { get; set; } = string.Empty;

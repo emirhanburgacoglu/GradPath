@@ -6804,6 +6804,68 @@ a {
   gap: 10px;
 }
 
+.application-contact-hint {
+  padding: 12px 14px;
+  border-radius: 16px;
+  background: rgba(24, 154, 118, 0.1);
+  border: 1px solid rgba(24, 154, 118, 0.16);
+  color: #0d5b47;
+  font-size: 0.9rem;
+  line-height: 1.5;
+}
+
+.application-match-panel {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid rgba(31, 60, 136, 0.14);
+}
+
+.application-match-panel-copy {
+  display: grid;
+  gap: 6px;
+}
+
+.application-match-panel-copy strong {
+  font-size: 1rem;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+.application-match-panel-copy p {
+  margin: 0;
+  color: var(--text-soft);
+  font-size: 0.92rem;
+  line-height: 1.6;
+}
+
+.application-match-kicker {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  min-height: 28px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: rgba(24, 154, 118, 0.12);
+  color: #0d5b47;
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.application-match-contact-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.application-card-contact-actions a {
+  text-decoration: none;
+}
+
 .applicant-public-profile-shell {
   display: grid;
   gap: 16px;

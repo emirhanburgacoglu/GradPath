@@ -88,13 +88,6 @@ public class AdvisorService : IAdvisorService
             .Select(user => user.DepartmentId)
             .FirstOrDefaultAsync();
 
-        var projectDepartmentIds = await _context.ProjectDepartments
-            .AsNoTracking()
-            .Where(link => link.ProjectId == projectId)
-            .Select(link => link.DepartmentId)
-            .Distinct()
-            .ToListAsync();
-
         var approvedCounts = await _context.AdvisorRequests
             .AsNoTracking()
             .Where(request => request.Status == "Approved")
@@ -121,32 +114,11 @@ public class AdvisorService : IAdvisorService
                 .ToList();
         }
 
-        var filteredAdvisors = advisors;
-        var hasProjectDepartmentMatch = false;
-        if (projectDepartmentIds.Count > 0)
-        {
-            var projectDepartmentAdvisors = advisors
-                .Where(user => user.DepartmentId.HasValue && projectDepartmentIds.Contains(user.DepartmentId.Value))
-                .ToList();
-
-            if (projectDepartmentAdvisors.Count > 0)
-            {
-                filteredAdvisors = projectDepartmentAdvisors;
-                hasProjectDepartmentMatch = true;
-            }
-        }
-
-        if (!hasProjectDepartmentMatch && studentDepartmentId.HasValue)
-        {
-            var studentDepartmentAdvisors = advisors
+        var filteredAdvisors = studentDepartmentId.HasValue
+            ? advisors
                 .Where(user => user.DepartmentId == studentDepartmentId.Value)
-                .ToList();
-
-            if (studentDepartmentAdvisors.Count > 0)
-            {
-                filteredAdvisors = studentDepartmentAdvisors;
-            }
-        }
+                .ToList()
+            : new List<GradPath.Data.Entities.AppUser>();
 
         return filteredAdvisors
             .Select(user =>

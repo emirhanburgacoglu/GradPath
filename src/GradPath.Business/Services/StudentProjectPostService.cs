@@ -57,6 +57,11 @@ public class StudentProjectPostService : IStudentProjectPostService
                 Id = application.Id,
                 StudentProjectPostId = application.StudentProjectPostId,
                 OwnerUserId = application.StudentProjectPost.OwnerUserId,
+                OwnerFullName = application.StudentProjectPost.OwnerUser.FullName,
+                OwnerEmail = application.StudentProjectPost.OwnerUser.Email ?? string.Empty,
+                OwnerDepartmentName = application.StudentProjectPost.OwnerUser.Department != null
+                    ? application.StudentProjectPost.OwnerUser.Department.Name
+                    : string.Empty,
                 PostTitle = application.StudentProjectPost.Title,
                 PostCategory = application.StudentProjectPost.Category,
                 PostProjectType = application.StudentProjectPost.ProjectType,
