@@ -5,6 +5,7 @@ import api from '../api';
 
 const advisorNavItems = [
   { id: 'dashboard', label: 'Talepler' },
+  { id: 'students', label: 'Öğrenciler' },
   { id: 'projects', label: 'Projeler' },
   { id: 'profile', label: 'Profil' },
 ];
@@ -979,7 +980,7 @@ function AdvisorDashboardPage({
         )}
       </main>
 
-      <AppFooter currentView={currentView} onViewChange={onViewChange} />
+      <AppFooter currentView={currentView} navItems={advisorNavItems} onViewChange={onViewChange} />
     </div>
   );
 }

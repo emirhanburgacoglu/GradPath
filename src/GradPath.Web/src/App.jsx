@@ -11,6 +11,13 @@ import StudentProjectPostsPage from './pages/StudentProjectPostsPage';
 import api from './api';
 import './index.css';
 
+const advisorNavigationItems = [
+  { id: 'dashboard', label: 'Talepler' },
+  { id: 'students', label: 'Öğrenciler' },
+  { id: 'projects', label: 'Projeler' },
+  { id: 'profile', label: 'Profil' },
+];
+
 function resolveCvSummary(profile) {
   const directSummary = profile?.cvSummary?.trim();
   if (directSummary && directSummary !== '{}') {
@@ -400,6 +407,22 @@ function App() {
   }
 
   if (isAdvisor) {
+    if (currentView === 'students') {
+      return (
+        <StudentDirectoryPage
+          currentView={currentView}
+          footerNavItems={advisorNavigationItems}
+          initials={initials}
+          navItems={advisorNavigationItems}
+          onLogout={handleLogout}
+          onViewChange={setCurrentView}
+          profile={profile}
+          profileActionLabel="Talepler"
+          profileActionViewId="dashboard"
+        />
+      );
+    }
+
     return (
       <AdvisorDashboardPage
         currentView={currentView}

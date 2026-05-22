@@ -98,10 +98,14 @@ function buildDirectoryParams(filters) {
 
 function StudentDirectoryPage({
   currentView,
+  footerNavItems,
   initials,
+  navItems,
   onLogout,
   onViewChange,
   profile,
+  profileActionLabel,
+  profileActionViewId,
 }) {
   const [directoryOptions, setDirectoryOptions] = useState({
     departments: [],
@@ -522,9 +526,12 @@ function StudentDirectoryPage({
       <AppHeader
         currentView={currentView}
         initials={initials}
+        navItems={navItems}
         onLogout={onLogout}
         onViewChange={onViewChange}
         profile={profile}
+        profileActionLabel={profileActionLabel}
+        profileActionViewId={profileActionViewId}
       />
 
 
@@ -827,7 +834,7 @@ function StudentDirectoryPage({
         )}
       </main>
 
-      <AppFooter currentView={currentView} onViewChange={onViewChange} />
+      <AppFooter currentView={currentView} navItems={footerNavItems} onViewChange={onViewChange} />
       {renderProfileModal()}
     </div>
   );
